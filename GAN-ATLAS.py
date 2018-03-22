@@ -52,6 +52,7 @@ def process_data():
 
     return images_batch, num_images
 
+
 def generator(input, random_dim, is_train, reuse=False):
     c4, c8, c16, c32, c64 = 512, 256, 128, 64, 32
     s4 = 4
