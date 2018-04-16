@@ -108,21 +108,15 @@ def to_patches(toPatch, PATCH_Z, STRIDE_PATCH_Z, PATCH_X, STRIDE_PATCH_X, PATCH_
         for i in range(0,x_shape-PATCH_X+STRIDE_PATCH_X,STRIDE_PATCH_X):
             for j in range(0,y_shape-PATCH_Y+STRIDE_PATCH_Y,STRIDE_PATCH_Y):
                 patches.append(toPatch[k:k+PATCH_Z,i:i+PATCH_X, j:j+PATCH_Y])
-    print(np.shape(patches))
+
     return patches
 
 
 def create_patches_from_images(numpy_image, patch_size, mode="extend"):
-
-    patch_size_x = patch_size[0]
-    patch_size_y = patch_size[1]
-    patch_size_z = patch_size[2]
-
-
     shape = numpy_image.shape
     missing = np.array([patch_size[i]-(shape[i]%patch_size[i]) for i in range(len(patch_size))])
     numpy_image_padded = np.zeros(numpy_image.shape+missing)
-    print(numpy_image_padded.shape)
+
     if mode is "extend":
             numpy_image_padded[:,:,:] = np.pad(numpy_image[:,:,:], [(0, missing[0]), (0, missing[1]), (0, missing[2])], mode="constant",
                                     constant_values=0)
@@ -189,7 +183,7 @@ def recreate_image_from_patches(original_image_size, list_patches, mode="extend"
 
 def create_and_save_patches(input_list, label_list, patching_save_path, patch_size=[32, 32, 32]):
     assert(len(input_list)==len(label_list))
-    dir_patch_size = "x".join(patch_size)
+    dir_patch_size = "x".join([str(x) for x in patch_size])
     patching_save_path = create_if_not_exists(os.path.join(patching_save_path, dir_patch_size))
 
     for subject in range(len(input_list)):
@@ -198,10 +192,10 @@ def create_and_save_patches(input_list, label_list, patching_save_path, patch_si
         input_patches = create_patches_from_images(x, patch_size)
         label_patches = create_patches_from_images(y, patch_size)
         for i in range(len(input_patches)):
-            im = Image.fromarray(input_patches[i])
-            im.save(os.path.join(patching_save_path, "input_p{}-{}.jpeg".format(subject, i)))
-            im = Image.fromarray(label_patches[i])
-            im.save(os.path.join(patching_save_path, "label_p{}-{}.jpeg".format(subject, i)))
+            brain_scan = nb.Nifti1Image(input_patches[i], np.eye(4))
+            lesion = nb.Nifti1Image(label_patches[i], np.eye(4))
+            nb.save(brain_scan, os.path.join(patching_save_path, "input_p{}-{}.nii".format(subject, i)))
+            nb.save(lesion, os.path.join(patching_save_path, "label_p{}-{}.nii".format(subject, i)))
 
 
 if __name__ == '__main__':
@@ -212,14 +206,14 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--datapath", help="Path to data folder (ATLAS)", default="/home/simon/Datasets/Stroke_DeepLearning_ATLASdataset")
     args = parser.parse_args()
 
-    sites = [os.path.join(dataos.listdir(args.datapath)
+    sites = [os.path.join(args.datapath, x) for x in os.listdir(args.datapath)]
     patch_size = [32, 32, 32]
     print("Saving patches...")
     with progressbar.ProgressBar(max_value=len(sites)) as bar:
         i=0
         for site in sites:
             x, y = load_data_atlas_from_site(site)
-            save_dir = create_if_not_exists("Data/{}".format(site))
+            save_dir = create_if_not_exists("/home/simon/Datasets/Data/{}".format(os.path.basename(site)))
             create_and_save_patches(x, y, save_dir)
             i=i+1
             bar.update(i)
