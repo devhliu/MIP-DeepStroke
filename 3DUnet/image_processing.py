@@ -130,37 +130,42 @@ def transform_atlas_to_patches(altas_path, save_path, patch_size=[32, 32, 32]):
             site_path = os.path.join(altas_path, site)
             patients = os.listdir(site_path)
             bar.update(percent)
-            for patient in patients:
-                # Read data for this patient
-                for t in os.listdir(os.path.join(site_path, patient)):
-                    if not t == "t01" or patient == "031916":
-                        # print("Found folder {} instead of T01 for patient {}".format(t, patient))
-                        continue
-                    brain_structure_path = os.path.join(site_path, patient, t, "output.nii")
-                    lesion_path = os.path.join(site_path, patient, t, "{}_LesionSmooth_stx.nii".format(patient))
-                    try:
-                        brain_structure = nb.load(brain_structure_path).get_data()
-                        lesion = nb.load(lesion_path).get_data()
+            with progressbar.ProgressBar(max_value=len(sites)) as bar_patient:
+                bar_patient.update(0)
+                j=0
+                for patient in patients:
+                    j = j+1
+                    # Read data for this patient
+                    for t in os.listdir(os.path.join(site_path, patient)):
+                        if not t == "t01" or patient == "031916":
+                            # print("Found folder {} instead of T01 for patient {}".format(t, patient))
+                            continue
+                        brain_structure_path = os.path.join(site_path, patient, t, "output.nii")
+                        lesion_path = os.path.join(site_path, patient, t, "{}_LesionSmooth_stx.nii".format(patient))
+                        try:
+                            brain_structure = nb.load(brain_structure_path).get_data()
+                            lesion = nb.load(lesion_path).get_data()
 
-                        # Create patches
-                        x = brain_structure
-                        y = lesion
-                        input_patches = create_patches_from_images(x, patch_size)
-                        label_patches = create_patches_from_images(y, patch_size)
+                            # Create patches
+                            x = brain_structure
+                            y = lesion
+                            input_patches = create_patches_from_images(x, patch_size)
+                            label_patches = create_patches_from_images(y, patch_size)
 
-                        # Save each patch
-                        for i in range(len(input_patches)):
-                            brain_scan = nb.Nifti1Image(input_patches[i], np.eye(4))
-                            lesion = nb.Nifti1Image(label_patches[i], np.eye(4))
-                            nb.save(brain_scan,
-                                    os.path.join(save_path, "inputs", "input_{}-p{}-{}.nii".format(site, patient, i)))
-                            nb.save(lesion,
-                                    os.path.join(save_path, "masks", "label_{}-p{}-{}.nii".format(site, patient, i)))
+                            # Save each patch
+                            for i in range(len(input_patches)):
+                                brain_scan = nb.Nifti1Image(input_patches[i], np.eye(4))
+                                lesion = nb.Nifti1Image(label_patches[i], np.eye(4))
+                                nb.save(brain_scan,
+                                        os.path.join(save_path, "inputs", "input_{}-p{}-{}.nii".format(site, patient, i)))
+                                nb.save(lesion,
+                                        os.path.join(save_path, "masks", "label_{}-p{}-{}.nii".format(site, patient, i)))
 
-                    except Exception as e:
-                        print("Error reading patient {} ({})".format(patient, os.path.basename(site_path)))
-                        print(e.with_traceback())
-                        continue
+                        except Exception as e:
+                            print("Error reading patient {} ({})".format(patient, os.path.basename(site_path)))
+                            print(e.with_traceback())
+                            continue
+                    bar_patient.update(j)
 
 
             percent = percent + 1
