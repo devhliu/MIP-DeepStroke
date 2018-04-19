@@ -130,7 +130,7 @@ def transform_atlas_to_patches(altas_path, save_path, patch_size=[32, 32, 32]):
             site_path = os.path.join(altas_path, site)
             patients = os.listdir(site_path)
             bar.update(percent)
-            with progressbar.ProgressBar(max_value=len(sites)) as bar_patient:
+            with progressbar.ProgressBar(max_value=len(patients)) as bar_patient:
                 bar_patient.update(0)
                 j=0
                 for patient in patients:
