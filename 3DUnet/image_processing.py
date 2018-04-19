@@ -193,7 +193,7 @@ def save_set_to_folder(x_paths, y_paths, data_path, save_path):
             bar.update(i)
 
 
-def splits_sets(data_path, save_path=None, ratios=[0.6,0.15,0.25], seed=42):
+def splits_sets(data_path, save_path=None, ratios=[0.6, 0.15, 0.25], seed=None):
     assert(sum(ratios) == 1)
     if len(ratios) < 3:
         raise Exception("Ratio should be [train_ratio, val_ratio, test_ratio]")
@@ -210,11 +210,24 @@ def splits_sets(data_path, save_path=None, ratios=[0.6,0.15,0.25], seed=42):
     test_ratio = ratios[2]
 
     # Splitting train/test
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_ratio)
+    if seed is not None:
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_ratio, random_state=seed)
+    else:
+        train_val_ratio = train_ratio + val_ratio
+        data = zip(x, y)
+        num_train = int(train_val_ratio*len(data))
+        x_train, y_train = zip(*data[:num_train])
+        x_test, y_test = zip(*data[num_train:])
 
     # Splitting train/val
-    ratio_split_val = val_ratio/(val_ratio + train_ratio)
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=ratio_split_val, random_state=seed)
+    ratio_split_val = val_ratio / (val_ratio + train_ratio)
+    if seed is not None:
+        x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=ratio_split_val, random_state=seed)
+    else:
+        data = zip(x_train, y_train)
+        num_train = int(ratio_split_val*len(data))
+        x_train, y_train = zip(*data[:num_train])
+        x_val, y_val = zip(*data[num_train:])
 
     save_set_to_folder(x_train, y_train, data_path, os.path.join(save_path, "train"))
     save_set_to_folder(x_val, y_val, data_path, os.path.join(save_path, "validation"))
