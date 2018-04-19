@@ -21,8 +21,8 @@ if __name__ == '__main__':
     dataset_data_path = create_if_not_exists(os.path.join(dataset_path, "Data"))
     save_path = create_if_not_exists(os.path.join(dataset_data_path, string_patches))
 
-    patches_path = transform_atlas_to_patches(altas_path=args.data_path, save_path=save_path, patch_size=patch_size)
+    #patches_path = transform_atlas_to_patches(altas_path=args.data_path, save_path=save_path, patch_size=patch_size)
 
-    print("Patches saved under {}".format(patches_path))
+    #print("Patches saved under {}".format(patches_path))
     splits_sets(save_path, ratios=[0.6, 0.15, 0.25], seed=42)
     print("Sets saved under {}".format(save_path))

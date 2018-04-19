@@ -210,7 +210,7 @@ def splits_sets(data_path, save_path=None, ratios=[0.6,0.15,0.25], seed=42):
     test_ratio = ratios[2]
 
     # Splitting train/test
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_ratio, random_state=seed)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_ratio)
 
     # Splitting train/val
     ratio_split_val = val_ratio/(val_ratio + train_ratio)
