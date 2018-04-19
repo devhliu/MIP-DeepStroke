@@ -9,6 +9,17 @@ from utils import create_if_not_exists
 from unet import unet_model_3d
 from argparse import ArgumentParser
 import time
+import tensorflow as tf
+from tensorflow.python.client import device_lib
+import keras
+
+
+print(device_lib.list_local_devices())
+
+config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 6} )
+sess = tf.Session(config=config)
+keras.backend.set_session(sess)
+
 
 
 def create_generators(batch_size, data_path=None, skip_blank=True):
@@ -123,7 +134,7 @@ if __name__ == '__main__':
 
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/simon/Datasets/Data/32x32x32")
-    parser.add_argument("-b", "--batch_size", help="Batch size", default=32)
+    parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", help="Skip blank images - will not be fed to the network", default=True)
 
     args = parser.parse_args()
