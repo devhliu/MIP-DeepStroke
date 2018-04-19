@@ -214,7 +214,7 @@ def splits_sets(data_path, save_path=None, ratios=[0.6, 0.15, 0.25], seed=None):
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_ratio, random_state=seed)
     else:
         train_val_ratio = train_ratio + val_ratio
-        data = zip(x, y)
+        data = list(zip(x, y))
         num_train = int(train_val_ratio*len(data))
         x_train, y_train = zip(*data[:num_train])
         x_test, y_test = zip(*data[num_train:])
@@ -224,8 +224,8 @@ def splits_sets(data_path, save_path=None, ratios=[0.6, 0.15, 0.25], seed=None):
     if seed is not None:
         x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=ratio_split_val, random_state=seed)
     else:
-        data = zip(x_train, y_train)
-        num_train = int(ratio_split_val*len(data))
+        data = list(zip(x_train, y_train))
+        num_train = 1-int(ratio_split_val*len(data)) #1-validation_ratio
         x_train, y_train = zip(*data[:num_train])
         x_val, y_val = zip(*data[num_train:])
 
