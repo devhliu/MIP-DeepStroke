@@ -13,14 +13,9 @@ import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
 
-
-print(device_lib.list_local_devices())
-
 config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 6} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
-
-
 
 def create_generators(batch_size, data_path=None, skip_blank=True):
     train_path = "train/"
@@ -112,17 +107,17 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
 
     # Parameters
     validation_steps = 5   # Number of steps per evaluation (number of to pass)
-    steps_per_epoch = 20   # Number of batches to pass before going to next epoch
+    steps_per_epoch = 1300  # Number of batches to pass before going to next epoch
     shuffle = True         # Shuffle the data before creating a batch
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
 
     # Train the model, iterating on the data in batches of 32 samples
-    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=1000, verbose=1,
+    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
                                   callbacks=[tensorboard_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=10,
-                                  workers=1, use_multiprocessing=True, shuffle=True, initial_epoch=0)
+                                  workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)
 
     return model, history
 
