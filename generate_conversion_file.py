@@ -7,8 +7,9 @@ mappings = {
         "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_rCBF": "{}\\Ct2_Cerebrale\\",
         "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_rCBV": "{}\\Ct2_Cerebrale\\",
         "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_Tmax": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*\\SPC_301mm_Std": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\Neuro*\\t2_tse*": "{}\\Neuro_Cerebrale_64Ch\\",
+        "*\\{}\\*\\SPC_301*Std*": "{}\\Ct2_Cerebrale\\",
+        "*\\{}\\*\\DE_SPC_30*Std*": "{}\\Ct2_Cerebrale\\",
+        "*\\{}\\*Neuro*\\t2*tse*tra": "{}\\Neuro_Cerebrale_64Ch\\",
         "*\\{}\\VOI*" : "{}\\"
 }
 

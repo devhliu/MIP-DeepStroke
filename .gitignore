@@ -102,3 +102,7 @@ ENV/
 
 #PyCharm
 .idea
+
+#other
+*.txt
+*.csv

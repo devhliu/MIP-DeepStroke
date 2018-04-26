@@ -1,0 +1,66 @@
+import os
+import shutil
+import fnmatch
+
+list_of_data = [
+    "Ct2_Cerebrale/RAPID_MTT",
+    "Ct2_Cerebrale/RAPID_rCBF",
+    "Ct2_Cerebrale/RAPID_rCBV",
+    "Ct2_Cerebrale/RAPID_Tmax",
+    "Ct2_Cerebrale/SPC_301mm_Std",
+    "Ct2_Cerebrale/RAPID_rCBF",
+    "Neuro_Cerebrale_64Ch/t2_tse_tra",
+    "VOI lesion.nii"
+]
+
+
+dict_renaming = {
+    "*SPC_30*" : "SPC_301mm_Std",
+    "T2W*TSE": "t2_tse_tra",
+}
+
+
+def rename_incorrect(dir, dict_renaming):
+    renamed = False
+    new_name = correct_folder_name(dir, dict_renaming)
+    if(new_name != dir):
+       os.rename(dir, new_name)
+       print("Renamed : ", dir, "->", new_name)
+       renamed = True
+    return renamed
+
+
+def correct_folder_name(dir, dict_renaming):
+    folder_name = os.path.basename(dir)
+    for p, d in dict_renaming.items():
+        if fnmatch.fnmatch(folder_name.lower(), p.lower()):
+            new_name = dir.replace(folder_name, d)
+            return new_name
+    return dir
+
+
+def check_integrity(dir, list_of_data, output_file):
+    correct = True
+    missing_crits=[]
+    for criterion in list_of_data:
+       if not os.path.exists(os.path.join(dir, criterion)):
+           correct = False
+           missing_crits.append(criterion)
+
+    if not correct:
+        with open(output_file, "a") as myfile:
+            patient = os.path.basename(dir)
+            line = patient + ", missing : "+str(missing_crits)+"\n"
+            myfile.writelines([line])
+            print(line, end="")
+        print("removing : "+dir)
+        shutil.rmtree(dir)
+
+
+if __name__ == '__main__':
+    folder_path = os.path.join("d:", "Anonymized_Data")
+    dirs = [os.path.join(folder_path, dir) for dir in os.listdir(folder_path)]
+    output_file = "integrity_error.txt"
+
+    for dir in dirs:
+        check_integrity(dir, list_of_data, output_file)
