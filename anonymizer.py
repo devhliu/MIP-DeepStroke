@@ -184,6 +184,7 @@ if __name__ == '__main__':
     # data_dir = os.path.join(main_dir, 'working_data')
     output_dir = os.path.join(main_dir, 'Anonymized_Data')
     dcm2niix_path = "c:\\Program Files\\dcm2niix\\dcm2niix.exe"
+    patient_data_file = "c:"
 
     if not IN_PLACE:
         main_dir = copy_to(main_dir, output_dir)
