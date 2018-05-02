@@ -1,13 +1,10 @@
 import os
-import os
 import subprocess
 from multiprocessing import Pool
 from argparse import ArgumentParser
 from tqdm import tqdm
-import dicom2nifti
 from shutil import copy, rmtree, copyfile
 import itertools
-
 
 # mount = '/run/media/jk/Elements'
 # main_dir = os.path.join(mount, 'MASTER/')
@@ -20,6 +17,7 @@ ct_sequences = ['SPC_301mm_Std', 'RAPID_Tmax', 'RAPID_MTT', 'RAPID_rCBV', 'RAPID
 mri_sequences = ['t2_tse_tra', 'T2W_TSE_tra']
 sequences = ct_sequences + mri_sequences
 
+
 def create_if_not_exists(folder):
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -28,8 +26,7 @@ def create_if_not_exists(folder):
 def organize_folder(subject_folder, output_dir):
     subject = os.path.basename(subject_folder)
     if os.path.isdir(subject_folder):
-        modalities = [o for o in os.listdir(subject_folder)
-                        if os.path.isdir(os.path.join(subject_folder,o))]
+        modalities = [o for o in os.listdir(subject_folder) if os.path.isdir(os.path.join(subject_folder, o))]
 
         for modality in modalities:
             modality_dir = os.path.join(subject_folder, modality)
@@ -38,10 +35,7 @@ def organize_folder(subject_folder, output_dir):
             if not os.path.exists(modality_output_dir):
                 os.makedirs(modality_output_dir)
 
-
-            studies = [o for o in os.listdir(modality_dir)
-                            if os.path.isdir(os.path.join(modality_dir,o))]
-
+            studies = [o for o in os.listdir(modality_dir) if os.path.isdir(os.path.join(modality_dir, o))]
 
             for study in studies:
                 study_dir = os.path.join(modality_dir, study)
@@ -53,7 +47,6 @@ def organize_folder(subject_folder, output_dir):
                             new_file_path = os.path.join(modality_output_dir, new_file_name)
                             if not os.path.exists(new_file_path):
                                 copy(file_path, new_file_path)
-
 
         # copy lesions file into subject dir
         lesion_path = os.path.join(data_dir, subject, 'VOI lesion.nii')
@@ -68,13 +61,11 @@ def organize_folder(subject_folder, output_dir):
 
 def to_nii(subject_folder, output_dir):
     subject = os.path.basename(subject_folder)
-    modalities = [o for o in os.listdir(subject_folder)
-                    if os.path.isdir(os.path.join(subject_folder, o))]
+    modalities = [o for o in os.listdir(subject_folder) if os.path.isdir(os.path.join(subject_folder, o))]
 
     for modality in modalities:
         modality_dir = os.path.join(subject_folder, modality)
-        studies = [o for o in os.listdir(modality_dir)
-                        if os.path.isdir(os.path.join(modality_dir, o))]
+        studies = [o for o in os.listdir(modality_dir) if os.path.isdir(os.path.join(modality_dir, o))]
 
         for study in studies:
             study_dir = os.path.join(modality_dir, study)
@@ -106,8 +97,6 @@ def skull_strip(folder, skull_strip_path):
                 print(output)
 
 
-
-
 if __name__ == '__main__':
     parser = ArgumentParser("Convert dcm images to nii images")
     parser.add_argument("-p", "--path", help="Path to the data containing the subjects", default=data_dir)
@@ -131,7 +120,7 @@ if __name__ == '__main__':
     print("--------Converting files to nii-----------")
     # Create pools of workers
     pool = Pool(processes)
-    pool.starmap(to_nii,  zip(subjects_folders, itertools.repeat(tmp_folder,len(subjects_folders))))
+    pool.starmap(to_nii,  zip(subjects_folders, itertools.repeat(tmp_folder, len(subjects_folders))))
     pool.close()
     pool.join()
 
@@ -143,7 +132,7 @@ if __name__ == '__main__':
         print(subject)
         files = [file for file in os.listdir(folder) if file.endswith(".nii") and "lesion" in file.lower()]
         for file in files:
-            dest =os.path.join(tmp_folder, subject)
+            dest = os.path.join(tmp_folder, subject)
             create_if_not_exists(dest)
             copyfile(os.path.join(folder, file), os.path.join(tmp_folder, subject, file))
         break
@@ -151,7 +140,6 @@ if __name__ == '__main__':
     create_if_not_exists(output_dir)
     for subject_folder in tqdm(subjects_tmp, desc="Copy"):
         organize_folder(subject_folder, output_dir)
-
 
     print("--------Remove temporary folder-------------")
     rmtree(tmp_folder)

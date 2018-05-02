@@ -1,13 +1,7 @@
 import os
-import subprocess
-import re
-import os
-import numpy as np
-import progress
 from progress.bar import IncrementalBar
 import shutil
 from distutils.dir_util import copy_tree
-import hashlib
 import csv
 import pandas as pd
 
