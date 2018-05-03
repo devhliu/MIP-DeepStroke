@@ -8,10 +8,10 @@ import itertools
 
 # mount = '/run/media/jk/Elements'
 # main_dir = os.path.join(mount, 'MASTER/')
-main_dir = "C:\\Users\\simon\\Documents\\EPFL\\Master\\Semester4\\SemesterProject\\Data"
+main_dir = "/home/simon/Documents/EPFL/Master/SemesterProject/Data"
 data_dir = os.path.join(main_dir, 'Anonymized_Data')
 output_dir = os.path.join(main_dir, 'To_Preprocess')
-dcm2niix_path = "C:\\dcm2niix\\dcm2niix.exe"
+dcm2niix_path = "/usr/bin/dcm2niix"
 
 ct_sequences = ['SPC_301mm_Std', 'RAPID_Tmax', 'RAPID_MTT', 'RAPID_rCBV', 'RAPID_rCBF']
 mri_sequences = ['t2_tse_tra', 'T2W_TSE_tra']
@@ -30,7 +30,7 @@ def organize_folder(subject_folder, output_dir):
 
         for modality in modalities:
             modality_dir = os.path.join(subject_folder, modality)
-            modality_output_dir = os.path.join(output_dir, subject_folder, modality)
+            modality_output_dir = os.path.join(output_dir, subject, modality)
 
             if not os.path.exists(modality_output_dir):
                 os.makedirs(modality_output_dir)
@@ -78,7 +78,6 @@ def to_nii(subject_folder, output_dir):
 
 
 def skull_strip(folder, skull_strip_path):
-    subject = os.path.basename(folder)
     modalities = [o for o in os.listdir(folder)
                   if os.path.isdir(os.path.join(folder, o))]
 
@@ -88,13 +87,41 @@ def skull_strip(folder, skull_strip_path):
                    if os.path.isfile(os.path.join(modality_dir, o))]
 
         for study in studies:
-            study_path = os.path.join(modality_dir, study)
             if modality.startswith('Ct') & study.startswith('SPC'):
-                print(subject)
-                print(study)
-                output = subprocess.run([skull_strip_path, '-i', study],
-                                        cwd=os.path.join(folder, modality), shell=True)
-                print(output)
+                # BET image
+                subprocess.run([skull_strip_path, '-i', study],
+                                        cwd=os.path.join(folder, modality))
+
+                # Extract file (*nii.gz created by fslmaths)
+                created_files = [x for x in os.listdir(modality_dir) if
+                                 x.startswith("betted_") and x.endswith(".nii.gz")]
+                for file in created_files:
+                    subprocess.run(["gzip", "-d", file], cwd=os.path.join(folder, modality))
+
+
+def process_folder(subject_folder, output_dir, tmp_folder=None):
+    subject = os.path.basename(subject_folder)
+
+    if tmp_folder is None:
+        tmp_folder = os.path.join("/tmp/Temp_Nii")
+        create_if_not_exists(tmp_folder)
+
+    to_nii(subject_folder, tmp_folder)
+
+    # Copy lesion
+    files = [file for file in os.listdir(subject_folder) if file.endswith(".nii") and "lesion" in file.lower()]
+    for file in files:
+        dest = os.path.join(tmp_folder, subject)
+        create_if_not_exists(dest)
+        copyfile(os.path.join(subject_folder, file), os.path.join(tmp_folder, subject, file))
+
+    # Reorganize
+    print("Reorganizing : {}".format(subject))
+    subject_folder = os.path.join(tmp_folder, subject)
+    create_if_not_exists(output_dir)
+    organize_folder(subject_folder, output_dir)
+
+    rmtree(os.path.join(tmp_folder, subject))
 
 
 if __name__ == '__main__':
@@ -117,36 +144,26 @@ if __name__ == '__main__':
     tmp_folder = data_dir.replace(base_name_data_dir, "Temp_Nii")
     create_if_not_exists(tmp_folder)
 
-    print("--------Converting files to nii-----------")
-    # Create pools of workers
+
+    print("--------Converting files to nii, copy lesion and organize-----------")
+    # Create a pool of workers
     pool = Pool(processes)
-    pool.starmap(to_nii,  zip(subjects_folders, itertools.repeat(tmp_folder, len(subjects_folders))))
+    pool.starmap(process_folder,  zip(subjects_folders,
+                                      itertools.repeat(output_dir, len(subjects_folders)),
+                                      itertools.repeat(tmp_folder, len(subjects_folders))))
     pool.close()
     pool.join()
 
-    subjects_tmp = [os.path.join(args.path, x) for x in os.listdir(tmp_folder)]
-
-    print("--------Copy Lesion-------------------")
-    for folder in subjects_folders:
-        subject = os.path.basename(folder)
-        print(subject)
-        files = [file for file in os.listdir(folder) if file.endswith(".nii") and "lesion" in file.lower()]
-        for file in files:
-            dest = os.path.join(tmp_folder, subject)
-            create_if_not_exists(dest)
-            copyfile(os.path.join(folder, file), os.path.join(tmp_folder, subject, file))
-        break
-    print("--------Organizing files-------------------")
-    create_if_not_exists(output_dir)
-    for subject_folder in tqdm(subjects_tmp, desc="Copy"):
-        organize_folder(subject_folder, output_dir)
-
-    print("--------Remove temporary folder-------------")
+    # Cleanup
     rmtree(tmp_folder)
-
+ 
     print("---------Betting-----------------------------")
     skull_strip_path = os.path.join(os.getcwd(), 'skull_strip.sh')
     subjects = [os.path.join(output_dir, x) for x in os.listdir(output_dir)]
+    skull_strip_paths = itertools.repeat(skull_strip_path, len(subjects))
 
-    for subject in tqdm(subjects, desc="BET"):
-        skull_strip(subject, skull_strip_path)
+    # Create Pool of workers
+    pool = Pool(processes)
+    pool.starmap(skull_strip, zip(subjects, skull_strip_paths))
+    pool.close()
+    pool.join()
