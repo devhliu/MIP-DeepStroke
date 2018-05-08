@@ -118,7 +118,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
                                   callbacks=[tensorboard_callback, checkpoint_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=2*batch_size,
-                                  workers=4, use_multiprocessing=True, shuffle=True, initial_epoch=0)
+                                  workers=1, use_multiprocessing=True, shuffle=True, initial_epoch=0)
 
     return model, history
 
