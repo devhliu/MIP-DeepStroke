@@ -49,8 +49,8 @@ def generator(from_directory, batch_size, skip_blank=True):
         for cbatch in range(0, len(image_path), batch_size):
             images = []
             for path in image_path[cbatch:(cbatch + batch_size)]:
+                image = nb.load(os.path.join(from_directory, path)).get_data().reshape(1, 32, 32, 32)
 
-                image = nb.load(os.path.join(from_directory, path)).get_data().reshape(1,32,32,32)
                 if not (np.all(image == 0) and skip_blank):
                     images.append(image)
 
@@ -59,7 +59,7 @@ def generator(from_directory, batch_size, skip_blank=True):
             yield images
 
 
-def dual_generator(input_directory, target_directory, batch_size, skip_blank=True):
+def dual_generator(input_directory, target_directory, batch_size, skip_blank=False):
     while True:
         image_paths = os.listdir(input_directory)
         target_paths = os.listdir(target_directory)
@@ -101,7 +101,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
 
     # Save checkpoint each 5 epochs
     checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))
-    checkpoint_filename = os.path.join(checkpoint_path,"model.{epoch:02d}-{val_loss:.2f}.hdf5")
+    checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_loss:.2f}.hdf5")
 
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
                                     save_weights_only=False, mode='auto', period=5)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/simon/Datasets/Data/32x32x32")
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
-    parser.add_argument("-s", "--skip_blank", help="Skip blank images - will not be fed to the network", default=True)
+    parser.add_argument("-s", "--skip_blank", help="Skip blank images - will not be fed to the network", default=False)
 
     args = parser.parse_args()
     data_path = args.data_path
