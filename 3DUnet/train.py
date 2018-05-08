@@ -104,11 +104,11 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
     checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_loss:.2f}.hdf5")
 
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
-                                    save_weights_only=False, mode='auto', period=5)
+                                    save_weights_only=False, mode='auto', period=1)
 
     # Parameters
-    validation_steps = 5   # Number of steps per evaluation (number of to pass)
-    steps_per_epoch = 1000  # Number of batches to pass before going to next epoch
+    validation_steps = 1   # Number of steps per evaluation (number of to pass)
+    steps_per_epoch = (44152/batch_size)  # Number of batches to pass before going to next epoch
     shuffle = True         # Shuffle the data before creating a batch
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
@@ -117,8 +117,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
     history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
                                   callbacks=[tensorboard_callback, checkpoint_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
-                                  class_weight=None, max_queue_size=10,
-                                  workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)
+                                  class_weight=None, max_queue_size=2*batch_size,
+                                  workers=4, use_multiprocessing=True, shuffle=True, initial_epoch=0)
 
     return model, history
 
