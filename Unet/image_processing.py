@@ -2,7 +2,7 @@ import os
 import nibabel as nb
 import numpy as np
 import progressbar
-from Unet.utils import create_if_not_exists
+from .utils import create_if_not_exists
 
 
 def load_data_atlas_for_patient(patient_path):

@@ -5,8 +5,8 @@ import subprocess
 import os
 import nibabel as nb
 import numpy as np
-from Unet.utils import create_if_not_exists
-from Unet.unet import unet_model_3d, TrainValTensorBoard
+from .utils import create_if_not_exists
+from .unet import unet_model_3d, TrainValTensorBoard
 from argparse import ArgumentParser
 import time
 import tensorflow as tf

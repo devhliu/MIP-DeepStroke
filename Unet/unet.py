@@ -4,7 +4,7 @@ from keras.engine import Input, Model
 from keras.layers import Conv3D, MaxPooling3D, UpSampling3D, Activation, BatchNormalization, PReLU, Deconvolution3D
 from keras.optimizers import Adam
 import os
-from Unet.metrics import dice_coefficient_loss, get_label_dice_coefficient_function, dice_coefficient
+from .metrics import dice_coefficient_loss, get_label_dice_coefficient_function, dice_coefficient
 import tensorflow as tf
 from keras.callbacks import TensorBoard
 

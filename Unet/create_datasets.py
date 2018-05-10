@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
-from Unet.utils import create_if_not_exists, splits_sets, split_train_test_val
-from Unet.image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches
+from .utils import create_if_not_exists, splits_sets, split_train_test_val
+from .image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches
 import numpy as np
 import nibabel as nb
 import os
