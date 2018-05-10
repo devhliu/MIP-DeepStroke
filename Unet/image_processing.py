@@ -3,8 +3,32 @@ import nibabel as nb
 import numpy as np
 import progressbar
 from Unet.utils import create_if_not_exists
-from sklearn.model_selection import train_test_split
-from shutil import copyfile
+
+
+def load_data_atlas_for_patient(patient_path):
+    patient = os.path.basename(patient_path)
+    #list_x = []
+    #list_y = []
+    for t in os.listdir(patient_path):
+        if not t == "t01" or os.path.basename(patient_path) == "031916":
+            # print("Found folder {} instead of T01 for patient {}".format(t, patient))
+            continue
+        brain_structure_path = os.path.join(patient_path, t, "output.nii")
+        lesion_path = os.path.join(patient_path, t, "{}_LesionSmooth_stx.nii".format(patient))
+        try:
+            brain_structure = nb.load(brain_structure_path).get_data()
+            lesion = nb.load(lesion_path).get_data()
+        except Exception as e:
+            print("Error reading patient {} ({})".format(patient_path))
+            print(e.with_traceback())
+            continue
+
+        return brain_structure, lesion
+
+    #    list_x.append(brain_structure)
+    #    list_y.append(lesion)
+    #return list_x, list_y
+
 
 def load_data_atlas_from_site(site_path):
     list_x = []
@@ -14,22 +38,10 @@ def load_data_atlas_from_site(site_path):
         i = 0
         for patient in patients:
             bar.update(i)
-            for t in os.listdir(os.path.join(site_path, patient)):
-                if not t == "t01" or patient == "031916":
-                    # print("Found folder {} instead of T01 for patient {}".format(t, patient))
-                    continue
-                brain_structure_path = os.path.join(site_path, patient, t, "output.nii")
-                lesion_path = os.path.join(site_path, patient, t, "{}_LesionSmooth_stx.nii".format(patient))
-                try:
-                    brain_structure = nb.load(brain_structure_path).get_data()
-                    lesion = nb.load(lesion_path).get_data()
-                except Exception as e:
-                    print("Error reading patient {} ({})".format(patient, os.path.basename(site_path)))
-                    print(e.with_traceback())
-                    continue
+            brain_structure, lesion = load_data_atlas_for_patient(os.path.join(site_path,patient))
 
-                list_x.append(brain_structure)
-                list_y.append(lesion)
+            list_x.append(brain_structure)
+            list_y.append(lesion)
             i = i + 1
 
     return list_x, list_y
@@ -105,31 +117,6 @@ def create_extra_patches(numpy_image, numpy_lesion, patch_size, limit=0):
 
     return patches_image, patches_lesion
 
-
-def augment_patches(patches_image, patches_labels, patch_size, original_image_size):
-
-    image = recreate_image_from_patches(original_image_size, patches_image)
-    label = recreate_image_from_patches(original_image_size, patches_labels)
-
-    shape = image.shape
-    dimension_size = np.array(np.ceil(np.array(image.shape[:3]) / patch_size), dtype=np.int64)
-
-    xMax = dimension_size[0]
-    yMax = dimension_size[1]
-    zMax = dimension_size[2]
-
-    patches = [0 for x in range(xMax*yMax*zMax)]
-    for x in range(0, shape[0], patch_size[0]):
-        for y in range(0, shape[1], patch_size[1]):
-            for z in range(0, shape[2], patch_size[2]):
-                idx = int(x/patch_size[0])
-                idy = int(y/patch_size[1])
-                idz = int(z/patch_size[2])
-                index1D = to1D_index(idx, idy, idz, xMax, yMax)
-                patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]]
-                patches[index1D] = patch
-
-    return patches
 
 
 def create_patch_around(center_x, center_y, center_z, patch_size, image):
@@ -260,68 +247,6 @@ def transform_atlas_to_patches(altas_path, save_path, patch_size=[32, 32, 32]):
                             continue
                     bar_patient.update(j)
 
-
             percent = percent + 1
 
     return save_path
-
-
-def save_set_to_folder(x_paths, y_paths, data_path, save_path):
-    create_if_not_exists(save_path)
-    with progressbar.ProgressBar(max_value=len(x_paths)) as bar:
-        bar.update(0)
-        old_folder_input = os.path.join(data_path, "inputs")
-        old_folder_mask = os.path.join(data_path, "masks")
-        new_folder_input = os.path.join(save_path, "inputs")
-        new_folder_mask = os.path.join(save_path, "masks")
-        create_if_not_exists(new_folder_input)
-        create_if_not_exists(new_folder_mask)
-        i = 0
-        for x, y in zip(x_paths, y_paths):
-            path_x = x.replace(old_folder_input, new_folder_input)
-            path_y = y.replace(old_folder_mask, new_folder_mask)
-            copyfile(x, path_x)
-            copyfile(y, path_y)
-            i = i + 1
-            bar.update(i)
-
-
-def splits_sets(data_path, save_path=None, ratios=[0.6, 0.15, 0.25], seed=None):
-    assert(sum(ratios) == 1)
-    if len(ratios) < 3:
-        raise Exception("Ratio should be [train_ratio, val_ratio, test_ratio]")
-    if save_path is None:
-        save_path = data_path
-
-    input_folder = os.path.join(data_path, "inputs")
-    masks_folder = os.path.join(data_path, "masks")
-    x = [os.path.join(input_folder,x) for x in os.listdir(input_folder)]
-    y = [os.path.join(masks_folder,x) for x in os.listdir(masks_folder)]
-
-    train_ratio = ratios[0]
-    val_ratio = ratios[1]
-    test_ratio = ratios[2]
-
-    # Splitting train/test
-    if seed is not None:
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_ratio, random_state=seed)
-    else:
-        train_val_ratio = train_ratio + val_ratio
-        data = list(zip(x, y))
-        num_train = int(train_val_ratio*len(data))
-        x_train, y_train = zip(*data[:num_train])
-        x_test, y_test = zip(*data[num_train:])
-
-    # Splitting train/val
-    ratio_split_val = val_ratio / (val_ratio + train_ratio)
-    if seed is not None:
-        x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=ratio_split_val, random_state=seed)
-    else:
-        data = list(zip(x_train, y_train))
-        num_train = 1-int(ratio_split_val*len(data)) #1-validation_ratio
-        x_train, y_train = zip(*data[:num_train])
-        x_val, y_val = zip(*data[num_train:])
-
-    save_set_to_folder(x_train, y_train, data_path, os.path.join(save_path, "train"))
-    save_set_to_folder(x_val, y_val, data_path, os.path.join(save_path, "validation"))
-    save_set_to_folder(x_test, y_test, data_path, os.path.join(save_path, "test"))
