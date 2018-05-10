@@ -18,10 +18,11 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
 
-def normalize_numpy(x):
-    xmax, xmin = x.max(), x.min()
-    x = (x - xmin) / (xmax - xmin)
-    return x
+def normalize_numpy(v):
+    norm = np.linalg.norm(v)
+    if norm == 0:
+       return v
+    return v / norm
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train"):
     print("Creating dataset {} : ".format(dataset_type))
@@ -74,6 +75,8 @@ if __name__ == '__main__':
     for site in sites:
         patients = os.listdir(site)
         patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
+
+    patients_paths = patients_paths[:10]
 
     # Split set of patients into train, test and val sets
     ratios = [0.7, 0.2, 0.1]
