@@ -95,9 +95,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
     tensorboard_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
-        tensorboard_callback = TrainValTensorBoard(log_dir=log_path, histogram_freq=0, batch_size=batch_size,
+        tensorboard_callback = TrainValTensorBoard(log_dir=log_path, histogram_freq=1, batch_size=batch_size,
                                                    write_graph=True,
-                                           write_grads=True, write_images=True, embeddings_freq=0,
+                                           write_grads=True, write_images=True, embeddings_freq=1,
                                            embeddings_layer_names=None, embeddings_metadata=None)
         # Start Tensorboard
         print("tensorboard --logdir={}".format(log_path))
