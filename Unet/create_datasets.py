@@ -76,8 +76,6 @@ if __name__ == '__main__':
         patients = os.listdir(site)
         patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
 
-    patients_paths = patients_paths[:10]
-
     # Split set of patients into train, test and val sets
     ratios = [0.7, 0.2, 0.1]
     train, test, val, _, _, _ = split_train_test_val(patients_paths, ["" for x in range(len(patients_paths))], ratios=ratios)
