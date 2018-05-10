@@ -4,7 +4,7 @@ from distutils.dir_util import copy_tree
 import fnmatch
 import pandas as pd
 from shutil import copyfile
-from utils import bcolors
+from colorsutils import bcolors
 
 
 dict_renaming = {
