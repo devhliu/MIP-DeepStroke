@@ -18,6 +18,11 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
 
+def normalize_numpy(x):
+    xmax, xmin = x.max(), x.min()
+    x = (x - xmin) / (xmax - xmin)
+    return x
+
 def _create_data_for_patients(dataset, save_path, dataset_type="train"):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
@@ -25,6 +30,10 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
         subject = os.path.basename(patient_path)
         # load all data
         brain, lesion = load_data_atlas_for_patient(patient_path)
+
+        brain = normalize_numpy(brain)
+        lesion = normalize_numpy(lesion)
+
 
         # create patches
         input_patches = create_patches_from_images(brain, patch_size)
