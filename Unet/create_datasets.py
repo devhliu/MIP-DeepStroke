@@ -7,12 +7,15 @@ import os
 from tqdm import tqdm
 
 
-def _save_patches(patch_list, save_path, subject, type):
+def _save_patches(patch_list, save_path, subject, type, extra=False):
     for i in range(len(patch_list)):
         patch = nb.Nifti1Image(patch_list[i], np.eye(4))
         saving_path = create_if_not_exists(save_path)
         patch_save_path = create_if_not_exists(os.path.join(saving_path, type))
-        nb.save(patch, os.path.join(patch_save_path, "{}_{}-{}.nii".format(type, subject, i)))
+        s = "{}_{}-{}.nii"
+        if extra:
+            s = "{}_{}-{}-extra.nii"
+        nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train"):
@@ -34,8 +37,8 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
             ratio_extra = 0.3
             number_extra = int(ratio_extra*len(input_patches))
             input_patches_extra, lesion_patches_extra = create_extra_patches(brain, lesion, patch_size, limit=number_extra)
-            _save_patches(input_patches_extra, save_path, subject=subject, type="input")
-            _save_patches(lesion_patches_extra, save_path, subject=subject, type="mask")
+            _save_patches(input_patches_extra, save_path, subject=subject, type="input", extra=True)
+            _save_patches(lesion_patches_extra, save_path, subject=subject, type="mask", extra=True)
 
 
 if __name__ == '__main__':
@@ -63,6 +66,8 @@ if __name__ == '__main__':
         patients = os.listdir(site)
         patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
 
+    patients_paths = patients_paths[:10]
+
     # Split set of patients into train, test and val sets
     ratios = [0.7, 0.2, 0.1]
     train, test, val, _, _, _ = split_train_test_val(patients_paths, ["" for x in range(len(patients_paths))], ratios=ratios)
@@ -77,6 +82,6 @@ if __name__ == '__main__':
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
 
     _create_data_for_patients(train, train_path, dataset_type="train")
-    _create_data_for_patients(train, test_path, dataset_type="test")
-    _create_data_for_patients(train, validation_path, dataset_type="validation")
+    _create_data_for_patients(test, test_path, dataset_type="test")
+    _create_data_for_patients(val, validation_path, dataset_type="validation")
 

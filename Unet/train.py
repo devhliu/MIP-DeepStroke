@@ -5,8 +5,8 @@ import subprocess
 import os
 import nibabel as nb
 import numpy as np
-from utils import create_if_not_exists, TrainValTensorBoard
-from unet import unet_model_3d
+from Unet.utils import create_if_not_exists
+from Unet.unet import unet_model_3d, TrainValTensorBoard
 from argparse import ArgumentParser
 import time
 import tensorflow as tf
@@ -24,8 +24,11 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
         train_path = os.path.join(data_path, train_path)
         validation_path = os.path.join(data_path, validation_path)
 
-    print("Train data path {}".format(train_path))
-    print("Validation data path {}".format(validation_path))
+    training_size = len(os.listdir(os.path.join(train_path, "input")))
+    validation_size = len(os.listdir(os.path.join(validation_path, "input")))
+
+    print("Train data path {} - {} samples".format(train_path, training_size))
+    print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
     # train_generator = zip(generator(os.path.join(train_path, "inputs"), batch_size=batch_size, skip_blank=skip_blank),
     # (generator(os.path.join(train_path, "masks"), batch_size=batch_size, skip_blank=skip_blank)))
@@ -34,10 +37,10 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
     # skip_blank=skip_blank),
     # (generator(os.path.join(validation_path, "masks"), batch_size=batch_size, skip_blank=skip_blank)))
 
-    train_generator = dual_generator(os.path.join(train_path, "inputs"), os.path.join(train_path, "masks"),
+    train_generator = dual_generator(os.path.join(train_path, "input"), os.path.join(train_path, "mask"),
                                      batch_size=batch_size, skip_blank=skip_blank)
 
-    validation_generator = dual_generator(os.path.join(validation_path, "inputs"), os.path.join(validation_path, "masks"),
+    validation_generator = dual_generator(os.path.join(validation_path, "input"), os.path.join(validation_path, "mask"),
                                           batch_size=batch_size, skip_blank=skip_blank)
 
     return train_generator, validation_generator
@@ -106,9 +109,11 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
                                     save_weights_only=False, mode='auto', period=1)
 
+    dataset_training_size = len(os.listdir(os.path.join(data_path, "train/input")))
+
     # Parameters
     validation_steps = 1   # Number of steps per evaluation (number of to pass)
-    steps_per_epoch = (44152/batch_size)  # Number of batches to pass before going to next epoch
+    steps_per_epoch = (dataset_training_size/batch_size)  # Number of batches to pass before going to next epoch
     shuffle = True         # Shuffle the data before creating a batch
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
