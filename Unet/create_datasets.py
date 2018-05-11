@@ -36,8 +36,8 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
             print("Error while reading patient {}".format(patients_path))
             continue
 
-        brain = normalize_numpy(brain)
-        lesion = normalize_numpy(lesion)
+       # brain = normalize_numpy(brain)
+       # lesion = normalize_numpy(lesion)
 
 
         # create patches
