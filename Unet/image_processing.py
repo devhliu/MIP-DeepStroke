@@ -2,7 +2,7 @@ import os
 import nibabel as nb
 import numpy as np
 import progressbar
-from utils import create_if_not_exists
+from .utils import create_if_not_exists
 
 
 def load_data_atlas_for_patient(patient_path):
@@ -180,7 +180,8 @@ def recreate_image_from_patches(original_image_size, list_patches, mode="extend"
     if mode == "extend":
         ox, oy, oz = original_image_size
         image = image[:ox, :oy, :oz]
-
+    
+    return image
 
 def create_and_save_patches(input_list, label_list, patching_save_path, patch_size=[32, 32, 32]):
     assert (len(input_list) == len(label_list))

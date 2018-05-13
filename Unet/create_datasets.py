@@ -18,11 +18,8 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
 
-def normalize_numpy(v):
-    norm = np.linalg.norm(v)
-    if norm == 0:
-       return v
-    return v / norm
+def normalize_numpy(v,max_value=1.0):
+    return v*max_value/v.max()
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train"):
     print("Creating dataset {} : ".format(dataset_type))
@@ -35,9 +32,10 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
         except:
             print("Error while reading patient {}".format(patient_path))
             continue
-
-       # brain = normalize_numpy(brain)
-       # lesion = normalize_numpy(lesion)
+        
+       # normalize data
+        brain = normalize_numpy(brain)
+        lesion = normalize_numpy(lesion)
 
 
         # create patches
