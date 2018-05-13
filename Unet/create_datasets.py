@@ -33,7 +33,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
         try:
             brain, lesion = load_data_atlas_for_patient(patient_path)
         except:
-            print("Error while reading patient {}".format(patients_path))
+            print("Error while reading patient {}".format(patient_path))
             continue
 
        # brain = normalize_numpy(brain)
