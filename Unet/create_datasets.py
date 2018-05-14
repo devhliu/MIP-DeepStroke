@@ -18,7 +18,7 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
 
-def normalize_numpy(v,max_value=1.0):
+def normalize_numpy(v, max_value=1.0):
     return v*max_value/v.max()
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train"):

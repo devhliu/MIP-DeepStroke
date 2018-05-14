@@ -90,7 +90,7 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
             yield x_list, y_list
 
 
-def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
+def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None):
 
     tensorboard_callback = None
     if logdir is not None:
@@ -114,6 +114,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
     # Parameters
     validation_steps = 1   # Number of steps per evaluation (number of to pass)
     steps_per_epoch = (dataset_training_size/batch_size)  # Number of batches to pass before going to next epoch
+    if epoch_size is not None :
+        steps_per_epoch = epoch_size
+
     shuffle = True         # Shuffle the data before creating a batch
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
@@ -123,7 +126,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True):
                                   callbacks=[tensorboard_callback, checkpoint_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=2*batch_size,
-                                  workers=1, use_multiprocessing=True, shuffle=True, initial_epoch=0)
+                                  workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)
 
     return model, history
 
@@ -137,6 +140,7 @@ if __name__ == '__main__':
                         default="/home/simon/Datasets/Data/32x32x32")
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", help="Skip blank images - will not be fed to the network", default=False)
+    parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -145,4 +149,5 @@ if __name__ == '__main__':
 
     create_if_not_exists(logdir)
     model = unet_model_3d([1, 32, 32, 32], batch_normalization=True)
-    train(model, batch_size=batch_size, data_path=data_path, logdir=logdir, skip_blank=args.skip_blank)
+    train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
+          skip_blank=args.skip_blank, epoch_size=args.epoch_size)
