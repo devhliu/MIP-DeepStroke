@@ -9,6 +9,7 @@ from tensorboard.plugins.scalar import summary as sc_summary
 from image_processing import create_patches_from_images
 from predict import predict
 import numpy as np
+import tensorflow as tf
 
 from sklearn.metrics import roc_auc_score
 from keras.callbacks import Callback
@@ -99,10 +100,28 @@ class TrainValTensorBoard(TensorBoard):
         # Log the validation metrics to a separate subdirectory
         self.val_log_dir = os.path.join(log_dir, 'validation')
 
+        # Get PR Curve
+        self.pr_curve = kwargs.pop('pr_curve', True)
+        self.initialized = False
+
     def set_model(self, model):
         # Setup writer for validation metrics
         self.val_writer = tf.summary.FileWriter(self.val_log_dir)
         super(TrainValTensorBoard, self).set_model(model)
+
+        if self.pr_curve:
+            # Get the prediction and label tensor placeholders.
+            predictions = self.model._feed_outputs[0]
+            labels = tf.cast(self.model._feed_targets[0], tf.bool)
+            # Create the PR summary OP.
+            self.pr_summary = pr_summary.op(name="pr_curve",
+                                            predictions=predictions,
+                                            labels=labels,
+                                            display_name='Precision-Recall Curve')
+
+            self.auc, ops = tf.metrics.auc(labels, predictions, curve="PR", name="auc_metric")
+            self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve")
+
 
     def on_epoch_end(self, epoch, logs=None):
         # Pop the validation logs and handle them separately with
@@ -122,41 +141,7 @@ class TrainValTensorBoard(TensorBoard):
         logs = {k: v for k, v in logs.items() if not k.startswith('val_')}
         super(TrainValTensorBoard, self).on_epoch_end(epoch, logs)
 
-    def on_train_end(self, logs=None):
-        super(TrainValTensorBoard, self).on_train_end(logs)
-        self.val_writer.close()
-
-
-class PRTensorBoard(TensorBoard):
-    def __init__(self, log_dir="./logs", **kwargs):
-        # One extra argument to indicate whether or not to use the PR curve summary.
-        self.pr_curve = kwargs.pop('pr_curve', True)
-        self.initialized = False
-        log_path = os.path.join(log_dir, "validation")
-        super(PRTensorBoard, self).__init__(log_dir=log_path, **kwargs)
-
-        global tf
-        import tensorflow as tf
-
-    def set_model(self, model):
-        super(PRTensorBoard, self).set_model(model)
-
-        if self.pr_curve:
-            # Get the prediction and label tensor placeholders.
-            predictions = self.model._feed_outputs[0]
-            labels = tf.cast(self.model._feed_targets[0], tf.bool)
-            # Create the PR summary OP.
-            self.pr_summary = pr_summary.op(name="pr_curve",
-                                            predictions=predictions,
-                                            labels=labels,
-                                            display_name='Precision-Recall Curve')
-
-            self.auc, ops = tf.metrics.auc(labels, predictions, curve="PR", name="auc_metric")
-            self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve")
-
-    def on_epoch_end(self, epoch, logs=None):
-        super(PRTensorBoard, self).on_epoch_end(epoch, logs)
-
+        # Add PR Curve
         if self.pr_curve and self.validation_data:
             # Get the tensors again.
             tensors = self.model._feed_targets + self.model._feed_outputs
@@ -171,5 +156,8 @@ class PRTensorBoard(TensorBoard):
                 self.initialized = True
 
             result = self.sess.run([self.pr_summary, self.auc, self.auc_summary], feed_dict=feed_dict)
-            self.writer.add_summary(result[0], epoch)
-        self.writer.flush()
+            self.val_writer.add_summary(result[0], epoch)
+
+    def on_train_end(self, logs=None):
+        super(TrainValTensorBoard, self).on_train_end(logs)
+        self.val_writer.close()
