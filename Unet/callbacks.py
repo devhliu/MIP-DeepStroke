@@ -5,6 +5,7 @@ import os
 from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
+from tensorboard.plugins.scalar import summary as sc_summary
 from image_processing import create_patches_from_images
 from predict import predict
 import numpy as np
@@ -148,6 +149,9 @@ class PRTensorBoard(TensorBoard):
                                             labels=labels,
                                             display_name='Precision-Recall Curve')
 
+            self.auc, ops = tf.metrics.auc(labels, predictions, curve="PR", name="auc_metric")
+            self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve")
+
     def on_epoch_end(self, epoch, logs=None):
         super(PRTensorBoard, self).on_epoch_end(epoch, logs)
 
@@ -160,6 +164,6 @@ class PRTensorBoard(TensorBoard):
             val_data = [self.validation_data[-2], predictions]
             feed_dict = dict(zip(tensors, val_data))
             # Run and add summary.
-            result = self.sess.run([self.pr_summary], feed_dict=feed_dict)
+            result = self.sess.run([self.pr_summary, self.auc, self.auc_summary], feed_dict=feed_dict)
             self.writer.add_summary(result[0], epoch)
         self.writer.flush()

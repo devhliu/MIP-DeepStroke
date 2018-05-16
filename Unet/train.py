@@ -15,6 +15,7 @@ from tensorflow.python.client import device_lib
 import keras
 from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, auc_score
 from keras.metrics import binary_crossentropy, binary_accuracy
+import tensorflow as tf
 
 config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 6} )
 sess = tf.Session(config=config)
@@ -159,7 +160,6 @@ if __name__ == '__main__':
     metrics = [
                weighted_dice_coefficient_loss,
                weighted_dice_coefficient,
-               auc_score,
                dice_coefficient,
                binary_crossentropy,
                binary_accuracy,
