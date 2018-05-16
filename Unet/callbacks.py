@@ -122,7 +122,6 @@ class TrainValTensorBoard(TensorBoard):
             self.auc, ops = tf.metrics.auc(labels, predictions, curve="PR", name="auc_metric")
             self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve")
 
-
     def on_epoch_end(self, epoch, logs=None):
         # Pop the validation logs and handle them separately with
         # `self.val_writer`. Also rename the keys so that they can
@@ -134,14 +133,19 @@ class TrainValTensorBoard(TensorBoard):
             summary_value = summary.value.add()
             summary_value.simple_value = value.item()
             summary_value.tag = name
-            self.val_writer.add_summary(summary, epoch)
-        self.val_writer.flush()
+            self.val_writer.add_summary(summary, epoch, )
+        #self.val_writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
         logs = {k: v for k, v in logs.items() if not k.startswith('val_')}
         super(TrainValTensorBoard, self).on_epoch_end(epoch, logs)
 
         # Add PR Curve
+        self.__add_pr_curve(epoch)
+        #
+        self.val_writer.flush()
+
+    def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
             # Get the tensors again.
             tensors = self.model._feed_targets + self.model._feed_outputs
@@ -157,7 +161,8 @@ class TrainValTensorBoard(TensorBoard):
 
             result = self.sess.run([self.pr_summary, self.auc, self.auc_summary], feed_dict=feed_dict)
             self.val_writer.add_summary(result[0], epoch)
-        self.val_writer.flush()
+            self.val_writer.add_summary(result[1], epoch)
+            self.val_writer.add_summary(result[2], epoch)
 
     def on_train_end(self, logs=None):
         super(TrainValTensorBoard, self).on_train_end(logs)
