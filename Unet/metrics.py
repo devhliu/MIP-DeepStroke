@@ -5,7 +5,9 @@ from sklearn.metrics import auc, roc_curve
 
 
 def auc_score(y_true, y_pred):
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=2)
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    fpr, tpr, thresholds = roc_curve(y_true_f, y_pred_f, pos_label=2)
     return auc(fpr, tpr)
 
 
