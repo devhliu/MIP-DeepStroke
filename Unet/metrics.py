@@ -1,14 +1,26 @@
 from functools import partial
 
 from keras import backend as K
+import tensorflow as tf
 from sklearn.metrics import auc, roc_curve
 
 
 def auc_score(y_true, y_pred):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    fpr, tpr, thresholds = roc_curve(y_true_f, y_pred_f, pos_label=2)
-    return auc(fpr, tpr)
+    # any tensorflow metric
+    value, update_op = tf.contrib.metrics.streaming_auc(y_pred, y_true)
+
+    # find all variables created for this metric
+    metric_vars = [i for i in tf.local_variables() if 'auc_roc' in i.name.split('/')[1]]
+
+    # Add metric variables to GLOBAL_VARIABLES collection.
+    # They will be initialized for new session.
+    for v in metric_vars:
+        tf.add_to_collection(tf.GraphKeys.GLOBAL_VARIABLES, v)
+
+    # force to update metric values
+    with tf.control_dependencies([update_op]):
+        value = tf.identity(value)
+        return value
 
 
 def dice_coefficient(y_true, y_pred, smooth=1.):
