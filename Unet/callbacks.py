@@ -1,17 +1,10 @@
 # Extends Keras' TensorBoard callback to include the Precision-Recall summary plugin.
 
 import os
-from urllib.request import urlretrieve
-
-import pandas as pd
 
 from keras.callbacks import TensorBoard, EarlyStopping
-from keras.layers import Input, Dense
-from keras.models import Model
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
+
 from tensorboard.plugins.pr_curve import summary as pr_summary
-from tensorboard.plugins.image import summary as im_summary
 from .image_processing import create_patches_from_images
 from .predict import predict
 import numpy as np
