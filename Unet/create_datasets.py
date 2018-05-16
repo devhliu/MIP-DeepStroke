@@ -45,7 +45,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
         _save_patches(label_patches, save_path, subject=subject, type="mask")
 
         # create extra patches
-        if dataset_type=="train":
+        if dataset_type=="train" or dataset_type=="validation":
             ratio_extra = 0.3
             number_extra = int(ratio_extra*len(input_patches))
             input_patches_extra, lesion_patches_extra = create_extra_patches(brain, lesion, patch_size, limit=number_extra)
