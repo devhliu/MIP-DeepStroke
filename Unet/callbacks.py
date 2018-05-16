@@ -157,6 +157,7 @@ class TrainValTensorBoard(TensorBoard):
 
             result = self.sess.run([self.pr_summary, self.auc, self.auc_summary], feed_dict=feed_dict)
             self.val_writer.add_summary(result[0], epoch)
+        self.val_writer.flush()
 
     def on_train_end(self, logs=None):
         super(TrainValTensorBoard, self).on_train_end(logs)
