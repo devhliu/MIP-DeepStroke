@@ -131,6 +131,7 @@ class PRTensorBoard(TensorBoard):
     def __init__(self, *args, **kwargs):
         # One extra argument to indicate whether or not to use the PR curve summary.
         self.pr_curve = kwargs.pop('pr_curve', True)
+        self.initialized = False
         super(PRTensorBoard, self).__init__(*args, **kwargs)
 
         global tf
@@ -164,6 +165,10 @@ class PRTensorBoard(TensorBoard):
             val_data = [self.validation_data[-2], predictions]
             feed_dict = dict(zip(tensors, val_data))
             # Run and add summary.
+            if not self.initialized:
+                self.sess.run(tf.local_variables_initializer())
+                self.initialized = True
+
             result = self.sess.run([self.pr_summary, self.auc, self.auc_summary], feed_dict=feed_dict)
             self.writer.add_summary(result[0], epoch)
         self.writer.flush()
