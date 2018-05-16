@@ -7,7 +7,7 @@ import nibabel as nb
 import numpy as np
 from utils import create_if_not_exists
 from unet import unet_model_3d
-from callbacks import TrainValTensorBoard, ImageTensorBoard
+from callbacks import TrainValTensorBoard
 from argparse import ArgumentParser
 import time
 import tensorflow as tf
@@ -98,7 +98,6 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
 
     tensorboard_callback = None
-    pr_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path, histogram_freq=0, batch_size=batch_size,
