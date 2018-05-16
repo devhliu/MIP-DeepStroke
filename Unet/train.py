@@ -105,7 +105,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    write_graph=True,
                                            write_grads=True, write_images=True, embeddings_freq=0,
                                            embeddings_layer_names=None, embeddings_metadata=None)
-        pr_callback = PRTensorBoard()
+
+        pr_callback = PRTensorBoard(log_dir=log_path)
 
         # Start Tensorboard
         print("tensorboard --logdir={}".format(log_path))

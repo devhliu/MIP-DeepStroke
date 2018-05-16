@@ -128,11 +128,12 @@ class TrainValTensorBoard(TensorBoard):
 
 
 class PRTensorBoard(TensorBoard):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, log_dir="./logs", **kwargs):
         # One extra argument to indicate whether or not to use the PR curve summary.
         self.pr_curve = kwargs.pop('pr_curve', True)
         self.initialized = False
-        super(PRTensorBoard, self).__init__(*args, **kwargs)
+        log_path = os.path.join(log_dir, "validation")
+        super(PRTensorBoard, self).__init__(log_dir=log_path, **kwargs)
 
         global tf
         import tensorflow as tf
