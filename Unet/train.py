@@ -6,16 +6,20 @@ import os
 import nibabel as nb
 import numpy as np
 from utils import create_if_not_exists
-from unet import unet_model_3d, TrainValTensorBoard
+from .unet import unet_model_3d
+from .callbacks import TrainValTensorBoard, PRTensorBoard, ImageTensorBoard
 from argparse import ArgumentParser
 import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
+from .metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, auc_score
+from keras.metrics import binary_crossentropy, binary_accuracy
 
 config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 6} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
+
 
 def create_generators(batch_size, data_path=None, skip_blank=True):
     train_path = "train/"
@@ -90,7 +94,7 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
             yield x_list, y_list
 
 
-def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None):
+def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
 
     tensorboard_callback = None
     if logdir is not None:
@@ -99,6 +103,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    write_graph=True,
                                            write_grads=True, write_images=True, embeddings_freq=0,
                                            embeddings_layer_names=None, embeddings_metadata=None)
+        pr_callback = PRTensorBoard()
+
         # Start Tensorboard
         print("tensorboard --logdir={}".format(log_path))
 
@@ -141,13 +147,32 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
+    parser.add_argument("-p", "--patch_size", type=int, help="Patch size per dimension", default=32)
 
     args = parser.parse_args()
     data_path = args.data_path
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
     batch_size = args.batch_size
+    patch_size = (args.patch_size,args.patch_size,args.patch_size)
+
+    metrics = [
+               weighted_dice_coefficient_loss,
+               weighted_dice_coefficient,
+               auc_score,
+               dice_coefficient,
+               binary_crossentropy,
+               binary_accuracy,
+               'acc',
+               'mse',
+               ]
+
+    loss_function = weighted_dice_coefficient_loss
+
+    model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
+                          batch_normalization=True,
+                          metrics=metrics,
+                          loss=loss_function)
 
     create_if_not_exists(logdir)
-    model = unet_model_3d([1, 32, 32, 32], batch_normalization=True)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
-          skip_blank=args.skip_blank, epoch_size=args.epoch_size)
+          skip_blank=args.skip_blank, epoch_size=args.epoch_size, patch_size=patch_size)

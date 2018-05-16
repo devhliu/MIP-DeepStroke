@@ -5,6 +5,7 @@ from .image_processing import create_patches_from_images, recreate_image_from_pa
 from keras.models import load_model
 from .metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
                             weighted_dice_coefficient_loss, weighted_dice_coefficient)
+import numpy as np
 
 
 def load_old_model(model_file):
@@ -27,6 +28,16 @@ def load_old_model(model_file):
         else:
             raise error
 
+def predict_patch(patch, model):
+    return model.predict(patch)
+
+def predict(image, model, patch_size, verbose=0):
+    original_image_size = image.shape
+    image_patches = create_patches_from_images(image, patch_size)
+    predictions = model.predict(np.asarray(image_patches), batch_size=32, verbose=verbose)[:, 0, :, :, :]
+    predicted_image = recreate_image_from_patches(original_image_size=original_image_size, list_patches=predictions)
+    return predicted_image
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -45,6 +56,7 @@ if __name__ == '__main__':
     for p in patches:
         predicted.append(model.predict(p))
 
+    # image.shape = (197, 233, 189)
     y_pred = recreate_image_from_patches(image.shape, predicted)
     new_filename = "predicted_{}"+os.path.basename(args.input)
 

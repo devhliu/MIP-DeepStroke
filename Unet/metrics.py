@@ -1,6 +1,12 @@
 from functools import partial
 
 from keras import backend as K
+from sklearn.metrics import auc, roc_curve
+
+
+def auc_score(y_true, y_pred):
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=2)
+    return auc(fpr, tpr)
 
 
 def dice_coefficient(y_true, y_pred, smooth=1.):
