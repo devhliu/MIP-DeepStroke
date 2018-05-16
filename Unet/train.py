@@ -97,6 +97,7 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
 
     tensorboard_callback = None
+    pr_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path, histogram_freq=0, batch_size=batch_size,
@@ -129,7 +130,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     # Train the model, iterating on the data in batches of 32 samples
     history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
-                                  callbacks=[tensorboard_callback, checkpoint_callback],
+                                  callbacks=[tensorboard_callback, checkpoint_callback, pr_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=2*batch_size,
                                   workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)

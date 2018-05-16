@@ -5,8 +5,8 @@ import os
 from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
-from .image_processing import create_patches_from_images
-from .predict import predict
+from image_processing import create_patches_from_images
+from predict import predict
 import numpy as np
 
 from sklearn.metrics import roc_auc_score
