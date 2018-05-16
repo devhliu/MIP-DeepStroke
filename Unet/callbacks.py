@@ -45,54 +45,8 @@ class roc_callback(Callback):
     def on_batch_end(self, batch, logs={}):
         return
 
-
-class ImageTensorBoard(TensorBoard):
-    def __init__(self, image, lesion, patch_size, layer, verbose=0, *args, **kwargs):
-        super(ImageTensorBoard, self).__init__(*args, **kwargs)
-        self.image = image
-        self.lesion = lesion
-        self.lesion_patches = create_patches_from_images(image, patch_size)
-        self.image_patches = create_patches_from_images(lesion, patch_size)
-        self.layer = layer
-        self.patch_size = patch_size
-        self.verbose = verbose
-
-    def set_model(self, model):
-        super(ImageTensorBoard, self).set_model(model)
-
-    def on_epoch_end(self, epoch, logs=None):
-        super(ImageTensorBoard, self).on_epoch_end(epoch, logs)
-
-        if self.lesion_patches and self.image_patches:
-            # Predict the output.
-            predicted_image = predict(self.image, self.model, self.patch_size, verbose=self.verbose)
-
-            pred_image = predicted_image[:, :, self.layer]
-            image_original = self.image[:, :, self.layer]
-            lesion_original = self.lesion[:, :, self.layer]
-
-            # RGB
-            merged_image = np.array(pred_image.shape, 3)
-            merged_image[:, : , 0] = pred_image
-            merged_image[:, :, 1] = image_original
-            merged_image[:, :, 2] = lesion_original
-
-            pred_summary = tf.summary.image("prediction", pred_image)
-            image_summary = tf.summary.image("input", image_original)
-            lesion_summay = tf.summary.image("lesion", lesion_original)
-            merged_summary = tf.summary.image("merged", merged_image)
-
-            # Run and add summary.
-            result = self.sess.run([pred_summary, image_summary, lesion_summay, merged_summary])
-            self.writer.add_summary(result[0], epoch)
-            self.writer.add_summary(result[1], epoch)
-            self.writer.add_summary(result[2], epoch)
-            self.writer.add_summary(result[3], epoch)
-        self.writer.flush()
-
-
 class TrainValTensorBoard(TensorBoard):
-    def __init__(self, log_dir='./logs', **kwargs):
+    def __init__(self, image=None, lesion=None, patch_size=None, layer=None, verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
         super(TrainValTensorBoard, self).__init__(training_log_dir, **kwargs)
@@ -104,6 +58,18 @@ class TrainValTensorBoard(TensorBoard):
         self.pr_curve = kwargs.pop('pr_curve', True)
         self.initialized = False
 
+        # Image
+        if image is not None:
+            if lesion is None or patch_size is None or layer is None:
+                raise Exception("Please provide the following : \'image\',\'lesion\',\'patch_size\',\'layer\'")
+            self.image = image
+            self.lesion = lesion
+            self.lesion_patches = create_patches_from_images(image, patch_size)
+            self.image_patches = create_patches_from_images(lesion, patch_size)
+            self.layer = layer
+            self.patch_size = patch_size
+            self.verbose = verbose
+
     def set_model(self, model):
         # Setup writer for validation metrics
         self.val_writer = tf.summary.FileWriter(self.val_log_dir)
@@ -112,7 +78,7 @@ class TrainValTensorBoard(TensorBoard):
         if self.pr_curve:
             # Get the prediction and label tensor placeholders.
             predictions = self.model._feed_outputs[0]
-            labels = tf.cast(self.model._feed_targets[0], tf.bool)
+            labels = tf.cast(self.model._feed_targets[0])
             # Create the PR summary OP.
             self.pr_summary = pr_summary.op(name="pr_curve",
                                             predictions=predictions,
@@ -145,8 +111,36 @@ class TrainValTensorBoard(TensorBoard):
         #
         self.val_writer.flush()
 
+    def __add_image(self, epoch):
+        if self.lesion_patches and self.image_patches:
+            # Predict the output.
+            predicted_image = predict(self.image, self.model, self.patch_size, verbose=self.verbose)
+
+            pred_image = predicted_image[:, :, self.layer]
+            image_original = self.image[:, :, self.layer]
+            lesion_original = self.lesion[:, :, self.layer]
+
+            # RGB
+            merged_image = np.array(pred_image.shape, 3)
+            merged_image[:, : , 0] = pred_image
+            merged_image[:, :, 1] = image_original
+            merged_image[:, :, 2] = lesion_original
+
+            pred_summary = tf.summary.image("prediction", pred_image)
+            image_summary = tf.summary.image("input", image_original)
+            lesion_summay = tf.summary.image("lesion", lesion_original)
+            merged_summary = tf.summary.image("merged", merged_image)
+
+            # Run and add summary.
+            result = self.sess.run([pred_summary, image_summary, lesion_summay, merged_summary])
+            self.val_writer.add_summary(result[0], epoch)
+            self.val_writer.add_summary(result[1], epoch)
+            self.val_writer.add_summary(result[2], epoch)
+            self.val_writer.add_summary(result[3], epoch)
+
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
+            print("INSIDE PR CURVE")
             # Get the tensors again.
             tensors = self.model._feed_targets + self.model._feed_outputs
             # Predict the output.
