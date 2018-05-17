@@ -4,6 +4,9 @@ from sklearn.model_selection import train_test_split
 from shutil import copyfile
 
 
+def normalize_numpy(v, max_value=1.0, min_value=0.0):
+    return v*max_value/v.max()
+
 def create_if_not_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)

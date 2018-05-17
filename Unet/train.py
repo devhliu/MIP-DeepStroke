@@ -100,7 +100,6 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
-
     tensorboard_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
@@ -188,19 +187,19 @@ if __name__ == '__main__':
                weighted_dice_coefficient_loss,
                weighted_dice_coefficient,
                dice_coefficient,
-               binary_crossentropy,
-               binary_accuracy,
                'acc',
                'mse',
                ]
 
-    loss_function = weighted_dice_coefficient_loss
+    loss_function = 'mse'
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
-                          batch_normalization=True,
+                          pool_size=[5, 5, 5],
+                          depth=3,
+                          batch_normalization=False,
                           metrics=metrics,
                           loss=loss_function,
-                          activation_name="hard_sigmoid")
+                          activation_name="sigmoid")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,

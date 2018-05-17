@@ -6,11 +6,15 @@ from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
+from tensorboard.plugins.image import summary as im_summary
 from image_processing import create_patches_from_images
+from utils import normalize_numpy
 from predict import predict
 import numpy as np
 import tensorflow as tf
-
+import skimage.io
+from io import StringIO,BytesIO
+from PIL import Image
 from sklearn.metrics import roc_auc_score
 from keras.callbacks import Callback
 
@@ -62,8 +66,8 @@ class TrainValTensorBoard(TensorBoard):
         if image is not None:
             if lesion is None or patch_size is None or layer is None:
                 raise Exception("Please provide the following : \'image\',\'lesion\',\'patch_size\',\'layer\'")
-            self.image = image
-            self.lesion = lesion
+            self.image = normalize_numpy(image)
+            self.lesion = normalize_numpy(lesion)
             self.lesion_patches = create_patches_from_images(image, patch_size)
             self.image_patches = create_patches_from_images(lesion, patch_size)
             self.layer = layer
@@ -100,17 +104,44 @@ class TrainValTensorBoard(TensorBoard):
             summary_value.simple_value = value.item()
             summary_value.tag = name
             self.val_writer.add_summary(summary, epoch, )
-        #self.val_writer.flush()
 
-        # Pass the remaining logs to `TensorBoard.on_epoch_end`
-        logs = {k: v for k, v in logs.items() if not k.startswith('val_')}
-        super(TrainValTensorBoard, self).on_epoch_end(epoch, logs)
 
         # Add PR Curve
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
         self.val_writer.flush()
+
+        # Pass the remaining logs to `TensorBoard.on_epoch_end`
+        logs = {k: v for k, v in logs.items() if not k.startswith('val_')}
+        super(TrainValTensorBoard, self).on_epoch_end(epoch, logs)
+
+
+    def log_images(self, tag, images, step):
+        """Logs a list of images."""
+
+        image_summaries = []
+        for image_num, image in enumerate(images):
+            # Write the image to a string
+            try:
+                # Python 2.7
+                s = StringIO()
+                skimage.io.imsave(s, image)
+            except TypeError:
+                # Python 3.X
+                s = BytesIO()
+                skimage.io.imsave(s, image)
+            # Create an Image object
+            img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
+                                       height=image.shape[0],
+                                       width=image.shape[1])
+            # Create a Summary value
+            image_summaries.append(tf.Summary.Value(tag='%s/%d' % (tag, image_num),
+                                                    image=img_sum))
+
+        # Create and write Summary
+        summary = tf.Summary(value=image_summaries)
+        self.val_writer.add_summary(summary, step)
 
     def __add_image(self, epoch):
         if self.lesion_patches and self.image_patches:
@@ -122,22 +153,16 @@ class TrainValTensorBoard(TensorBoard):
             lesion_original = self.lesion[:, :, self.layer]
 
             # RGB
-            merged_image = np.array(pred_image.shape, 3)
-            merged_image[:, : , 0] = pred_image
+            merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
+            merged_image[:, :, 0] = pred_image
             merged_image[:, :, 1] = image_original
             merged_image[:, :, 2] = lesion_original
 
-            pred_summary = tf.summary.image("prediction", pred_image)
-            image_summary = tf.summary.image("input", image_original)
-            lesion_summay = tf.summary.image("lesion", lesion_original)
-            merged_summary = tf.summary.image("merged", merged_image)
+            #pred_tensor = tf.convert_to_tensor(pred_image.reshape(1, pred_image.shape[0], pred_image.shape[1], 1))
+            #image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
+            #lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            # Run and add summary.
-            result = self.sess.run([pred_summary, image_summary, lesion_summay, merged_summary])
-            self.val_writer.add_summary(result[0], epoch)
-            self.val_writer.add_summary(result[1], epoch)
-            self.val_writer.add_summary(result[2], epoch)
-            self.val_writer.add_summary(result[3], epoch)
+            self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:

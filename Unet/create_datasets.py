@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from utils import create_if_not_exists, splits_sets, split_train_test_val
+from utils import create_if_not_exists, splits_sets, split_train_test_val, normalize_numpy
 from image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches
 import numpy as np
 import nibabel as nb
@@ -16,10 +16,6 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
         if extra:
             s = "{}_{}-{}-extra.nii"
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
-
-
-def normalize_numpy(v, max_value=1.0):
-    return v*max_value/v.max()
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train"):
     print("Creating dataset {} : ".format(dataset_type))
