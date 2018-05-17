@@ -122,8 +122,8 @@ class TrainValTensorBoard(TensorBoard):
             lesion_original = self.lesion[:, :, self.layer]
 
             # RGB
-            merged_image = np.array(pred_image.shape, 3)
-            merged_image[:, : , 0] = pred_image
+            merged_image = np.array(pred_image.shape[0], pred_image.shape[1], 3)
+            merged_image[:, :, 0] = pred_image
             merged_image[:, :, 1] = image_original
             merged_image[:, :, 2] = lesion_original
 
