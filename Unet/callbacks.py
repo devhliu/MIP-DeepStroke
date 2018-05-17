@@ -109,7 +109,7 @@ class TrainValTensorBoard(TensorBoard):
         # Add PR Curve
         self.__add_pr_curve(epoch)
         # add image
-        self.__add_image(self, epoch)
+        self.__add_image(epoch)
         self.val_writer.flush()
 
     def __add_image(self, epoch):
