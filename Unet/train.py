@@ -73,26 +73,30 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
         target_paths = os.listdir(target_directory)
         paths = list(zip(image_paths, target_paths))
 
-        for cbatch in range(0, len(paths), batch_size):
-            x_list = []
-            y_list = []
-            for input_path, target_path in paths[cbatch:(cbatch + batch_size)]:
-                image = nb.load(os.path.join(input_directory, input_path)).get_data()
-                target = nb.load(os.path.join(target_directory, target_path)).get_data()
+        x_list = []
+        y_list = []
+        for i in range(len(paths)):
+            input_path, target_path = paths[i]
 
-                shape = image.shape
-                reshape_size = (1, shape[0], shape[1], shape[2])
-                image = image.reshape(reshape_size)
-                target = target.reshape(reshape_size)
+            image = nb.load(os.path.join(input_directory, input_path)).get_data()
+            target = nb.load(os.path.join(target_directory, target_path)).get_data()
 
-                if not (np.all(image == 0) and skip_blank):
-                    x_list.append(image)
-                    y_list.append(target)
+            shape = image.shape
+            reshape_size = (1, shape[0], shape[1], shape[2])
+            image = image.reshape(reshape_size)
+            target = target.reshape(reshape_size)
 
-            x_list = np.array(x_list)
-            y_list = np.array(y_list)
+            if not (np.all(image == 0) and skip_blank):
+                x_list.append(image)
+                y_list.append(target)
 
-            yield x_list, y_list
+            if len(x_list) == batch_size:
+                x_list_batch = np.array(x_list)
+                y_list_batch = np.array(y_list)
+                x_list = []
+                y_list = []
+
+                yield x_list_batch, y_list_batch
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
@@ -146,7 +150,7 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/simon/Datasets/Data/32x32x32")
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
-    parser.add_argument("-s", "--skip_blank", help="Skip blank images - will not be fed to the network", default=False)
+    parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
     parser.add_argument("-p", "--patch_size", type=int, help="Patch size per dimension", default=32)
 
