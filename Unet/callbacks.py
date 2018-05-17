@@ -36,7 +36,7 @@ class roc_callback(Callback):
         roc = roc_auc_score(self.y, y_pred)
         y_pred_val = self.model.predict(self.x_val)
         roc_val = roc_auc_score(self.y_val, y_pred_val)
-        print('\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc,4)),str(round(roc_val,4))),end=100*' '+'\n')
+        print('\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc, 4)), str(round(roc_val,4))),end=100*' '+'\n')
         return
 
     def on_batch_begin(self, batch, logs={}):
@@ -108,7 +108,8 @@ class TrainValTensorBoard(TensorBoard):
 
         # Add PR Curve
         self.__add_pr_curve(epoch)
-        #
+        # add image
+        self.__add_image(self, epoch)
         self.val_writer.flush()
 
     def __add_image(self, epoch):
