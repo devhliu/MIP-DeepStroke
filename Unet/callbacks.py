@@ -123,18 +123,18 @@ class TrainValTensorBoard(TensorBoard):
 
             # RGB
             merged_image = np.zeros([1, pred_image.shape[0], pred_image.shape[1], 3])
-            merged_image[1, :, :, 0] = pred_image
-            merged_image[1, :, :, 1] = image_original
-            merged_image[1, :, :, 2] = lesion_original
+            merged_image[0, :, :, 0] = pred_image
+            merged_image[0, :, :, 1] = image_original
+            merged_image[0, :, :, 2] = lesion_original
 
             pred_tensor = pred_image.reshape(1, pred_image.shape[0], pred_image.shape[1], 1)
             image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
             lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            pred_summary = tf.summary.image("prediction", pred_tensor)
-            image_summary = tf.summary.image("input", image_tensor)
-            lesion_summay = tf.summary.image("lesion", lesion_tensor)
-            merged_summary = tf.summary.image("merged", merged_image)
+            pred_summary = tf.summary.image("prediction", pred_tensor, max_outputs=1)
+            image_summary = tf.summary.image("input", image_tensor, max_outputs=1)
+            lesion_summay = tf.summary.image("lesion", lesion_tensor,max_outputs=1)
+            merged_summary = tf.summary.image("merged", merged_image, max_outputs=1)
 
             # Run and add summary.
             result = self.sess.run([pred_summary, image_summary, lesion_summay, merged_summary])
