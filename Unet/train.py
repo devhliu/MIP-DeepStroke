@@ -175,7 +175,8 @@ if __name__ == '__main__':
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
                           batch_normalization=True,
                           metrics=metrics,
-                          loss=loss_function)
+                          loss=loss_function,
+                          activation_name="hard_sigmoid")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
