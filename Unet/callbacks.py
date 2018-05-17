@@ -129,11 +129,11 @@ class TrainValTensorBoard(TensorBoard):
             merged_image[0, :, :, 1] = image_original
             merged_image[0, :, :, 2] = lesion_original
 
-            pred_tensor = pred_image.reshape(1, pred_image.shape[0], pred_image.shape[1], 1)
-            image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
-            lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
+            pred_tensor = pred_image.reshape(pred_image.shape[0], pred_image.shape[1], 1)
+            image_tensor = image_original.reshape(image_original.shape[0], image_original.shape[1], 1)
+            lesion_tensor = lesion_original.reshape(lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            tensor_images = [pred_tensor, image_tensor, lesion_tensor, merged_image]
+            tensor_images = tf.convert_to_tensor([image_tensor, lesion_tensor, pred_tensor])
             summary = tf.summary.image("images", tensor_images, max_outputs=1)
 
             # Run and add summary.
