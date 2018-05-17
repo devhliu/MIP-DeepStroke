@@ -136,10 +136,10 @@ class TrainValTensorBoard(TensorBoard):
             lesion_summay = tf.summary.image(name="lesion", tensor=lesion_tensor,max_outputs=1)
             merged_summary = tf.summary.image(name="merged", tensor=merged_image, max_outputs=1)
 
-            #summary_op = tf.summary.merge_all()
+            summary_op = tf.summary.merge_all()
             # Run and add summary.
-            #result = self.sess.run(summary_op)
-            self.val_writer.add_summary(pred_summary,epoch)
+            result = self.sess.run(summary_op)
+            self.val_writer.add_summary(result, epoch)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
