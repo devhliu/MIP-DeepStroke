@@ -131,15 +131,17 @@ class TrainValTensorBoard(TensorBoard):
             image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
             lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            pred_summary = tf.summary.image(name="prediction", tensor=pred_tensor, max_outputs=1)
-            image_summary = tf.summary.image(name="input", tensor=image_tensor, max_outputs=1)
-            lesion_summay = tf.summary.image(name="lesion", tensor=lesion_tensor,max_outputs=1)
-            merged_summary = tf.summary.image(name="merged", tensor=merged_image, max_outputs=1)
+            pred_summary = tf.summary.image("image/prediction", pred_tensor, max_outputs=1)
+            image_summary = tf.summary.image("image/input", image_tensor, max_outputs=1)
+            lesion_summay = tf.summary.image("image/lesion", lesion_tensor,max_outputs=1)
+            merged_summary = tf.summary.image("image/merged", merged_image, max_outputs=1)
 
-            #summary_op = tf.summary.merge_all()
             # Run and add summary.
-            #result = self.sess.run(summary_op)
-            self.val_writer.add_summary(pred_summary,epoch)
+            result = self.sess.run([pred_summary, image_summary, lesion_summay, merged_summary])
+            self.val_writer.add_summary(result[0])
+            self.val_writer.add_summary(result[1])
+            self.val_writer.add_summary(result[2])
+            self.val_writer.add_summary(result[3])
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
