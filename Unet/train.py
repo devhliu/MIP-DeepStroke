@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
-from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, precision, recall, AUC
+from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss
 from keras.metrics import binary_crossentropy, binary_accuracy
 import tensorflow as tf
 
@@ -194,9 +194,6 @@ if __name__ == '__main__':
                dice_coefficient,
                'acc',
                'mse',
-               precision,
-               recall,
-               AUC
                ]
 
     loss_function = binary_crossentropy
