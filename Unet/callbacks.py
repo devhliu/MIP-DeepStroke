@@ -129,7 +129,8 @@ class TrainValTensorBoard(TensorBoard):
             except TypeError:
                 # Python 3.X
                 s = BytesIO()
-                Image.fromarray(image).save(s, format="png")
+                im = Image.fromarray(image)
+                im.save(s, format="png")
             # Create an Image object
             img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=image.shape[0],
