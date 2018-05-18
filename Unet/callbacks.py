@@ -50,7 +50,7 @@ class roc_callback(Callback):
         return
 
 class TrainValTensorBoard(TensorBoard):
-    def __init__(self, image=None, lesion=None, patch_size=None, layer=None, verbose=0, log_dir='./logs', **kwargs):
+    def __init__(self, image=None, lesion=None, patch_size=None, layer=None, validation_data=None, verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
         super(TrainValTensorBoard, self).__init__(training_log_dir, **kwargs)
@@ -61,6 +61,7 @@ class TrainValTensorBoard(TensorBoard):
         # Get PR Curve
         self.pr_curve = kwargs.pop('pr_curve', True)
         self.initialized = False
+        self.validation_data = validation_data
 
         # Image
         if image is not None:
@@ -169,7 +170,7 @@ class TrainValTensorBoard(TensorBoard):
             # Get the tensors again.
             tensors = self.model._feed_targets + self.model._feed_outputs
             # Predict the output.
-            predictions = self.model.predict(self.validation_data[:-2])
+            predictions = self.model.predict_generator(self.validation_data)
             # Build the dictionary mapping the tensor to the data.
             val_data = [self.validation_data[-2], predictions]
             feed_dict = dict(zip(tensors, val_data))

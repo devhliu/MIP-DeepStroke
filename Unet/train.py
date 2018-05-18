@@ -100,6 +100,10 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
+
+
+    training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
+
     tensorboard_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
@@ -116,6 +120,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    lesion=lesion,
                                                    layer=layer,
                                                    patch_size=patch_size,
+                                                   validation_data=validation_generator,
                                                    verbose=1,
                                                    histogram_freq=0,
                                                    batch_size=batch_size,
@@ -152,11 +157,6 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         steps_per_epoch = epoch_size
 
     shuffle = True         # Shuffle the data before creating a batch
-
-    training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
-
-    print("--------------------------------------------------------------")
-    print(len(training_generator))
 
     # Train the model, iterating on the data in batches of 32 samples
     history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
@@ -196,7 +196,6 @@ if __name__ == '__main__':
                'mse',
                precision,
                recall,
-               PR,
                AUC
                ]
 

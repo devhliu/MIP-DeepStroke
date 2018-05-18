@@ -17,26 +17,6 @@ def dice_coefficient_loss(y_true, y_pred):
     return -dice_coefficient(y_true, y_pred)
 
 
-def precision(y_true, y_pred):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    p, _ =tf.metrics.precision(y_true_f, y_pred_f)
-    return p
-
-
-def recall(y_true, y_pred):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    r, _ = tf.metrics.recall(y_true_f,y_pred_f)
-    return r
-
-
-def AUC(y_true, y_pred):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    auc,_ = tf.metrics.auc(y_true_f, y_pred_f)
-    return auc
-
 
 def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001):
     """
