@@ -7,7 +7,8 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
 from tensorboard.plugins.image import summary as im_summary
-from image_processing import create_patches_from_images
+from image_processing import create_patches_from_image
+from utils import normalize_numpy
 from predict import predict
 import numpy as np
 import tensorflow as tf
@@ -65,8 +66,8 @@ class TrainValTensorBoard(TensorBoard):
         if image is not None:
             if lesion is None or patch_size is None or layer is None:
                 raise Exception("Please provide the following : \'image\',\'lesion\',\'patch_size\',\'layer\'")
-            self.image = image
-            self.lesion = lesion
+            self.image = normalize_numpy(image)
+            self.lesion = normalize_numpy(lesion)
             self.lesion_patches = create_patches_from_images(image, patch_size)
             self.image_patches = create_patches_from_images(lesion, patch_size)
             self.layer = layer
