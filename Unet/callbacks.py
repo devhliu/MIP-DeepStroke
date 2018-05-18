@@ -11,7 +11,7 @@ from image_processing import create_patches_from_images
 from predict import predict
 import numpy as np
 import tensorflow as tf
-from scipy.misc import *
+from scipy.misc import toimage
 from io import StringIO,BytesIO
 
 from sklearn.metrics import roc_auc_score
