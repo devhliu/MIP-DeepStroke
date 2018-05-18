@@ -187,19 +187,19 @@ if __name__ == '__main__':
                weighted_dice_coefficient_loss,
                weighted_dice_coefficient,
                dice_coefficient,
-               binary_crossentropy,
-               binary_accuracy,
                'acc',
                'mse',
                ]
 
-    loss_function = weighted_dice_coefficient_loss
+    loss_function = 'mse'
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
-                          batch_normalization=True,
+                          pool_size=[5, 5, 5],
+                          depth=3,
+                          batch_normalization=False,
                           metrics=metrics,
                           loss=loss_function,
-                          activation_name="hard_sigmoid")
+                          activation_name="sigmoid")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
