@@ -184,7 +184,7 @@ class TrainValTensorBoard(TensorBoard):
             for b in range(self.validation_steps):
                 x, y = next(generator)
                 pred_batch = self.model.predict_on_batch(y)
-                roc = roc_auc_score(y.flatten(), pred_batch.flatt())
+                roc = roc_auc_score(y.flatten(), pred_batch.flatten())
 
                 precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
                 mean_precision.append(precision)
