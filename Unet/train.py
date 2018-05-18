@@ -198,7 +198,7 @@ if __name__ == '__main__':
                'mse',
                ]
 
-    loss_function = binary_crossentropy
+    loss_function = dice_coefficient
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],

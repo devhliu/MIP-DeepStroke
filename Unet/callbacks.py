@@ -214,7 +214,7 @@ class TrainValTensorBoard(TensorBoard):
             PR_fig = np.asarray(Image.open('PR.jpg'))
             self.log_images(tag="Precision-Recall", images=[PR_fig], step=epoch)
             """
-            
+
             #Add AUC
             summary = tf.Summary()
             summary.value.add(tag='AUC', simple_value=mean_roc)
