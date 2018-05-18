@@ -19,7 +19,7 @@ from sklearn.metrics import roc_auc_score
 from keras.callbacks import Callback
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
-
+from tqdm import tqdm
 
 class roc_callback(Callback):
     def __init__(self, training_data, validation_data):
@@ -181,7 +181,7 @@ class TrainValTensorBoard(TensorBoard):
             mean_recall = []
 
             generator = self.validation_data
-            for b in range(self.validation_steps):
+            for b in tqdm(range(self.validation_steps)):
                 x, y = next(generator)
                 pred_batch = self.model.predict_on_batch(y)
 
