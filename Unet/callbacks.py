@@ -7,7 +7,7 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
 from tensorboard.plugins.image import summary as im_summary
-from image_processing import create_patches_from_image
+from image_processing import create_patches_from_images
 from utils import normalize_numpy
 from predict import predict
 import numpy as np
@@ -164,7 +164,7 @@ class TrainValTensorBoard(TensorBoard):
             #image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
             #lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            self.log_images(tag="prediction", images=[merged_image], step=epoch)
+            self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
             """
             tensor_images = [pred_tensor, image_tensor, lesion_tensor, merged_image]
             #pred_summary = tf.summary.image(name="prediction", tensor=pred_tensor, max_outputs=1)
