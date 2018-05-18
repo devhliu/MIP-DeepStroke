@@ -92,6 +92,7 @@ class TrainValTensorBoard(TensorBoard):
             self.auc, ops = tf.metrics.auc(labels, predictions, curve="PR", name="auc_metric")
             self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve")
 
+
     def on_epoch_end(self, epoch, logs=None):
         # Pop the validation logs and handle them separately with
         # `self.val_writer`. Also rename the keys so that they can
@@ -166,7 +167,6 @@ class TrainValTensorBoard(TensorBoard):
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
-            print("INSIDE PR CURVE")
             # Get the tensors again.
             tensors = self.model._feed_targets + self.model._feed_outputs
             # Predict the output.
