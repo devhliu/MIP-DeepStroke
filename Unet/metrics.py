@@ -6,12 +6,6 @@ import numpy as np
 from sklearn.metrics import auc, roc_curve
 
 
-def auc_score(y_true, y_pred):
-    # any tensorflow metric
-    auc, update_op = tf.metrics.auc(y_true, y_pred, curve="PR", name="auc")
-    return auc
-
-
 def dice_coefficient(y_true, y_pred, smooth=1.):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -26,16 +20,15 @@ def dice_coefficient_loss(y_true, y_pred):
 def precision(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
-    TP, _ = tf.metrics.true_positives(y_true_f, y_pred_f)
-    FP, _ = tf.metrics.false_positives(y_true_f, y_pred_f)
-    return K.division(TP, (K.sum(TP, FP)))
+    p, _ =tf.metrics.precision(y_true_f, y_pred_f)
+    return p
 
 
 def recall(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
-    r = tf.metrics.recall(y_true_f,y_pred_f)
-    return K.eval(r)
+    r, _ = tf.metrics.recall(y_true_f,y_pred_f)
+    return r
 
 
 def PR(y_true, y_pred):
@@ -44,13 +37,14 @@ def PR(y_true, y_pred):
     thresholds = np.arange(0, 1, 0.05)
     r = tf.metrics.recall_at_thresholds(y_true_f, y_pred_f, thresholds)
     p = tf.metrics.precision_at_thresholds(y_true_f, y_pred_f, thresholds)
-    return K.division(p/r)
+    return K.division(p, r)
 
 
 def AUC(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
-    return K.eval(tf.metrics.auc(y_true_f, y_pred_f))
+    auc,_ = tf.metrics.auc(y_true_f, y_pred_f)
+    return auc
 
 
 def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001):
