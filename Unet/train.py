@@ -104,6 +104,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
 
+    dataset_training_size = len(os.listdir(os.path.join(data_path, "train/input")))
+    dataset_val_size = len(os.listdir(os.path.join(data_path, "validation/input")))
+
     tensorboard_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
@@ -121,6 +124,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    layer=layer,
                                                    patch_size=patch_size,
                                                    validation_data=validation_generator,
+                                                   validation_steps=int(dataset_val_size/batch_size),
                                                    verbose=1,
                                                    histogram_freq=0,
                                                    batch_size=batch_size,
@@ -147,8 +151,6 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
                                     save_weights_only=False, mode='auto', period=1)
-
-    dataset_training_size = len(os.listdir(os.path.join(data_path, "train/input")))
 
     # Parameters
     validation_steps = 1   # Number of steps per evaluation (number of to pass)

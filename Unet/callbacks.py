@@ -17,6 +17,8 @@ from io import StringIO,BytesIO
 from PIL import Image
 from sklearn.metrics import roc_auc_score
 from keras.callbacks import Callback
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_curve
 
 
 class roc_callback(Callback):
@@ -50,7 +52,8 @@ class roc_callback(Callback):
         return
 
 class TrainValTensorBoard(TensorBoard):
-    def __init__(self, image=None, lesion=None, patch_size=None, layer=None, validation_data=None, verbose=0, log_dir='./logs', **kwargs):
+    def __init__(self, image=None, lesion=None, patch_size=None, layer=None, validation_data=None, validation_steps=None,
+                 verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
         super(TrainValTensorBoard, self).__init__(training_log_dir, **kwargs)
@@ -62,6 +65,7 @@ class TrainValTensorBoard(TensorBoard):
         self.pr_curve = kwargs.pop('pr_curve', True)
         self.initialized = False
         self.validation_data = validation_data
+        self.validation_steps = validation_steps
 
         # Image
         if image is not None:
@@ -167,22 +171,47 @@ class TrainValTensorBoard(TensorBoard):
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
+            if self.validation_steps is None:
+                raise Exception("Please provide validation_step argument")
             # Get the tensors again.
             tensors = self.model._feed_targets + self.model._feed_outputs
             # Predict the output.
-            predictions = self.model.predict_generator(self.validation_data)
-            # Build the dictionary mapping the tensor to the data.
-            val_data = [self.validation_data[-2], predictions]
-            feed_dict = dict(zip(tensors, val_data))
-            # Run and add summary.
-            if not self.initialized:
-                self.sess.run(tf.local_variables_initializer())
-                self.initialized = True
+            mean_roc = []
+            mean_precision = []
+            mean_recall = []
 
-            result = self.sess.run([self.pr_summary, self.auc, self.auc_summary], feed_dict=feed_dict)
-            self.val_writer.add_summary(result[0], epoch)
-            self.val_writer.add_summary(result[1], epoch)
-            self.val_writer.add_summary(result[2], epoch)
+            for b in range(self.validation_steps):
+                x, y = self.validation_data.next()
+                pred_batch = self.model.predict_on_batch(y)
+                roc = roc_auc_score(y.flatten(), pred_batch.flatt())
+
+                precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
+                mean_precision.append(precision)
+                mean_recall.append(recall)
+                mean_roc.append(roc)
+
+
+            mean_recall = np.mean(mean_recall, axis=0)
+            mean_precision = np.mean(mean_precision, axis=0)
+            mean_roc = np.mean(mean_roc)
+
+
+            # Plot curve
+            plt.step(mean_recall, mean_precision, color='b', alpha=0.2,
+                     where='post')
+            plt.xlabel('Recall')
+            plt.ylabel('Precision')
+            plt.ylim([0.0, 1.05])
+            plt.xlim([0.0, 1.0])
+            plt.title('Precision-Recall curve')
+            plt.savefig('PR.jpg')
+            PR_fig = np.asarray(Image.open('PR.jpg'))
+            self.log_images(tag="Precision-Recall", images=[PR_fig], step=epoch)
+
+            #Add AUC
+            summary = tf.Summary()
+            summary.value.add(tag='AUC', simple_value=mean_roc)
+            self.val_writer.add_summary(summary, epoch)
 
     def on_train_end(self, logs=None):
         super(TrainValTensorBoard, self).on_train_end(logs)
