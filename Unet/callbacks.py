@@ -126,10 +126,12 @@ class TrainValTensorBoard(TensorBoard):
             try:
                 # Python 2.7
                 s = StringIO()
+                print("max", image.max(), "min", image.min())
                 skimage.io.imsave(s, image)
             except TypeError:
                 # Python 3.X
                 s = BytesIO()
+                print("max", image.max(), "min", image.min())
                 skimage.io.imsave(s, image)
             # Create an Image object
             img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
