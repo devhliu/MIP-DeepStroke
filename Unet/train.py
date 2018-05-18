@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
-from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, auc_score
+from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, precision, recall, PR, auc
 from keras.metrics import binary_crossentropy, binary_accuracy
 import tensorflow as tf
 
@@ -155,6 +155,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
 
+    print("--------------------------------------------------------------")
+    print(len(training_generator))
+
     # Train the model, iterating on the data in batches of 32 samples
     history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
                                   callbacks=[tensorboard_callback, checkpoint_callback],
@@ -191,9 +194,13 @@ if __name__ == '__main__':
                dice_coefficient,
                'acc',
                'mse',
+               precision,
+               recall,
+               PR,
+               auc
                ]
 
-    loss_function = 'mse'
+    loss_function = binary_crossentropy
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
@@ -201,7 +208,7 @@ if __name__ == '__main__':
                           batch_normalization=False,
                           metrics=metrics,
                           loss=loss_function,
-                          activation_name="sigmoid")
+                          activation_name="softmax")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
