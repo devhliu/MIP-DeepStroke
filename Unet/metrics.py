@@ -31,15 +31,6 @@ def recall(y_true, y_pred):
     return r
 
 
-def PR(y_true, y_pred):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = tf.cast(K.flatten(y_pred), tf.float64)
-    thresholds = np.arange(0, 1, 0.05).astype(dtype=np.float64)
-    r = tf.metrics.recall_at_thresholds(y_true_f, y_pred_f, thresholds)
-    p = tf.metrics.precision_at_thresholds(y_true_f, y_pred_f, thresholds)
-    return K.division(p, r)
-
-
 def AUC(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
