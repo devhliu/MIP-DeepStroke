@@ -194,7 +194,7 @@ if __name__ == '__main__':
     loss_function = 'mse'
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
-                          pool_size=[5, 5, 5],
+                          pool_size=[2, 2, 2],
                           depth=3,
                           batch_normalization=False,
                           metrics=metrics,
