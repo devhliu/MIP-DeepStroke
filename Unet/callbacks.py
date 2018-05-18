@@ -11,7 +11,7 @@ from image_processing import create_patches_from_images
 from predict import predict
 import numpy as np
 import tensorflow as tf
-from scipy.misc import toimage
+import skimage.io
 from io import StringIO,BytesIO
 from PIL import Image
 from sklearn.metrics import roc_auc_score
@@ -129,8 +129,7 @@ class TrainValTensorBoard(TensorBoard):
             except TypeError:
                 # Python 3.X
                 s = BytesIO()
-                im = Image.fromarray(image)
-                im.save(s, format="png")
+                skimage.io.imsave(s, image)
             # Create an Image object
             img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=image.shape[0],

@@ -100,7 +100,6 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
-
     tensorboard_callback = None
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
