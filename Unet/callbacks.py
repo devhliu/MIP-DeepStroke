@@ -125,7 +125,7 @@ class TrainValTensorBoard(TensorBoard):
             try:
                 # Python 2.7
                 s = StringIO()
-                Image.fromarray(image).save(s, format="png")
+                skimage.io.imsave(s, image)
             except TypeError:
                 # Python 3.X
                 s = BytesIO()
