@@ -13,7 +13,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.misc import toimage
 from io import StringIO,BytesIO
-
+from PIL import Image
 from sklearn.metrics import roc_auc_score
 from keras.callbacks import Callback
 
@@ -125,11 +125,11 @@ class TrainValTensorBoard(TensorBoard):
             try:
                 # Python 2.7
                 s = StringIO()
-                toimage(image).save(s, format="png")
+                Image.fromarray(image).save(s, format="png")
             except TypeError:
                 # Python 3.X
                 s = BytesIO()
-                toimage(image).save(s, format="png")
+                Image.fromarray(image).save(s, format="png")
             # Create an Image object
             img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=image.shape[0],
