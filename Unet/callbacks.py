@@ -90,7 +90,8 @@ class TrainValTensorBoard(TensorBoard):
                                             display_name='Precision-Recall Curve')
 
             self.auc, ops = tf.metrics.auc(labels, predictions, curve="PR", name="auc_metric")
-            self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve")
+            self.auc_summary = sc_summary.op(name="auc", data=self.auc, description="Area Under Curve"
+            
 
 
     def on_epoch_end(self, epoch, logs=None):
