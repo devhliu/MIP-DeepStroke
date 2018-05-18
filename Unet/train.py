@@ -182,6 +182,8 @@ if __name__ == '__main__':
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
     batch_size = args.batch_size
     patch_size = (args.patch_size,args.patch_size,args.patch_size)
+    if(args.skip_blank):
+        print("Skipping blank images")
 
     metrics = [
                weighted_dice_coefficient_loss,
