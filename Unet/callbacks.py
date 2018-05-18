@@ -135,14 +135,14 @@ class TrainValTensorBoard(TensorBoard):
             lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
             tensor_images = [pred_tensor, image_tensor, lesion_tensor, merged_image]
-            pred_summary = im_summary.op("images", pred_tensor, max_outputs=1)
+            pred_summary = tf.summary.image(name="image", tensor=pred_tensor, max_outputs=1)
             #image_summary = tf.summary.image("input", image_tensor, max_outputs=10)
             #lesion_summay = tf.summary.image("lesion", lesion_tensor, max_outputs=10)
             #merged_summary = tf.summary.image("merged", merged_image, max_outputs=10)
 
             # Run and add summary.
             result = self.sess.run([pred_summary])
-            self.val_writer.add_summary(result[0],epoch)
+            self.val_writer.add_summary(result[0], epoch)
             #self.val_writer.add_summary(result[1])
             #self.val_writer.add_summary(result[2])
             #self.val_writer.add_summary(result[3])
