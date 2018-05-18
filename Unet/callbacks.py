@@ -6,6 +6,7 @@ from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
+from tensorboard.plugins.image import summary as im_summary
 from image_processing import create_patches_from_images
 from predict import predict
 import numpy as np
@@ -129,17 +130,22 @@ class TrainValTensorBoard(TensorBoard):
             merged_image[0, :, :, 1] = image_original
             merged_image[0, :, :, 2] = lesion_original
 
-            pred_tensor = pred_image.reshape(pred_image.shape[0], pred_image.shape[1], 1)
-            image_tensor = image_original.reshape(image_original.shape[0], image_original.shape[1], 1)
-            lesion_tensor = lesion_original.reshape(lesion_original.shape[0], lesion_original.shape[1], 1)
+            pred_tensor = pred_image.reshape(1, pred_image.shape[0], pred_image.shape[1], 1)
+            image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
+            lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            tensor_images = tf.convert_to_tensor([image_tensor, lesion_tensor, pred_tensor])
-            summary = tf.summary.image("images", tensor_images, max_outputs=1)
+            tensor_images = [pred_tensor, image_tensor, lesion_tensor, merged_image]
+            pred_summary = im_summary.op("images", pred_tensor, max_outputs=10)
+            #image_summary = tf.summary.image("input", image_tensor, max_outputs=10)
+            #lesion_summay = tf.summary.image("lesion", lesion_tensor, max_outputs=10)
+            #merged_summary = tf.summary.image("merged", merged_image, max_outputs=10)
 
             # Run and add summary.
-            result = self.sess.run([summary])
+            result = self.sess.run([pred_summary])
             self.val_writer.add_summary(result[0])
-
+            #self.val_writer.add_summary(result[1])
+            #self.val_writer.add_summary(result[2])
+            #self.val_writer.add_summary(result[3])
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
