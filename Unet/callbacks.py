@@ -189,12 +189,12 @@ class TrainValTensorBoard(TensorBoard):
                     roc = roc_auc_score(y.flatten(), pred_batch.flatten())
                     mean_roc.append(roc)
 
-                precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
-                mean_precision.append(precision)
-                mean_recall.append(recall)
+                #precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
+                #mean_precision.append(precision)
+                #mean_recall.append(recall)
 
-            mean_recall = np.mean(mean_recall, axis=0)
-            mean_precision = np.mean(mean_precision, axis=0)
+            #mean_recall = np.mean(mean_recall, axis=0)
+            #mean_precision = np.mean(mean_precision, axis=0)
             if len(mean_roc) == 0:
                 mean_roc = 0
             else:
@@ -202,6 +202,7 @@ class TrainValTensorBoard(TensorBoard):
 
 
             # Plot curve
+            """ TODO FIX
             plt.step(mean_recall, mean_precision, color='b', alpha=0.2,
                      where='post')
             plt.xlabel('Recall')
@@ -212,7 +213,8 @@ class TrainValTensorBoard(TensorBoard):
             plt.savefig('PR.jpg')
             PR_fig = np.asarray(Image.open('PR.jpg'))
             self.log_images(tag="Precision-Recall", images=[PR_fig], step=epoch)
-
+            """
+            
             #Add AUC
             summary = tf.Summary()
             summary.value.add(tag='AUC', simple_value=mean_roc)
