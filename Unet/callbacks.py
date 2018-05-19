@@ -87,10 +87,9 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
-        generator_train = self.training_generator
-        generator_val = self.validation_generator
-        #self.__add_batch_viz(tag="training_batch", generator=generator_train, epoch=epoch)
-        self.__add_batch_viz(tag="validation_batch", generator=generator_val, epoch=epoch)
+
+        self.__add_batch_viz(tag="training_batch", epoch=epoch)
+        self.__add_batch_viz(tag="validation_batch", epoch=epoch)
         self.val_writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
@@ -98,8 +97,10 @@ class TrainValTensorBoard(TensorBoard):
         super(TrainValTensorBoard, self).on_epoch_end(epoch, logs)
 
 
-    def log_images(self, tag, images, step):
+    def log_images(self, tag, images, step, writer=None):
         """Logs a list of images."""
+        if writer is None:
+            writer = self.val_writer
 
         image_summaries = []
         for image_num, image in enumerate(images):
@@ -122,7 +123,7 @@ class TrainValTensorBoard(TensorBoard):
 
         # Create and write Summary
         summary = tf.Summary(value=image_summaries)
-        self.val_writer.add_summary(summary, step)
+        writer.add_summary(summary, step)
 
     def __add_image(self, epoch):
         if self.lesion_patches and self.image_patches:
@@ -146,11 +147,17 @@ class TrainValTensorBoard(TensorBoard):
             self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
 
 
-    def __add_batch_viz(self, tag, generator, epoch):
+    def __add_batch_viz(self, tag, epoch):
         images = []
-        for (image, lesion) in next(generator):
-            shape = image.shape
-            layer = int(image.shape[3]/2)
+        if tag is "training_batch":
+            generator = self.training_generator
+            writer = self.writer
+        else:
+            generator = self.validation_generator
+            writer = self.val_writer
+
+        for image, lesion in next(generator):
+            layer = int(image.shape[2]/2)
             image_layer = image[:, :, layer]
             lesion_layer = lesion[:, :, layer]
             merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
