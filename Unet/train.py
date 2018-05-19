@@ -188,8 +188,9 @@ if __name__ == '__main__':
     batch_size = args.batch_size
 
     # Get patch size
-    input_example = os.listdir(os.path.join(data_path, "train/input"))[0]
-    patch_size = nb.load(os.path.join(data_path,input_example)).get_data().shape
+    path_train = os.path.join(data_path, "train/input")
+    input_example = os.listdir(path_train)[0]
+    patch_size = nb.load(os.path.join(path_train, input_example)).get_data().shape
 
     if(args.skip_blank):
         print("Skipping blank images")
