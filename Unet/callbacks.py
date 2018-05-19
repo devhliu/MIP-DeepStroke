@@ -89,9 +89,7 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
-
-        self.__add_batch_viz(tag="training_batch", epoch=epoch)
-        self.__add_batch_viz(tag="validation_batch", epoch=epoch)
+        self.__add_batch_visualization(epoch)
         self.val_writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
@@ -149,6 +147,25 @@ class TrainValTensorBoard(TensorBoard):
             self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
 
 
+    def __add_batch_visualization(self, epoch):
+        batch = next(self.training_generator)
+        b = next(self.validation_generator)
+        images = []
+        for x, y in zip(batch[0], batch[1]):
+            image = x[0,:,:,:]
+            lesion = y[0,:,:,:]
+            layer = int(image.shape[2] / 2)
+            image_layer = image[:, :, layer]
+            lesion_layer = lesion[:, :, layer]
+            merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+            merged_image[:, :, 0] = lesion_layer
+            merged_image[:, :, 1] = 0
+            merged_image[:, :, 2] = image_layer
+            images.append(merged_image)
+        self.log_images(tag="Batch", images=images, step=epoch)
+
+
+
     def __add_batch_viz(self, tag, epoch):
         images = []
         if tag is "training_batch":
@@ -170,7 +187,7 @@ class TrainValTensorBoard(TensorBoard):
                     merged_image[:, :, 2] = image_layer
                     images.append(merged_image)
 
-                self.log_images(tag=tag, images=images, step=epoch)
+                self.log_images(tag=tag, images=images, step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:
