@@ -93,7 +93,7 @@ class TrainValTensorBoard(TensorBoard):
         if self.training_generator:
             self.__add_batch_visualization(self.training_generator, epoch, training=True)
         if self.validation_generator:
-            self.__add_batch_visualization(self.validation_generator, epoch, training=True)
+            self.__add_batch_visualization(self.validation_generator, epoch, training=False)
 
         self.val_writer.flush()
 
