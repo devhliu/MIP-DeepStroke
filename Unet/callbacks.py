@@ -155,17 +155,20 @@ class TrainValTensorBoard(TensorBoard):
         else:
             generator = self.validation_generator
             writer = self.val_writer
+        if generator:
+            for batch in next(generator):
+                images_x = batch[0]
+                lesions_y = batch[1]
+                for image, lesion in zip(images_x,lesions_y):
+                    layer = int(image.shape[2]/2)
+                    image_layer = image[:, :, layer]
+                    lesion_layer = lesion[:, :, layer]
+                    merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+                    merged_image[:, :, 0] = lesion_layer
+                    merged_image[:, :, 2] = image_layer
+                    images.append(merged_image)
 
-        for image, lesion in next(generator):
-            layer = int(image.shape[2]/2)
-            image_layer = image[:, :, layer]
-            lesion_layer = lesion[:, :, layer]
-            merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
-            merged_image[:, :, 0] = lesion_layer
-            merged_image[:, :, 2] = image_layer
-            images.append(merged_image)
-
-            self.log_images(tag=tag, images=images, step=epoch)
+                self.log_images(tag=tag, images=images, step=epoch)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:
