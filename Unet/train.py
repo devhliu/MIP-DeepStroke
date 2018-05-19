@@ -87,9 +87,6 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
 
-    a = next(training_generator)
-    b = next(validation_generator)
-
     dataset_training_size = len(os.listdir(os.path.join(data_path, "train/input")))
     dataset_val_size = len(os.listdir(os.path.join(data_path, "validation/input")))
 
@@ -99,19 +96,19 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
 
         # load image and lesion
-        #patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031836/t01/"
-        #image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
-        #lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
+        patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031836/t01/"
+        image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
+        lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
         layer = 100
 
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
-                                                   #image=image,
-                                                   #lesion=lesion,
+                                                   image=image,
+                                                   lesion=lesion,
                                                    layer=layer,
                                                    patch_size=patch_size,
                                                    training_generator=training_generator,
                                                    validation_generator=validation_generator,
-                                                   validation_steps=3,#int(dataset_val_size/batch_size),
+                                                   validation_steps= int(dataset_val_size/batch_size),
                                                    verbose=1,
                                                    histogram_freq=0,
                                                    batch_size=batch_size,

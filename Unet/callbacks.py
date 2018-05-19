@@ -89,7 +89,12 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
-        self.__add_batch_visualization(epoch)
+
+        if self.training_generator:
+            self.__add_batch_visualization(self.training_generator, epoch, training=True)
+        if self.validation_generator:
+            self.__add_batch_visualization(self.validation_generator, epoch, training=True)
+
         self.val_writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
@@ -136,29 +141,29 @@ class TrainValTensorBoard(TensorBoard):
 
             # RGB
             merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
-            merged_image[:, :, 0] = pred_image
-            merged_image[:, :, 1] = image_original
-            merged_image[:, :, 2] = lesion_original
+            merged_image[:, :, 0] = lesion_original
+            merged_image[:, :, 1] = pred_image
+            merged_image[:, :, 2] = image_original
 
             #pred_tensor = tf.convert_to_tensor(pred_image.reshape(1, pred_image.shape[0], pred_image.shape[1], 1))
             #image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
             #lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
-            self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
+            self.log_images(tag="Prediction example", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
 
 
     def __merge_images(self, images):
         # Create merged image
         nb_images = len(images)
-        square = np.ceil(np.sqrt(nb_images))
+        square = int(np.ceil(np.sqrt(nb_images)))
         im_shape = images[0].shape
-        while len(images) != square:
+        while len(images) < square**2:
             # add blank images to obtain a square
             blank_image = np.zeros(im_shape)
             blank_image[:, :, 1] = 1
             images.append(blank_image)
 
-        merged_image = np.zeros(square*im_shape[0], square*im_shape[1], im_shape[2])
+        merged_image = np.zeros([square*im_shape[0], square*im_shape[1], im_shape[2]])
         for i in range(0, square):
             for j in range(0, square):
                 idx = i*im_shape[0]
@@ -168,10 +173,16 @@ class TrainValTensorBoard(TensorBoard):
         return merged_image
 
 
-    def __add_batch_visualization(self, epoch):
-        batch = next(self.training_generator)
-        b = next(self.validation_generator)
+    def __add_batch_visualization(self, generator, epoch, training=True):
+        batch = next(generator)
         images = []
+        if training:
+            t = "training"
+            writer = self.writer
+        else:
+            writer = self.val_writer
+            t = "validation"
+
         for x, y in zip(batch[0], batch[1]):
             image = x[0,:,:,:]
             lesion = y[0,:,:,:]
@@ -186,34 +197,7 @@ class TrainValTensorBoard(TensorBoard):
 
         image_merged = self.__merge_images(images)
 
-        self.log_images(tag="Batch", images=[image_merged], step=epoch)
-
-
-
-    def __add_batch_viz(self, tag, epoch):
-        images = []
-        if tag is "training_batch":
-            generator = self.training_generator
-            writer = self.writer
-        else:
-            generator = self.validation_generator
-            writer = self.val_writer
-        if generator:
-            for batch in next(generator):
-                images_x = batch[0]
-                lesions_y = batch[1]
-                for image, lesion in zip(images_x,lesions_y):
-                    layer = int(image.shape[2]/2)
-                    image_layer = image[:, :, layer]
-                    lesion_layer = lesion[:, :, layer]
-                    merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
-                    merged_image[:, :, 0] = lesion_layer
-                    merged_image[:, :, 2] = image_layer
-                    images.append(merged_image)
-
-
-
-                self.log_images(tag=tag, images=images, step=epoch, writer=writer)
+        self.log_images(tag="batch {}".format(t), images=[image_merged], step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:
