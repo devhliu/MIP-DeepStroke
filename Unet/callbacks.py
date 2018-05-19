@@ -21,38 +21,9 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 
-class roc_callback(Callback):
-    def __init__(self, training_data, validation_data):
-        self.x = training_data[0]
-        self.y = training_data[1]
-        self.x_val = validation_data[0]
-        self.y_val = validation_data[1]
-
-    def on_train_begin(self, logs={}):
-        return
-
-    def on_train_end(self, logs={}):
-        return
-
-    def on_epoch_begin(self, epoch, logs={}):
-        return
-
-    def on_epoch_end(self, epoch, logs={}):
-        y_pred = self.model.predict(self.x)
-        roc = roc_auc_score(self.y, y_pred)
-        y_pred_val = self.model.predict(self.x_val)
-        roc_val = roc_auc_score(self.y_val, y_pred_val)
-        print('\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc, 4)), str(round(roc_val,4))),end=100*' '+'\n')
-        return
-
-    def on_batch_begin(self, batch, logs={}):
-        return
-
-    def on_batch_end(self, batch, logs={}):
-        return
 
 class TrainValTensorBoard(TensorBoard):
-    def __init__(self, image=None, lesion=None, patch_size=None, layer=None,  training_data=None, validation_data=None, validation_steps=None,
+    def __init__(self, image=None, lesion=None, patch_size=None, layer=None,  training_generator=None, validation_generator=None, validation_steps=None,
                  verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
@@ -64,9 +35,9 @@ class TrainValTensorBoard(TensorBoard):
         # Get PR Curve
         self.pr_curve = kwargs.pop('pr_curve', True)
         self.initialized = False
-        self.validation_data = validation_data
+        self.validation_generator = validation_generator
         self.validation_steps = validation_steps
-        self.training_data = training_data
+        self.training_generator = training_generator
 
         # Image
         if image is not None:
@@ -116,8 +87,8 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
-        generator_train = self.training_data
-        generator_val = self.validation_data
+        generator_train = self.training_generator
+        generator_val = self.validation_generator
         self.__add_batch_viz(tag="training_batch", generator=generator_train, epoch=epoch)
         self.__add_batch_viz(tag="validation_batch", generator=generator_val, epoch=epoch)
         self.val_writer.flush()
@@ -177,24 +148,20 @@ class TrainValTensorBoard(TensorBoard):
 
     def __add_batch_viz(self, tag, generator, epoch):
         images = []
+        for (image, lesion) in next(generator):
+            shape = image.shape
+            layer = int(image.shape[3]/2)
+            image_layer = image[:, :, layer]
+            lesion_layer = lesion[:, :, layer]
+            merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+            merged_image[:, :, 0] = lesion_layer
+            merged_image[:, :, 2] = image_layer
+            images.append(merged_image)
 
-        for batch in next(generator):
-            print("batch is")
-            print(batch)
-            for image, lesion in batch:
-                shape = image.shape
-                layer = int(image.shape[3]/2)
-                image_layer = image[:, :, layer]
-                lesion_layer = lesion[:, :, layer]
-                merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
-                merged_image[:, :, 0] = lesion_layer
-                merged_image[:, :, 2] = image_layer
-                images.append(merged_image)
-
-                self.log_images(tag=tag, images=images, step=epoch)
+            self.log_images(tag=tag, images=images, step=epoch)
 
     def __add_pr_curve(self, epoch):
-        if self.pr_curve and self.validation_data:
+        if self.pr_curve and self.validation_generator:
             if self.validation_steps is None:
                 raise Exception("Please provide validation_step argument")
             # Get the tensors again.
@@ -204,7 +171,7 @@ class TrainValTensorBoard(TensorBoard):
             mean_precision = []
             mean_recall = []
 
-            generator = self.validation_data
+            generator = self.validation_generator
             for b in tqdm(range(self.validation_steps)):
                 x,y = next(generator)
 
