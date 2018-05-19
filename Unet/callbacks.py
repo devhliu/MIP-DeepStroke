@@ -175,17 +175,20 @@ class TrainValTensorBoard(TensorBoard):
 
     def __add_batch_viz(self, tag, generator, epoch):
         images = []
-        for image, lesion in next(generator):
-            shape = image.shape
-            layer = int(image.shape[3]/2)
-            image_layer = image[:, :, layer]
-            lesion_layer = lesion[:, :, layer]
-            merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
-            merged_image[:, :, 0] = lesion_layer
-            merged_image[:, :, 2] = image_layer
-            images.append(merged_image)
+        print(next(generator))
 
-            self.log_images(tag=tag, images=images, step=epoch)
+        for batch in next(generator):
+            for image, lesion in batch:
+                shape = image.shape
+                layer = int(image.shape[3]/2)
+                image_layer = image[:, :, layer]
+                lesion_layer = lesion[:, :, layer]
+                merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+                merged_image[:, :, 0] = lesion_layer
+                merged_image[:, :, 2] = image_layer
+                images.append(merged_image)
+
+                self.log_images(tag=tag, images=images, step=epoch)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
@@ -200,16 +203,17 @@ class TrainValTensorBoard(TensorBoard):
 
             generator = self.validation_data
             for b in tqdm(range(self.validation_steps)):
-                x, y = next(generator)
-                pred_batch = self.model.predict_on_batch(y)
+                batch = next(generator)
+                for x,y in batch:
+                    pred_batch = self.model.predict_on_batch(y)
 
-                if len(np.unique(y)) > 1:
-                    roc = roc_auc_score(y.flatten(), pred_batch.flatten())
-                    mean_roc.append(roc)
+                    if len(np.unique(y)) > 1:
+                        roc = roc_auc_score(y.flatten(), pred_batch.flatten())
+                        mean_roc.append(roc)
 
-                #precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
-                #mean_precision.append(precision)
-                #mean_recall.append(recall)
+                    #precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
+                    #mean_precision.append(precision)
+                    #mean_recall.append(recall)
 
             #mean_recall = np.mean(mean_recall, axis=0)
             #mean_precision = np.mean(mean_precision, axis=0)
