@@ -156,21 +156,23 @@ class TrainValTensorBoard(TensorBoard):
         # Create merged image
         nb_images = len(images)
         square = int(np.ceil(np.sqrt(nb_images)))
-        im_shape = images[0].shape
-        while len(images) < square**2:
-            # add blank images to obtain a square
-            blank_image = np.zeros(im_shape)
-            blank_image[:, :, 1] = 1
-            images.append(blank_image)
+        if nb_images > 0:
+            im_shape = images[0].shape
+            while len(images) < square**2:
+                # add blank images to obtain a square
+                blank_image = np.zeros(im_shape)
+                blank_image[:, :, 1] = 1
+                images.append(blank_image)
 
-        merged_image = np.zeros([square*im_shape[0], square*im_shape[1], im_shape[2]])
-        for i in range(0, square):
-            for j in range(0, square):
-                idx = i*im_shape[0]
-                idy = j*im_shape[1]
-                merged_image[idx:idx+im_shape[0], idy:idy+im_shape[1], :] = images[i*square+j]
+            merged_image = np.zeros([square*im_shape[0], square*im_shape[1], im_shape[2]])
+            for i in range(0, square):
+                for j in range(0, square):
+                    idx = i*im_shape[0]
+                    idy = j*im_shape[1]
+                    merged_image[idx:idx+im_shape[0], idy:idy+im_shape[1], :] = images[i*square+j]
 
-        return merged_image
+            return merged_image
+        return None
 
 
     def __add_batch_visualization(self, generator, epoch, training=True):
@@ -199,9 +201,10 @@ class TrainValTensorBoard(TensorBoard):
         list_merged_images = []
         for i in range(0, len(images)+images_per_log, images_per_log):
             image_merged = self.__merge_images(images[:i])
-            list_merged_images.append(image_merged)
-
-        self.log_images(tag="batch {}".format(t), images=list_merged_images, step=epoch, writer=writer)
+            if image_merged is not None:
+                list_merged_images.append(image_merged)
+        if len(list_merged_images)>0:
+            self.log_images(tag="batch {}".format(t), images=list_merged_images, step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:
