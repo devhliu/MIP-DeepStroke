@@ -40,9 +40,12 @@ def predict(image, model, patch_size, verbose=0):
     image_norm = normalize_numpy(image)
     image_patches = create_patches_from_images(image_norm, patch_size)
     # Extend with channel
-    image_patches = [x.reshape(1, 32, 32, 32) for x in image_patches]
+    image_patches = [x.reshape(1, patch_size[0], patch_size[1], patch_size[2]) for x in image_patches]
+    try:
+        predictions = model.predict(np.asarray(image_patches), batch_size=32, verbose=verbose)[:, 0, :, :, :]
+    except: # Not enough memory : switch to mono prediction
+        predictions = model.predict(np.asarray(image_patches), batch_size=1, verbose=verbose)[:, 0, :, :, :]
 
-    predictions = model.predict(np.asarray(image_patches), batch_size=32, verbose=verbose)[:, 0, :, :, :]
     predicted_image = recreate_image_from_patches(original_image_size=original_image_size, list_patches=predictions)
     return predicted_image
 

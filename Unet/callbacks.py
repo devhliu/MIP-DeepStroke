@@ -176,9 +176,13 @@ class TrainValTensorBoard(TensorBoard):
     def __add_batch_viz(self, tag, generator, epoch):
         images = []
         for image, lesion in next(generator):
-            merged_image = np.zeros([image.shape[0], image.shape[1], 3])
-            merged_image[:, :, 0] = lesion
-            merged_image[:, :, 2] = image
+            shape = image.shape
+            layer = int(image.shape[3]/2)
+            image_layer = image[:, :, layer]
+            lesion_layer = lesion[:, :, layer]
+            merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+            merged_image[:, :, 0] = lesion_layer
+            merged_image[:, :, 2] = image_layer
             images.append(merged_image)
 
             self.log_images(tag=tag, images=images, step=epoch)
