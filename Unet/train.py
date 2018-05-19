@@ -97,14 +97,14 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
 
         # load image and lesion
-        patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031836/t01/"
-        image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
-        lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
+        #patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031836/t01/"
+        #image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
+        #lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
         layer = 100
 
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
-                                                   image=image,
-                                                   lesion=lesion,
+                                                   #image=image,
+                                                   #lesion=lesion,
                                                    layer=layer,
                                                    patch_size=patch_size,
                                                    training_generator=training_generator,

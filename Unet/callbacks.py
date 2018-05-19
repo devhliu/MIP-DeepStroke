@@ -38,6 +38,8 @@ class TrainValTensorBoard(TensorBoard):
         self.validation_generator = validation_generator
         self.validation_steps = validation_steps
         self.training_generator = training_generator
+        self.lesion_patches = None
+        self.image_patches = None
 
         # Image
         if image is not None:
