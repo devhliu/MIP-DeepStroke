@@ -54,13 +54,12 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
 def dual_generator(input_directory, target_directory, batch_size, skip_blank=False):
     while True:
         image_paths = os.listdir(input_directory)
-        target_paths = os.listdir(target_directory)
-        paths = list(zip(image_paths, target_paths))
 
         x_list = []
         y_list = []
-        for i in range(len(paths)):
-            input_path, target_path = paths[i]
+        for i in range(len(image_paths)):
+            input_path = image_paths[i]
+            target_path = image_paths[i].replace("input", "mask")
 
             image = nb.load(os.path.join(input_directory, input_path)).get_data()
             target = nb.load(os.path.join(target_directory, target_path)).get_data()

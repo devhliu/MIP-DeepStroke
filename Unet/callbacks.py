@@ -147,6 +147,27 @@ class TrainValTensorBoard(TensorBoard):
             self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
 
 
+    def __merge_images(self, images):
+        # Create merged image
+        nb_images = len(images)
+        square = np.ceil(np.sqrt(nb_images))
+        im_shape = images[0].shape
+        while len(images) != square:
+            # add blank images to obtain a square
+            blank_image = np.zeros(im_shape)
+            blank_image[:, :, 1] = 1
+            images.append(blank_image)
+
+        merged_image = np.zeros(square*im_shape[0], square*im_shape[1], im_shape[2])
+        for i in range(0, square):
+            for j in range(0, square):
+                idx = i*im_shape[0]
+                idy = j*im_shape[1]
+                merged_image[idx:idx+im_shape[0], idy:idy+im_shape[1], :] = images[i*square+j]
+
+        return merged_image
+
+
     def __add_batch_visualization(self, epoch):
         batch = next(self.training_generator)
         b = next(self.validation_generator)
@@ -162,7 +183,10 @@ class TrainValTensorBoard(TensorBoard):
             merged_image[:, :, 1] = 0
             merged_image[:, :, 2] = image_layer
             images.append(merged_image)
-        self.log_images(tag="Batch", images=images, step=epoch)
+
+        image_merged = self.__merge_images(images)
+
+        self.log_images(tag="Batch", images=[image_merged], step=epoch)
 
 
 
@@ -186,6 +210,8 @@ class TrainValTensorBoard(TensorBoard):
                     merged_image[:, :, 0] = lesion_layer
                     merged_image[:, :, 2] = image_layer
                     images.append(merged_image)
+
+
 
                 self.log_images(tag=tag, images=images, step=epoch, writer=writer)
 
