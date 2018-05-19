@@ -195,9 +195,13 @@ class TrainValTensorBoard(TensorBoard):
             merged_image[:, :, 2] = image_layer
             images.append(merged_image)
 
-        image_merged = self.__merge_images(images)
+        images_per_log = 16
+        list_merged_images = []
+        for i in range(0, len(images)+images_per_log, images_per_log):
+            image_merged = self.__merge_images(images[:i])
+            list_merged_images.append(image_merged)
 
-        self.log_images(tag="batch {}".format(t), images=[image_merged], step=epoch, writer=writer)
+        self.log_images(tag="batch {}".format(t), images=list_merged_images, step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:
