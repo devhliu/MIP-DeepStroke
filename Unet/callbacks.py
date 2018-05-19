@@ -52,7 +52,7 @@ class roc_callback(Callback):
         return
 
 class TrainValTensorBoard(TensorBoard):
-    def __init__(self, image=None, lesion=None, patch_size=None, layer=None, validation_data=None, validation_steps=None,
+    def __init__(self, image=None, lesion=None, patch_size=None, layer=None,  training_data=None, validation_data=None, validation_steps=None,
                  verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
@@ -66,6 +66,7 @@ class TrainValTensorBoard(TensorBoard):
         self.initialized = False
         self.validation_data = validation_data
         self.validation_steps = validation_steps
+        self.training_data = training_data
 
         # Image
         if image is not None:
@@ -115,6 +116,8 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
+        self.__add_batch_viz("training_batch", self.training_data, epoch)
+        self.__add_batch_viz("validation_batch", self.validation_data, epoch)
         self.val_writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
@@ -168,6 +171,17 @@ class TrainValTensorBoard(TensorBoard):
             #lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
 
             self.log_images(tag="prediction", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
+
+
+    def __add_batch_viz(self, tag, generator, epoch):
+        images = []
+        for image, lesion in next(generator):
+            merged_image = np.zeros([image.shape[0], image.shape[1], 3])
+            merged_image[:, :, 0] = lesion
+            merged_image[:, :, 2] = image
+            images.append(merged_image)
+
+            self.log_images(tag=tag, images=images, step=epoch)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_data:
