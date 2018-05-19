@@ -175,9 +175,10 @@ class TrainValTensorBoard(TensorBoard):
 
     def __add_batch_viz(self, tag, generator, epoch):
         images = []
-        print(next(generator))
 
         for batch in next(generator):
+            print("batch is")
+            print(batch)
             for image, lesion in batch:
                 shape = image.shape
                 layer = int(image.shape[3]/2)
@@ -203,13 +204,13 @@ class TrainValTensorBoard(TensorBoard):
 
             generator = self.validation_data
             for b in tqdm(range(self.validation_steps)):
-                batch = next(generator)
-                for x,y in batch:
-                    pred_batch = self.model.predict_on_batch(y)
+                x,y = next(generator)
 
-                    if len(np.unique(y)) > 1:
-                        roc = roc_auc_score(y.flatten(), pred_batch.flatten())
-                        mean_roc.append(roc)
+                pred_batch = self.model.predict_on_batch(y)
+
+                if len(np.unique(y)) > 1:
+                    roc = roc_auc_score(y.flatten(), pred_batch.flatten())
+                    mean_roc.append(roc)
 
                     #precision, recall, _ = precision_recall_curve(y.flatten(), pred_batch.flatten())
                     #mean_precision.append(precision)
