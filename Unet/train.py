@@ -189,10 +189,11 @@ if __name__ == '__main__':
 
     # Get patch size
     input_example = os.listdir(os.path.join(data_path, "train/input"))[0]
-    patch_size = nb.load(input_example).get_data().shape
+    patch_size = nb.load(os.path.join(data_path,input_example)).get_data().shape
 
     if(args.skip_blank):
         print("Skipping blank images")
+    print("Patch size detected : {}".format(patch_size))
 
     metrics = [
                weighted_dice_coefficient_loss,
