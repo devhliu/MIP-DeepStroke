@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
-from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss
+from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss
 from keras.metrics import binary_crossentropy, binary_accuracy
 import tensorflow as tf
 
@@ -188,7 +188,7 @@ if __name__ == '__main__':
                'mse',
                ]
 
-    loss_function = dice_coefficient
+    loss_function = dice_coefficient_loss
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
