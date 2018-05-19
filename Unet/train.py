@@ -123,6 +123,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    lesion=lesion,
                                                    layer=layer,
                                                    patch_size=patch_size,
+                                                   training_data=training_generator,
                                                    validation_data=validation_generator,
                                                    validation_steps=int(dataset_val_size/batch_size),
                                                    verbose=1,
