@@ -180,13 +180,16 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
-    parser.add_argument("-p", "--patch_size", type=int, help="Patch size per dimension", default=32)
 
     args = parser.parse_args()
     data_path = args.data_path
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
     batch_size = args.batch_size
-    patch_size = (args.patch_size,args.patch_size,args.patch_size)
+
+    # Get patch size
+    input_example = os.listdir(os.path.join(data_path, "train/input"))[0]
+    patch_size = nb.load(input_example).get_data().shape
+
     if(args.skip_blank):
         print("Skipping blank images")
 
