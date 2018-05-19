@@ -51,22 +51,6 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
     return train_generator, validation_generator
 
 
-def generator(from_directory, batch_size, skip_blank=True):
-    while True:
-        image_path = os.listdir(from_directory)
-        for cbatch in range(0, len(image_path), batch_size):
-            images = []
-            for path in image_path[cbatch:(cbatch + batch_size)]:
-                image = nb.load(os.path.join(from_directory, path)).get_data().reshape(1, 32, 32, 32)
-
-                if not (np.all(image == 0) and skip_blank):
-                    images.append(image)
-
-            images = np.array(images)
-
-            yield images
-
-
 def dual_generator(input_directory, target_directory, batch_size, skip_blank=False):
     while True:
         image_paths = os.listdir(input_directory)
@@ -123,7 +107,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    lesion=lesion,
                                                    layer=layer,
                                                    patch_size=patch_size,
-                                                   train_generator=training_generator,
+                                                   training_generator=training_generator,
                                                    validation_generator=validation_generator,
                                                    validation_steps=int(dataset_val_size/batch_size),
                                                    verbose=1,

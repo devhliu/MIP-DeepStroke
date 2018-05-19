@@ -89,7 +89,7 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_image(epoch)
         generator_train = self.training_generator
         generator_val = self.validation_generator
-        self.__add_batch_viz(tag="training_batch", generator=generator_train, epoch=epoch)
+        #self.__add_batch_viz(tag="training_batch", generator=generator_train, epoch=epoch)
         self.__add_batch_viz(tag="validation_batch", generator=generator_val, epoch=epoch)
         self.val_writer.flush()
 
