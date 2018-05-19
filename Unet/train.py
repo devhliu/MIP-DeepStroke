@@ -100,14 +100,15 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
         lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
         layer = 100
-
+        training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
+                                                                     skip_blank=skip_blank)
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
                                                    image=image,
                                                    lesion=lesion,
                                                    layer=layer,
                                                    patch_size=patch_size,
-                                                   training_generator=training_generator,
-                                                   validation_generator=validation_generator,
+                                                   training_generator=training_generator_log,
+                                                   validation_generator=validation_generator_log,
                                                    validation_steps= int(dataset_val_size/batch_size),
                                                    verbose=1,
                                                    histogram_freq=0,
