@@ -116,8 +116,10 @@ class TrainValTensorBoard(TensorBoard):
         self.__add_pr_curve(epoch)
         # add image
         self.__add_image(epoch)
-        self.__add_batch_viz("training_batch", self.training_data, epoch)
-        self.__add_batch_viz("validation_batch", self.validation_data, epoch)
+        generator_train = self.training_data
+        generator_val = self.validation_data
+        self.__add_batch_viz(tag="training_batch", generator=generator_train, epoch=epoch)
+        self.__add_batch_viz(tag="validation_batch", generator=generator_val, epoch=epoch)
         self.val_writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
