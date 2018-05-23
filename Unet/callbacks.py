@@ -20,6 +20,7 @@ from keras.callbacks import Callback
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
+import keras.backend as K
 
 
 class TrainValTensorBoard(TensorBoard):
@@ -97,10 +98,19 @@ class TrainValTensorBoard(TensorBoard):
 
         self.val_writer.flush()
 
+        # Log learning rate
+        self.__log_lr(epoch)
+
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
         logs = {k: v for k, v in logs.items() if not k.startswith('val_')}
         super(TrainValTensorBoard, self).on_epoch_end(epoch, logs)
 
+    def __log_lr(self, epoch, logs=None):
+        summary = tf.Summary()
+        summary_value = summary.value.add()
+        summary_value.simple_value = K.eval(self.model.optimizer.lr)
+        summary_value.tag="LR"
+        self.writer.add_summary(summary, epoch)
 
     def log_images(self, tag, images, step, writer=None):
         """Logs a list of images."""
@@ -141,6 +151,7 @@ class TrainValTensorBoard(TensorBoard):
 
             # RGB
             merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
+            print("Prediction minimum is : {}, max is {}.".format(pred_image.min(), pred_image.max()))
             merged_image[:, :, 0] = lesion_original
             merged_image[:, :, 1] = pred_image
             merged_image[:, :, 2] = image_original
