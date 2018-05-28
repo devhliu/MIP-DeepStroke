@@ -15,6 +15,7 @@ from tensorflow.python.client import device_lib
 import keras
 from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss
 from keras.metrics import binary_crossentropy, binary_accuracy
+from create_datasets import load_data_for_patient
 import tensorflow as tf
 
 config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 6} )
@@ -35,43 +36,39 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
-    # train_generator = zip(generator(os.path.join(train_path, "inputs"), batch_size=batch_size, skip_blank=skip_blank),
-    # (generator(os.path.join(train_path, "masks"), batch_size=batch_size, skip_blank=skip_blank)))
+    train_generator = dual_generator(train_path, ["CBF","CBV","MTT","Tmax"], ["lesion"], batch_size=batch_size, skip_blank=skip_blank)
 
-    # validation_generator = zip(generator(os.path.join(validation_path, "inputs"), batch_size=batch_size,
-    # skip_blank=skip_blank),
-    # (generator(os.path.join(validation_path, "masks"), batch_size=batch_size, skip_blank=skip_blank)))
-
-    train_generator = dual_generator(os.path.join(train_path, "input"), os.path.join(train_path, "mask"),
-                                     batch_size=batch_size, skip_blank=skip_blank)
-
-    validation_generator = dual_generator(os.path.join(validation_path, "input"), os.path.join(validation_path, "mask"),
-                                          batch_size=batch_size, skip_blank=skip_blank)
+    validation_generator = dual_generator(validation_path, ["CBF","CBV","MTT","Tmax"], ["lesion"], batch_size=batch_size, skip_blank=skip_blank)
 
     return train_generator, validation_generator
 
 
-def dual_generator(input_directory, target_directory, batch_size, skip_blank=False):
+def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False):
     while True:
-        image_paths = os.listdir(input_directory)
+        example_dir = os.path.join(data_directory, folders_input[0])
+        image_paths = os.listdir(example_dir)
 
         x_list = []
         y_list = []
-        for i in range(len(image_paths)):
-            input_path = image_paths[i]
-            target_path = image_paths[i].replace("input", "mask")
+        for i in range(len(image_paths))
 
-            image = nb.load(os.path.join(input_directory, input_path)).get_data()
-            target = nb.load(os.path.join(target_directory, target_path)).get_data()
+            inputs = []
+            for x in folders_input:
+                image_path = image_paths[i].replace(folders_input[0], x)
+                image_input = nb.load(os.path.join(data_directory, x, image_path)).get_data()
+                inputs.append(image_input)
 
-            shape = image.shape
-            reshape_size = (1, shape[0], shape[1], shape[2])
-            image = image.reshape(reshape_size)
-            target = target.reshape(reshape_size)
+            targets = []
+            for y in folders_target:
+                target_path = image_paths[i].replace(folders_input[0], y)
+                image_target = nb.load(os.path.join(data_directory, y, target_path)).get_data()
+                targets.append(image_target)
 
-            if not (np.all(image == 0) and skip_blank):
-                x_list.append(image)
-                y_list.append(target)
+            image_target = targets[0] # Check label in only one target
+
+            if not (np.all(image_target == 0) and skip_blank):
+                x_list.append(inputs)
+                y_list.append(targets)
 
             if len(x_list) == batch_size:
                 x_list_batch = np.array(x_list)
@@ -80,7 +77,6 @@ def dual_generator(input_directory, target_directory, batch_size, skip_blank=Fal
                 y_list = []
 
                 yield x_list_batch, y_list_batch
-
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
 
@@ -94,18 +90,19 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     if logdir is not None:
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
-
         # load image and lesion
-        patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031836/t01/"
-        image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
-        lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
-        layer = 100
+        patient_path = "/home/klug/data/preprocessed_original/33723/"
+        MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
+        images_input = [CBF,CBV,MTT,Tmax]
+        images_target = [lesion]
+        layer = int(MTT.shape[2]/2.0)
+        layers = [layer-4, layer, layer+4]
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank)
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
-                                                   image=image,
-                                                   lesion=lesion,
-                                                   layer=layer,
+                                                   images=images_input,
+                                                   lesions=images_target,
+                                                   layers=layers,
                                                    patch_size=patch_size,
                                                    training_generator=training_generator_log,
                                                    validation_generator=validation_generator_log,
@@ -161,7 +158,7 @@ if __name__ == '__main__':
                         default="/home/simon/")
 
     parser.add_argument("-d", "--data_path", help="Path to data folder",
-                        default="/home/simon/Datasets/Data/32x32x32")
+                        default="/home/simon/Datasets/HUG/32x32x32")
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
@@ -190,8 +187,9 @@ if __name__ == '__main__':
 
     loss_function = dice_coefficient_loss
 
-    model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
+    model = unet_model_3d([4, patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
+                          n_base_filters=16,
                           depth=3,
                           batch_normalization=False,
                           metrics=metrics,

@@ -24,7 +24,7 @@ import keras.backend as K
 
 
 class TrainValTensorBoard(TensorBoard):
-    def __init__(self, image=None, lesion=None, patch_size=None, layer=None,  training_generator=None, validation_generator=None, validation_steps=None,
+    def __init__(self, images=None, lesions=None, patch_size=None, layers=None,  training_generator=None, validation_generator=None, validation_steps=None,
                  verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
@@ -43,16 +43,17 @@ class TrainValTensorBoard(TensorBoard):
         self.image_patches = None
 
         # Image
-        if image is not None:
-            if lesion is None or patch_size is None or layer is None:
+        if images is not None:
+            if lesions is None or patch_size is None or layers is None:
                 raise Exception("Please provide the following : \'image\',\'lesion\',\'patch_size\',\'layer\'")
-            self.image = normalize_numpy(image)
-            self.lesion = normalize_numpy(lesion)
-            self.lesion_patches = create_patches_from_images(image, patch_size)
-            self.image_patches = create_patches_from_images(lesion, patch_size)
-            self.layer = layer
-            self.patch_size = patch_size
-            self.verbose = verbose
+            for image in images:
+                self.image = normalize_numpy(image)
+                #self.lesion = normalize_numpy(lesion)
+                self.lesion_patches = create_patches_from_images(image, patch_size)
+                #self.image_patches = create_patches_from_images(lesion, patch_size)
+                #self.layer = layer
+                self.patch_size = patch_size
+                self.verbose = verbose
 
     def set_model(self, model):
         # Setup writer for validation metrics
