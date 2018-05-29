@@ -52,7 +52,7 @@ def predict(images, model, patch_size, verbose=0):
     for p in range(len(patch_by_channel[0])):
         channel_patch = []
         for c in range(len(images)):
-            channel_patch.append(patch_by_channel[c, p, :, :, :])
+            channel_patch.append(patch_by_channel[c][p])
         patch_tensor.append(channel_patch)
 
     try:

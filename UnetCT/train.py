@@ -43,7 +43,7 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
     return train_generator, validation_generator
 
 
-def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False):
+def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile="/home/logs.txt"):
     while True:
         example_dir = os.path.join(data_directory, folders_input[0])
         image_paths = os.listdir(example_dir)
@@ -53,16 +53,24 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
         for i in range(len(image_paths)):
 
             inputs = []
+            inputs_paths = []
             for x in folders_input:
                 image_path = image_paths[i].replace(folders_input[0], x)
                 image_input = nb.load(os.path.join(data_directory, x, image_path)).get_data()
                 inputs.append(image_input)
+                inputs_paths.append(image_path)
 
             targets = []
+            targets_paths = []
             for y in folders_target:
                 target_path = image_paths[i].replace(folders_input[0], y)
                 image_target = nb.load(os.path.join(data_directory, y, target_path)).get_data()
                 targets.append(image_target)
+                targets_paths.append(target_path)
+
+            with open(logfile, "a") as f:
+                paths = inputs_paths+targets_paths
+                f.write("{} - {}".format(i, paths))
 
             image_target = targets[0] # Check label in only one target
 
@@ -91,7 +99,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # load image and lesion
-        patient_path = "/home/klug/data/preprocessed_original/33723/"
+        patient_path = "/home/klug/data/preprocessed_original/33723"
         MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
         images_input = [CBF,CBV,MTT,Tmax]
         images_target = [lesion]

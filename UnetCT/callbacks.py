@@ -202,10 +202,10 @@ class TrainValTensorBoard(TensorBoard):
             writer = self.val_writer
             t = "validation"
 
-        for c in batch[0].shape[0]:
+        for c in range(batch[0].shape[1]):
             for x, y in zip(batch[0], batch[1]):
                 image = x[c, :, :, :]
-                lesion = y[c, :, :, :]
+                lesion = y[0, :, :, :]
                 layer = int(image.shape[2] / 2)
                 image_layer = image[:, :, layer]
                 lesion_layer = lesion[:, :, layer]
