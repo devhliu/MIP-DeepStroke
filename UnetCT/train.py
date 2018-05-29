@@ -43,7 +43,7 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
     return train_generator, validation_generator
 
 
-def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile="/home/logs.txt"):
+def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile=None):
     while True:
         example_dir = os.path.join(data_directory, folders_input[0])
         image_paths = os.listdir(example_dir)
@@ -67,10 +67,10 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                 image_target = nb.load(os.path.join(data_directory, y, target_path)).get_data()
                 targets.append(image_target)
                 targets_paths.append(target_path)
-
-            with open(logfile, "a") as f:
-                paths = inputs_paths+targets_paths
-                f.write("{} - {}".format(i, paths))
+            if logfile:
+                with open(logfile, "a") as f:
+                    paths = inputs_paths+targets_paths
+                    f.write("{} - {}".format(i, paths))
 
             image_target = targets[0] # Check label in only one target
 
