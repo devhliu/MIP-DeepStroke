@@ -46,6 +46,7 @@ class TrainValTensorBoard(TensorBoard):
         if images and not isinstance(images, list):
             images = [images]
         self.images = [preprocess_image(x) for x in images]
+        print(len(images))
         if lesions and not isinstance(lesions, list):
             lesions = [lesions]
         self.lesions = [preprocess_image(x) for x in lesions]
@@ -90,7 +91,7 @@ class TrainValTensorBoard(TensorBoard):
         # Add PR Curve
         self.__add_pr_curve(epoch)
         # add image
-        self.__add_image(epoch)
+        self.__log_example_image(epoch)
 
         if self.training_generator:
             self.__add_batch_visualization(self.training_generator, epoch, training=True)

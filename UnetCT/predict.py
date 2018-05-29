@@ -41,17 +41,24 @@ def predict(images, model, patch_size, verbose=0):
 
     original_image_size = images[0].shape
 
-    channel_patches = []
+    patch_by_channel = []
     for image in images:
         image_norm = preprocess_image(image)
         image_patches = create_patches_from_images(image_norm, patch_size)
+        patch_by_channel.append(image_patches)
 
-        channel_patches.append(image_patches)
+    # Reshape tensor
+    patch_tensor = []
+    for p in range(len(patch_by_channel[0])):
+        channel_patch = []
+        for c in range(len(images)):
+            channel_patch.append(patch_by_channel[c, p, :, :, :])
+        patch_tensor.append(channel_patch)
 
     try:
-        predictions = model.predict(np.asarray(channel_patches), batch_size=32, verbose=verbose)[:, 0, :, :, :]
+        predictions = model.predict(np.asarray(patch_tensor), batch_size=32, verbose=verbose)[:, 0, :, :, :]
     except: # Not enough memory : switch to mono prediction
-        predictions = model.predict(np.asarray(channel_patches), batch_size=1, verbose=verbose)[:, 0, :, :, :]
+        predictions = model.predict(np.asarray(patch_tensor), batch_size=1, verbose=verbose)[:, 0, :, :, :]
 
     predicted_image = recreate_image_from_patches(original_image_size=original_image_size, list_patches=predictions)
     return predicted_image

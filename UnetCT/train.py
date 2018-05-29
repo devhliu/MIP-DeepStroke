@@ -83,8 +83,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
 
-    dataset_training_size = len(os.listdir(os.path.join(data_path, "train/input")))
-    dataset_val_size = len(os.listdir(os.path.join(data_path, "validation/input")))
+    dataset_training_size = len(os.listdir(os.path.join(data_path, "train/MTT")))
+    dataset_val_size = len(os.listdir(os.path.join(data_path, "validation/MTT")))
 
     tensorboard_callback = None
     if logdir is not None:
@@ -163,8 +163,8 @@ if __name__ == '__main__':
 
     # Get patch size
     path_train = os.path.join(data_path, "train")
-    input_example = os.listdir(path_train, "MTT")[0]
-    patch_size = nb.load(os.path.join(path_train, input_example)).get_data().shape
+    input_example = os.listdir(os.path.join(path_train, "MTT"))[0]
+    patch_size = nb.load(os.path.join(path_train, "MTT", input_example)).get_data().shape
 
     if(args.skip_blank):
         print("Skipping blank images")
