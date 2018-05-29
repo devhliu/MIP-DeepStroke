@@ -2,7 +2,7 @@ import os
 import nibabel as nb
 from argparse import ArgumentParser
 from utils import normalize_numpy
-from image_processing import create_patches_from_images, recreate_image_from_patches
+from image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
 from keras.models import load_model
 from metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
                             weighted_dice_coefficient_loss, weighted_dice_coefficient)
@@ -35,16 +35,23 @@ def predict_patch(patch, model):
     return model.predict(patch_extended)[0, 0, :, :, :]
 
 
-def predict(image, model, patch_size, verbose=0):
-    original_image_size = image.shape
-    image_norm = normalize_numpy(image)
-    image_patches = create_patches_from_images(image_norm, patch_size)
-    # Extend with channel
-    image_patches = [x.reshape(1, patch_size[0], patch_size[1], patch_size[2]) for x in image_patches]
+def predict(images, model, patch_size, verbose=0):
+    if not isinstance(images, list):
+        images = [images]  # Transform to 1 dimensional channel
+
+    original_image_size = images[0].shape
+
+    channel_patches = []
+    for image in images:
+        image_norm = preprocess_image(image)
+        image_patches = create_patches_from_images(image_norm, patch_size)
+
+        channel_patches.append(image_patches)
+
     try:
-        predictions = model.predict(np.asarray(image_patches), batch_size=32, verbose=verbose)[:, 0, :, :, :]
+        predictions = model.predict(np.asarray(channel_patches), batch_size=32, verbose=verbose)[:, 0, :, :, :]
     except: # Not enough memory : switch to mono prediction
-        predictions = model.predict(np.asarray(image_patches), batch_size=1, verbose=verbose)[:, 0, :, :, :]
+        predictions = model.predict(np.asarray(channel_patches), batch_size=1, verbose=verbose)[:, 0, :, :, :]
 
     predicted_image = recreate_image_from_patches(original_image_size=original_image_size, list_patches=predictions)
     return predicted_image

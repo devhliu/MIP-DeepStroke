@@ -50,7 +50,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
         x_list = []
         y_list = []
-        for i in range(len(image_paths))
+        for i in range(len(image_paths)):
 
             inputs = []
             for x in folders_input:
@@ -117,15 +117,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    embeddings_layer_names=None,
                                                    embeddings_metadata=None)
 
-
-
-
-
         # Start Tensorboard
         print("tensorboard --logdir={}".format(log_path))
-
-
-
 
     # Save checkpoint each 5 epochs
     checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))

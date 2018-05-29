@@ -7,7 +7,7 @@ from keras.callbacks import TensorBoard, EarlyStopping
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
 from tensorboard.plugins.image import summary as im_summary
-from image_processing import create_patches_from_images
+from image_processing import create_patches_from_images, preprocess_image
 from utils import normalize_numpy
 from predict import predict
 import numpy as np
@@ -39,21 +39,22 @@ class TrainValTensorBoard(TensorBoard):
         self.validation_generator = validation_generator
         self.validation_steps = validation_steps
         self.training_generator = training_generator
-        self.lesion_patches = None
-        self.image_patches = None
+        self.patch_size = patch_size
+        self.verbose = verbose
 
-        # Image
-        if images is not None:
-            if lesions is None or patch_size is None or layers is None:
-                raise Exception("Please provide the following : \'image\',\'lesion\',\'patch_size\',\'layer\'")
-            for image in images:
-                self.image = normalize_numpy(image)
-                #self.lesion = normalize_numpy(lesion)
-                self.lesion_patches = create_patches_from_images(image, patch_size)
-                #self.image_patches = create_patches_from_images(lesion, patch_size)
-                #self.layer = layer
-                self.patch_size = patch_size
-                self.verbose = verbose
+        # Transform inputs to lists:
+        if images and not isinstance(images, list):
+            images = [images]
+        self.images = [preprocess_image(x) for x in images]
+        if lesions and not isinstance(lesions, list):
+            lesions = [lesions]
+        self.lesions = [preprocess_image(x) for x in lesions]
+        if layers and not isinstance(layers,list):
+            layers = [layers]
+        self.layers = layers
+
+        if images and not lesions or images and not layers or lesions and not layers:
+            raise Exception("If you want to log images, please provide at least one image, one lesions and one layer.")
 
     def set_model(self, model):
         # Setup writer for validation metrics
@@ -85,7 +86,6 @@ class TrainValTensorBoard(TensorBoard):
             summary_value.simple_value = value.item()
             summary_value.tag = name
             self.val_writer.add_summary(summary, epoch, )
-
 
         # Add PR Curve
         self.__add_pr_curve(epoch)
@@ -141,28 +141,32 @@ class TrainValTensorBoard(TensorBoard):
         summary = tf.Summary(value=image_summaries)
         writer.add_summary(summary, step)
 
-    def __add_image(self, epoch):
-        if self.lesion_patches and self.image_patches:
+    def __log_example_image(self, epoch):
+        if self.images and self.lesions and self.layers:
+
             # Predict the output.
-            predicted_image = predict(self.image, self.model, self.patch_size, verbose=self.verbose)
+            predicted_image = predict(self.images, self.model, self.patch_size, verbose=self.verbose)
 
-            pred_image = predicted_image[:, :, self.layer]
-            image_original = self.image[:, :, self.layer]
-            lesion_original = self.lesion[:, :, self.layer]
+            for layer in self.layers:
+                # Log example images at the beginning only
+                if epoch == 0 or epoch == 1:
+                    images_layer = [x[:, :, layer] for x in self.images]
+                    lesions_layer = [y[:, :, layer] for y in self.lesions]
+                    self.log_images(tag="Input example (layer{})".format(layer),
+                                    images=images_layer+lesions_layer, step=epoch)
 
-            # RGB
-            merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
-            print("Prediction minimum is : {}, max is {}.".format(pred_image.min(), pred_image.max()))
-            merged_image[:, :, 0] = lesion_original
-            merged_image[:, :, 1] = pred_image
-            merged_image[:, :, 2] = image_original
+                pred_image = predicted_image[:, :, layer]
+                image_original = self.images[0][:, :, layer]
+                lesion_original = self.lesions[0][:, :, layer]
 
-            #pred_tensor = tf.convert_to_tensor(pred_image.reshape(1, pred_image.shape[0], pred_image.shape[1], 1))
-            #image_tensor = image_original.reshape(1, image_original.shape[0], image_original.shape[1], 1)
-            #lesion_tensor = lesion_original.reshape(1, lesion_original.shape[0], lesion_original.shape[1], 1)
+                # RGB
+                merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
+                merged_image[:, :, 0] = lesion_original
+                merged_image[:, :, 1] = pred_image
+                merged_image[:, :, 2] = image_original
 
-            self.log_images(tag="Prediction example", images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
-
+                self.log_images(tag="Prediction example (layer{}), with first channel of inputs and lesions".format(layer),
+                                images=[pred_image, lesion_original, image_original, merged_image], step=epoch)
 
     def __merge_images(self, images):
         # Create merged image
@@ -197,26 +201,27 @@ class TrainValTensorBoard(TensorBoard):
             writer = self.val_writer
             t = "validation"
 
-        for x, y in zip(batch[0], batch[1]):
-            image = x[0,:,:,:]
-            lesion = y[0,:,:,:]
-            layer = int(image.shape[2] / 2)
-            image_layer = image[:, :, layer]
-            lesion_layer = lesion[:, :, layer]
-            merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
-            merged_image[:, :, 0] = lesion_layer
-            merged_image[:, :, 1] = 0
-            merged_image[:, :, 2] = image_layer
-            images.append(merged_image)
+        for c in batch[0].shape[0]:
+            for x, y in zip(batch[0], batch[1]):
+                image = x[c, :, :, :]
+                lesion = y[c, :, :, :]
+                layer = int(image.shape[2] / 2)
+                image_layer = image[:, :, layer]
+                lesion_layer = lesion[:, :, layer]
+                merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+                merged_image[:, :, 0] = lesion_layer
+                merged_image[:, :, 1] = 0
+                merged_image[:, :, 2] = image_layer
+                images.append(merged_image)
 
-        images_per_log = 16
-        list_merged_images = []
-        for i in range(0, len(images)+images_per_log, images_per_log):
-            image_merged = self.__merge_images(images[i:i+images_per_log])
-            if image_merged is not None:
-                list_merged_images.append(image_merged)
-        if len(list_merged_images)>0:
-            self.log_images(tag="batch {}".format(t), images=list_merged_images, step=epoch, writer=writer)
+            images_per_log = 16
+            list_merged_images = []
+            for i in range(0, len(images)+images_per_log, images_per_log):
+                image_merged = self.__merge_images(images[i:i+images_per_log])
+                if image_merged is not None:
+                    list_merged_images.append(image_merged)
+            if len(list_merged_images)>0:
+                self.log_images(tag="channel{}-batch{}".format(c, t), images=list_merged_images, step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:
@@ -231,9 +236,9 @@ class TrainValTensorBoard(TensorBoard):
 
             generator = self.validation_generator
             for b in tqdm(range(self.validation_steps)):
-                x,y = next(generator)
+                x, y = next(generator)
 
-                pred_batch = self.model.predict_on_batch(y)
+                pred_batch = self.model.predict_on_batch(x)
 
                 if len(np.unique(y)) > 1:
                     roc = roc_auc_score(y.flatten(), pred_batch.flatten())
