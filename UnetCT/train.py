@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
-from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss
+from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss, tversky_coeff, tversky_loss
 from keras.metrics import binary_crossentropy, binary_accuracy
 from create_datasets import load_data_for_patient
 import tensorflow as tf
@@ -100,7 +100,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # load image and lesion
-        patient_path = "/home/klug/data/preprocessed_original/33723"
+        patient_path = "/home/klug/data/preprocessed_original/636994"
         MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
 
         dict_inputs = {"MTT": MTT,
@@ -193,14 +193,14 @@ if __name__ == '__main__':
     print("Patch size detected : {}".format(patch_size))
 
     metrics = [
-               weighted_dice_coefficient_loss,
                weighted_dice_coefficient,
                dice_coefficient,
+               tversky_coeff,
                'acc',
                'mse',
                ]
 
-    loss_function = dice_coefficient_loss
+    loss_function = tversky_loss
 
     #folders_input = ["CBV", "CBF", "MTT", "Tmax"]
     folders_input = ["Tmax"]
@@ -213,7 +213,7 @@ if __name__ == '__main__':
                           batch_normalization=False,
                           metrics=metrics,
                           loss=loss_function,
-                          activation_name="sigmoid")
+                          activation_name="softmax")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,

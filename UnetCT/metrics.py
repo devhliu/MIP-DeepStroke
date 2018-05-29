@@ -16,6 +16,17 @@ def dice_coefficient(y_true, y_pred, smooth=1.):
 def dice_coefficient_loss(y_true, y_pred):
     return -dice_coefficient(y_true, y_pred)
 
+def tversky_coeff(y_true, y_pred, alpha=.3, beta=.7, smooth=1.):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    G_P = alpha * K.sum((1 - y_true_f) * y_pred_f)  # G not P
+    P_G = beta * K.sum(y_true_f * (1 - y_pred_f))  # P not G
+    return (intersection + smooth) / (intersection + smooth + G_P + P_G)
+
+
+def tversky_loss(y_true, y_pred):
+    return -tversky_coeff(y_true, y_pred)
 
 
 def weighted_dice_coefficient(y_true, y_pred, axis=(-3, -2, -1), smooth=0.00001):
