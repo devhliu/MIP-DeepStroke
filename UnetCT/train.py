@@ -86,7 +86,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
                 yield x_list_batch, y_list_batch
 
-def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion']):
+def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'], num_patient=295742):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -100,7 +100,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # load image and lesion
-        patient_path = "/home/klug/data/preprocessed_original/636994"
+        patient_path = "/home/klug/data/preprocessed_original/{}".format(num_patient)
         MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
 
         dict_inputs = {"MTT": MTT,
@@ -177,11 +177,13 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
+    parser.add_argument("-p", "--patient", type=int, help="Patient from which to log an image in tensorboard", default=295742)
 
     args = parser.parse_args()
     data_path = args.data_path
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
     batch_size = args.batch_size
+    num_patient = args.patient
 
     # Get patch size
     path_train = os.path.join(data_path, "train")
@@ -218,4 +220,4 @@ if __name__ == '__main__':
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=args.skip_blank, epoch_size=args.epoch_size, patch_size=patch_size,
-          folders_input=folders_input, folders_target=folders_target)
+          folders_input=folders_input, folders_target=folders_target, num_patient=num_patient)
