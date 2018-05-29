@@ -30,8 +30,8 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
         train_path = os.path.join(data_path, train_path)
         validation_path = os.path.join(data_path, validation_path)
 
-    training_size = len(os.listdir(os.path.join(train_path, "input")))
-    validation_size = len(os.listdir(os.path.join(validation_path, "input")))
+    training_size = len(os.listdir(os.path.join(train_path, "MTT")))
+    validation_size = len(os.listdir(os.path.join(validation_path, "MTT")))
 
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
@@ -162,8 +162,8 @@ if __name__ == '__main__':
     batch_size = args.batch_size
 
     # Get patch size
-    path_train = os.path.join(data_path, "train/input")
-    input_example = os.listdir(path_train)[0]
+    path_train = os.path.join(data_path, "train")
+    input_example = os.listdir(path_train, "MTT")[0]
     patch_size = nb.load(os.path.join(path_train, input_example)).get_data().shape
 
     if(args.skip_blank):
