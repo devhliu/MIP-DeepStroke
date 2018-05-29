@@ -194,7 +194,6 @@ class TrainValTensorBoard(TensorBoard):
 
     def __add_batch_visualization(self, generator, epoch, training=True):
         batch = next(generator)
-        images = []
         if training:
             t = "training"
             writer = self.writer
@@ -203,6 +202,7 @@ class TrainValTensorBoard(TensorBoard):
             t = "validation"
 
         for c in range(batch[0].shape[1]):
+            images = []
             for x, y in zip(batch[0], batch[1]):
                 image = x[c, :, :, :]
                 lesion = y[0, :, :, :]
@@ -222,7 +222,7 @@ class TrainValTensorBoard(TensorBoard):
                 if image_merged is not None:
                     list_merged_images.append(image_merged)
             if len(list_merged_images)>0:
-                self.log_images(tag="channel{}-batch{}".format(c, t), images=list_merged_images, step=epoch, writer=writer)
+                self.log_images(tag="Batch : {} - channel{}".format(t, c), images=list_merged_images, step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:

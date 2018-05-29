@@ -23,7 +23,7 @@ sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
 
-def create_generators(batch_size, data_path=None, skip_blank=True):
+def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion']):
     train_path = "train/"
     validation_path = "validation/"
     if data_path is not None:
@@ -36,9 +36,9 @@ def create_generators(batch_size, data_path=None, skip_blank=True):
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
-    train_generator = dual_generator(train_path, ["CBF","CBV","MTT","Tmax"], ["lesion"], batch_size=batch_size, skip_blank=skip_blank)
+    train_generator = dual_generator(train_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank)
 
-    validation_generator = dual_generator(validation_path, ["CBF","CBV","MTT","Tmax"], ["lesion"], batch_size=batch_size, skip_blank=skip_blank)
+    validation_generator = dual_generator(validation_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank)
 
     return train_generator, validation_generator
 
@@ -86,13 +86,12 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
                 yield x_list_batch, y_list_batch
 
-def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None):
-
+def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion']):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank)
 
-    dataset_training_size = len(os.listdir(os.path.join(data_path, "train/MTT")))
-    dataset_val_size = len(os.listdir(os.path.join(data_path, "validation/MTT")))
+    dataset_training_size = len(os.listdir(os.path.join(data_path, "train",folders_input[0])))
+    dataset_val_size = len(os.listdir(os.path.join(data_path, "validation",folders_input[0])))
 
     tensorboard_callback = None
     if logdir is not None:
@@ -101,12 +100,24 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         # load image and lesion
         patient_path = "/home/klug/data/preprocessed_original/33723"
         MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
-        images_input = [CBF,CBV,MTT,Tmax]
+
+        dict_inputs = {"MTT": MTT,
+                       "CBF": CBF,
+                       "CBV": CBV,
+                       "Tmax": Tmax}
+
+        print("Shapes of data : ")
+        for k in dict_inputs.keys():
+            print("\t", k, " - ", dict_inputs[k].shape)
+
+        images_input = [dict_inputs[k] for k in folders_input]
         images_target = [lesion]
         layer = int(MTT.shape[2]/2.0)
-        layers = [layer-4, layer, layer+4]
+        layers = [layer]
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
-                                                                     skip_blank=skip_blank)
+                                                                     skip_blank=skip_blank,
+                                                                     folders_input=folders_input,
+                                                                     folders_target=folders_target)
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
                                                    images=images_input,
                                                    lesions=images_target,
@@ -188,15 +199,20 @@ if __name__ == '__main__':
 
     loss_function = dice_coefficient_loss
 
-    model = unet_model_3d([4, patch_size[0], patch_size[1], patch_size[2]],
+    #folders_input = ["CBV", "CBF", "MTT", "Tmax"]
+    folders_input = ["Tmax"]
+    folders_target = ["lesion"]
+
+    model = unet_model_3d([len(folders_input), patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
                           n_base_filters=16,
                           depth=3,
                           batch_normalization=False,
                           metrics=metrics,
                           loss=loss_function,
-                          activation_name="softmax")
+                          activation_name="sigmoid")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
-          skip_blank=args.skip_blank, epoch_size=args.epoch_size, patch_size=patch_size)
+          skip_blank=args.skip_blank, epoch_size=args.epoch_size, patch_size=patch_size,
+          folders_input=folders_input, folders_target=folders_target)
