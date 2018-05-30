@@ -85,7 +85,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                 yield x_list_batch, y_list_batch
 
         while len(x_list)<batch_size:
-           input_size = nb.load(os.path.join(data_directory, folders_input[0], image_paths[0])).get_data()
+           input_size = nb.load(os.path.join(data_directory, folders_input[0], image_paths[0])).get_data().shape
            zero = np.zeros(input_size)
 
            inputs = []
@@ -97,7 +97,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
            x_list.append(inputs)
            y_list.append(targets)
-        yield x_list, y_list
+        yield np.array(x_list), np.array(y_list)
 
 
 
