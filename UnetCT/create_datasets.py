@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from utils import create_if_not_exists, splits_sets, split_train_test_val, normalize_numpy
 from image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches_from_list, preprocess_image
+from image_processing import to_patches_3d, to_patches_3d_augmented_with_1
 import numpy as np
 import nibabel as nb
 import os
@@ -48,12 +49,13 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         Tmax = preprocess_image(Tmax)
         lesion = preprocess_image(lesion)
 
-        # create patches
-        MTT_patches = create_patches_from_images(MTT, patch_size)
-        CBF_patches = create_patches_from_images(CBF, patch_size)
-        CBV_patches = create_patches_from_images(CBV, patch_size)
-        Tmax_patches = create_patches_from_images(Tmax, patch_size)
-        lesion_patches = create_patches_from_images(lesion, patch_size)
+        # create patches, by doing overlap in case of training set
+        is_train = (dataset_type == 'train')
+        MTT_patches = create_patches_from_images(MTT, patch_size, augment=is_train)
+        CBF_patches = create_patches_from_images(CBF, patch_size, augment=is_train)
+        CBV_patches = create_patches_from_images(CBV, patch_size, augment=is_train)
+        Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=is_train)
+        lesion_patches = create_patches_from_images(lesion, patch_size, augment=is_train)
 
         _save_patches(MTT_patches, save_path, subject=subject, type="MTT")
         _save_patches(CBF_patches, save_path, subject=subject, type="CBF")
@@ -100,10 +102,10 @@ if __name__ == '__main__':
 
     # Load patients paths
     sites = [os.path.join(args.data_path, x) for x in os.listdir(args.data_path)]
-    patients_paths = []
-    for site in sites:
-        patients = os.listdir(site)
-        patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
+    patients_paths = sites
+    #for site in sites:
+     #   patients = os.listdir(site)
+      #  patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
 
     # Split set of patients into train, test and val sets
     ratios = [0.7, 0.2, 0.1]

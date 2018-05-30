@@ -50,7 +50,7 @@ def load_data_atlas_from_site(site_path):
     return list_x, list_y
 
 
-def create_patches_from_images(numpy_image, patch_size, mode="extend"):
+def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=False, patch_divider=4):
 
     shape = numpy_image.shape
     missing = np.array([patch_size[i]-(shape[i]%patch_size[i]) for i in range(len(patch_size))])
@@ -66,17 +66,27 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend"):
     xMax = dimension_size[0]
     yMax = dimension_size[1]
     zMax = dimension_size[2]
-    patches = [0 for x in range(xMax*yMax*zMax)]
+    patches = [0 for x in range(xMax*yMax*zMax)] # Create patches array which handle structure of entire image (indexing of patches)
 
-    for x in range(0, shape[0], patch_size[0]):
-        for y in range(0, shape[1], patch_size[1]):
-            for z in range(0, shape[2], patch_size[2]):
-                idx = int(x/patch_size[0])
-                idy = int(y/patch_size[1])
-                idz = int(z/patch_size[2])
-                index1D = to1D_index(idx, idy, idz, xMax, yMax)
-                patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]]
-                patches[index1D] = patch
+    if augment:
+        # Create dataset using strides
+        PATCH_X = patch_size[0]
+        PATCH_Y = patch_size[1]
+        PATCH_Z = patch_size[2]
+        STRIDE_PATCH_X = int(patch_size[0] / patch_divider)
+        STRIDE_PATCH_Y = int(patch_size[1] / patch_divider)
+        STRIDE_PATCH_Z = int(patch_size[2] / patch_divider)
+        patches = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z, STRIDE_PATCH_Z)
+    else:
+        for x in range(0, shape[0], patch_size[0]):
+            for y in range(0, shape[1], patch_size[1]):
+                for z in range(0, shape[2], patch_size[2]):
+                    idx = int(x/patch_size[0])
+                    idy = int(y/patch_size[1])
+                    idz = int(z/patch_size[2])
+                    index1D = to1D_index(idx, idy, idz, xMax, yMax)
+                    patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]]
+                    patches[index1D] = patch
 
     return patches
 
@@ -146,6 +156,67 @@ def create_extra_patches_from_list(images, lesion, patch_size, limit=0):
     # Last array is the one containing extra patches for the lesion
     list_extra_patches.append(patches_lesion)
     return list_extra_patches
+
+
+# Create patches from a scan - toPatch should be (x,y,z) - the output of the function is (nb_patches,x,y,z)
+def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,STRIDE_PATCH_Z):
+
+    shape = toPatch.shape
+    x_shape = shape[0]
+    y_shape = shape[1]
+    slices = shape[2]
+
+    def check(x,y,z):
+        assert(((float)((x-PATCH_X)/STRIDE_PATCH_X)).is_integer())
+        assert(((float)((y-PATCH_Y)/STRIDE_PATCH_Y)).is_integer())
+        assert(((float)((z-PATCH_Z)/STRIDE_PATCH_Z)).is_integer())
+
+    check(x_shape,y_shape,slices)
+
+    patches = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+    for k in range(0,slices-PATCH_Z+STRIDE_PATCH_Z,STRIDE_PATCH_Z):
+        for i in range(0,x_shape-PATCH_X+STRIDE_PATCH_X,STRIDE_PATCH_X):
+            for j in range(0,y_shape-PATCH_Y+STRIDE_PATCH_Y,STRIDE_PATCH_Y):
+                cut = np.reshape(toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z],(1,PATCH_X,PATCH_Y,PATCH_Z))
+                patches = np.append(patches,cut,axis=0)
+
+    return patches
+
+
+# Augment the patches with new patches where the center pixel is part of a lesion - for 3D
+def to_patches_3d_augmented_with_1(mask,structural,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,STRIDE_PATCH_Z):
+
+    shape = mask.shape
+    x_shape = shape[0]
+    y_shape = shape[1]
+    slices = shape[2]
+
+    def check(x,y,z):
+        assert(((float)((x-PATCH_X)/STRIDE_PATCH_X)).is_integer())
+        assert(((float)((y-PATCH_Y)/STRIDE_PATCH_Y)).is_integer())
+        assert(((float)((z-PATCH_Z)/STRIDE_PATCH_Z)).is_integer())
+
+    check(x_shape,y_shape,slices)
+
+
+    patches_mask = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+    patches_struc = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+
+    mid_x = PATCH_X/2
+    mid_y = PATCH_Y/2
+    mid_z = PATCH_Z/2
+
+    for k in range(mid_z,slices-mid_z):
+        for i in range(mid_x,x_shape-mid_x):
+            for j in range(mid_y,y_shape-mid_y):
+                if(mask[i][j][k]==1):
+                    cut = mask[i-mid_x:i+mid_x,j-mid_y:j+mid_y,k-mid_z:k+mid_z]
+                    patches_mask = np.append(patches_mask,cut,axis=0)
+                    cut = structural[i-mid_x:i+mid_x,j-mid_y:j+mid_y,k-mid_z:k+mid_z]
+                    patches_struc = np.append(patches_struc,cut,axis=0)
+
+    return patches_mask,patches_struc
+
 
 
 def create_patch_around(center_x, center_y, center_z, patch_size, image):
