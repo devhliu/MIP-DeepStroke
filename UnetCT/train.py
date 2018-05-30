@@ -72,9 +72,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                     paths = inputs_paths+targets_paths
                     f.write("{} - {}".format(i, paths))
 
-            image_target = targets[0] # Check label in only one target
-
-            if not (np.all(image_target == 0) and skip_blank):
+            if not (np.all(inputs == 0) and skip_blank):
                 x_list.append(inputs)
                 y_list.append(targets)
 
@@ -85,6 +83,24 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                 y_list = []
 
                 yield x_list_batch, y_list_batch
+
+        while len(x_list)<batch_size:
+           input_size = nb.load(os.path.join(data_directory, folders_input[0], image_paths[0])).get_data()
+           zero = np.zeros(input_size)
+
+           inputs = []
+           for x in folders_input:
+               inputs.append(zero)
+           targets = []
+           for y in folders_target:
+               targets.append(zero)
+
+           x_list.append(inputs)
+           y_list.append(targets)
+        yield x_list, y_list
+
+
+
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'], num_patient=295742):
 
