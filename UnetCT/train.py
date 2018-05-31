@@ -220,8 +220,8 @@ if __name__ == '__main__':
 
     loss_function = tversky_loss
 
-    #folders_input = ["CBV", "CBF", "MTT", "Tmax"]
-    folders_input = ["Tmax"]
+    folders_input = ["CBV", "CBF", "MTT", "Tmax"]
+    #folders_input = ["Tmax"]
     folders_target = ["lesion"]
 
     model = unet_model_3d([len(folders_input), patch_size[0], patch_size[1], patch_size[2]],
@@ -231,7 +231,7 @@ if __name__ == '__main__':
                           batch_normalization=False,
                           metrics=metrics,
                           loss=loss_function,
-                          activation_name="softmax")
+                          activation_name="sigmoid")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
