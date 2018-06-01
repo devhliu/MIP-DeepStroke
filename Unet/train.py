@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
-from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss
+from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss, tversky_loss, tversky_coeff
 from keras.metrics import binary_crossentropy, binary_accuracy
 import tensorflow as tf
 
@@ -184,19 +184,21 @@ if __name__ == '__main__':
                weighted_dice_coefficient_loss,
                weighted_dice_coefficient,
                dice_coefficient,
+               tversky_coeff,
                'acc',
                'mse',
                ]
 
-    loss_function = dice_coefficient_loss
+    loss_function = tversky_loss
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
                           depth=3,
                           batch_normalization=False,
                           metrics=metrics,
+                          initial_learning_rate=1e-5,
                           loss=loss_function,
-                          activation_name="softmax")
+                          activation_name="sigmoid")
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
