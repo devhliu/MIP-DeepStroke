@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from utils import create_if_not_exists, splits_sets, split_train_test_val, normalize_numpy
-from image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches
+from image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches, preprocess_image
 import numpy as np
 import nibabel as nb
 import os
@@ -30,18 +30,18 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
             continue
         
        # normalize data
-        brain = normalize_numpy(brain)
-        lesion = normalize_numpy(lesion)
-
+        brain = preprocess_image(brain)
+        lesion = preprocess_image(lesion)
 
         # create patches
-        input_patches = create_patches_from_images(brain, patch_size)
-        label_patches = create_patches_from_images(lesion, patch_size)
+        is_train = (dataset_type == 'train')
+        input_patches = create_patches_from_images(brain,  patch_size, augment=is_train)
+        label_patches = create_patches_from_images(lesion,  patch_size, augment=is_train)
         _save_patches(input_patches, save_path, subject=subject, type="input")
         _save_patches(label_patches, save_path, subject=subject, type="mask")
 
         # create extra patches
-        if dataset_type=="train" or dataset_type=="validation":
+        if is_train:
             ratio_extra = 0.3
             number_extra = int(ratio_extra*len(input_patches))
             input_patches_extra, lesion_patches_extra = create_extra_patches(brain, lesion, patch_size, limit=number_extra)
