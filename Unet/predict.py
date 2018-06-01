@@ -1,10 +1,9 @@
 import os
 import nibabel as nb
 from argparse import ArgumentParser
-from utils import normalize_numpy
-from image_processing import create_patches_from_images, recreate_image_from_patches
+from Unet.image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
 from keras.models import load_model
-from metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
+from .metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
                             weighted_dice_coefficient_loss, weighted_dice_coefficient)
 import numpy as np
 
@@ -37,7 +36,7 @@ def predict_patch(patch, model):
 
 def predict(image, model, patch_size, verbose=0):
     original_image_size = image.shape
-    image_norm = normalize_numpy(image)
+    image_norm = preprocess_image(image)
     image_patches = create_patches_from_images(image_norm, patch_size)
     # Extend with channel
     image_patches = [x.reshape(1, patch_size[0], patch_size[1], patch_size[2]) for x in image_patches]

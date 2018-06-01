@@ -1,7 +1,6 @@
 import os
 import nibabel as nb
 from argparse import ArgumentParser
-from utils import normalize_numpy
 from image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
 from keras.models import load_model
 from metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,

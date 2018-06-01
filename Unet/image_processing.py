@@ -2,8 +2,8 @@ import os
 import nibabel as nb
 import numpy as np
 import progressbar
-from utils import create_if_not_exists, normalize_numpy
-
+from .utils import create_if_not_exists, normalize_numpy
+from multiprocessing import Pool
 
 def preprocess_image(img):
     return normalize_numpy(img)
