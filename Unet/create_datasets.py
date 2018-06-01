@@ -35,8 +35,8 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train"):
 
         # create patches
         is_train = (dataset_type == 'train')
-        input_patches = create_patches_from_images(brain,  patch_size, augment=is_train)
-        label_patches = create_patches_from_images(lesion,  patch_size, augment=is_train)
+        input_patches = create_patches_from_images(brain,  patch_size, augment=is_train, patch_divider=2)
+        label_patches = create_patches_from_images(lesion,  patch_size, augment=is_train, patch_divider=2)
         _save_patches(input_patches, save_path, subject=subject, type="input")
         _save_patches(label_patches, save_path, subject=subject, type="mask")
 
