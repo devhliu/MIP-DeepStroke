@@ -232,7 +232,7 @@ class TrainValTensorBoard(TensorBoard):
             for b in tqdm(range(self.validation_steps)):
                 x,y = next(generator)
 
-                pred_batch = self.model.predict_on_batch(y)
+                pred_batch = self.model.predict_on_batch(x)
 
                 if len(np.unique(y)) > 1:
                     roc = roc_auc_score(y.flatten(), pred_batch.flatten())
