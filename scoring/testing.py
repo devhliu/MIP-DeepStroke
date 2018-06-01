@@ -101,8 +101,7 @@ if __name__ == '__main__':
                                                         })
                 dict_scores={}
                 try:
-                    #dict_scores = predict(data_path, model, output_file, maxsize=5000)
-                    print("predicting")
+                    dict_scores = predict(data_path, model, output_file)
                 except Exception as e:
                     print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
                     print(e.with_traceback())
