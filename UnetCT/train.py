@@ -230,6 +230,7 @@ if __name__ == '__main__':
                           depth=3,
                           batch_normalization=False,
                           metrics=metrics,
+                          initial_learning_rate=1e-6,
                           loss=loss_function,
                           activation_name="sigmoid")
 
