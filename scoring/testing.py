@@ -43,7 +43,7 @@ def predict(test_folder, model, maxsize=None):
     y_pred = list_y_pred
 
     # AUC without threshold
-    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred, pos_label=1)
+    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred=)
     auc = metrics.auc(fpr, tpr)
     dict_scores = {"auc": auc}
 
@@ -88,6 +88,14 @@ if __name__ == '__main__':
     logdir = args.logdir
 
     df = None
+    columns = ["auc","ap","f1-score","jaccard","accuracy","precision","recall",
+               "model_name","run","date","iteration","val_acc"]
+
+    # Create DF if not exists
+    if not os.path.exists(output_file):
+        df = pd.DataFrame(columns=columns).reset_index()
+        df.to_csv(output_file)
+
 
     runs = [os.path.join(logdir, x) for x in os.listdir(logdir) if os.path.isdir(os.path.join(logdir,x))]
     for run in runs:
@@ -99,6 +107,20 @@ if __name__ == '__main__':
                 continue
             # For all checkpoints, evaluate.
             for ckpt in tqdm(checkpoints, desc=run):
+
+                # put extra information
+                model_name = os.path.basename(ckpt)
+                str_info = model_name.replace("model.", "").replace("_", "").replace(".hdf5", "").split("-")
+                str_info = [x for x in str_info if len(x) > 0]
+                it, val_acc = float(str_info[0]), float(str_info[1])
+
+                # Load CSV and append line
+                df = pd.read_csv(output_file, header=0)
+
+                # Check that the model was not already tested
+                if run in df["run"].values:
+                    print(run,"already tested.")
+                    continue
 
                 model = load_model(ckpt, custom_objects={"dice_coefficient" : dice_coefficient,
                                                         "dice_coefficient_loss" : dice_coefficient_loss,
@@ -114,12 +136,6 @@ if __name__ == '__main__':
                     print(e)
                     continue
 
-                #put extra information
-                model_name = os.path.basename(ckpt)
-                str_info = model_name.replace("model.", "").replace("_", "").replace(".hdf5", "").split("-")
-                str_info = [x for x in str_info if len(x)>0]
-                it, val_acc = float(str_info[0]), float(str_info[1])
-
                 dict_scores["model_name"] = model_name
                 dict_scores["run"] = run
                 run_date = os.path.basename(run)
@@ -128,13 +144,7 @@ if __name__ == '__main__':
                 dict_scores["iteration"] = it
                 dict_scores["val_acc"] = val_acc
 
-                # Create DF if not exists
-                if not os.path.exists(output_file):
-                    df = pd.DataFrame(columns=dict_scores.keys()).reset_index()
-                    df.to_csv(output_file)
-
-                # Load CSV and append line
-                df = pd.read_csv(output_file, header=0)
+                # Append line to CSV by keeping only relevant columns
                 df = df[list(dict_scores.keys())]
                 new_df = pd.DataFrame(dict_scores, index=[0])
                 df = df.append(new_df)

@@ -96,9 +96,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
 
         # load image and lesion
-        patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031836/t01/"
+        patient_path = "/media/miplab-nas2/Data/Stroke_DeepLearning_ATLASdataset/Site2/031934/t01/"
         image = nb.load(os.path.join(patient_path, "output.nii")).get_data()
-        lesion = nb.load(os.path.join(patient_path, "031836_LesionSmooth_stx.nii")).get_data()
+        lesion = nb.load(os.path.join(patient_path, "031934_LesionSmooth_stx.nii")).get_data()
         layer = 100
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank)
@@ -181,22 +181,22 @@ if __name__ == '__main__':
     print("Patch size detected : {}".format(patch_size))
 
     metrics = [
-               weighted_dice_coefficient_loss,
-               weighted_dice_coefficient,
-               dice_coefficient,
-               tversky_coeff,
-               'acc',
-               'mse',
-               ]
+        weighted_dice_coefficient,
+        dice_coefficient,
+        tversky_coeff,
+        'acc',
+        'mse',
+    ]
 
     loss_function = tversky_loss
 
     model = unet_model_3d([1, patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
+                          n_base_filters=16,
                           depth=3,
                           batch_normalization=False,
                           metrics=metrics,
-                          initial_learning_rate=1e-5,
+                          initial_learning_rate=1e-6,
                           loss=loss_function,
                           activation_name="sigmoid")
 
