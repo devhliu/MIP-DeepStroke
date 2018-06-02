@@ -55,8 +55,9 @@ def predict(test_folder, model, maxsize=None):
     for k in tqdm(functions.keys()):
         try:
             score = functions[k](y_true, y_pred)
-        except:
+        except Exception as e:
             print("error computing k")
+            print(e.with_traceback)
             score = 0
         dict_scores[k] = score
 
@@ -100,7 +101,7 @@ if __name__ == '__main__':
                                                         })
                 dict_scores={}
                 try:
-                    dict_scores = predict(data_path, model)
+                    #dict_scores = predict(data_path, model)
                 except Exception as e:
                     print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
                     print(e.with_traceback())
