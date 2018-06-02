@@ -11,8 +11,8 @@ from datetime import datetime
 import pandas as pd
 
 
-def predict(test_folder, model, file, maxsize=None):
-    input_files = [os.path.join(test_folder,"input",x) for x in os.listdir(os.path.join(test_folder,"input"))]
+def predict(test_folder, model, maxsize=None):
+    input_files = [os.path.join(test_folder, "input",x) for x in os.listdir(os.path.join(test_folder,"input"))]
 
     s = nb.load(input_files[0]).get_data().size
 
@@ -26,15 +26,14 @@ def predict(test_folder, model, file, maxsize=None):
         if(i>=maxsize):
             continue
         x_file = input_files[i]
-        y_file = input_files[i].replace("input","mask")
+        y_file = input_files[i].replace("input", "mask")
 
         x = nb.load(x_file).get_data()
         y = nb.load(y_file).get_data().astype(np.int8)
 
         # Predict one patch
-        #y_pred = predict_patch(x, model=model)
-        y_pred = np.zeros(x.shape)
-        y_pred[2] = 1
+        y_pred = predict_patch(x, model=model)
+
         list_y[i:i+s] = y.flatten()
         list_y_pred[i:i+s]=y_pred.flatten()
 
@@ -101,7 +100,7 @@ if __name__ == '__main__':
                                                         })
                 dict_scores={}
                 try:
-                    dict_scores = predict(data_path, model, output_file)
+                    dict_scores = predict(data_path, model)
                 except Exception as e:
                     print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
                     print(e.with_traceback())
