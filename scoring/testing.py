@@ -104,7 +104,7 @@ if __name__ == '__main__':
                     #dict_scores = predict(data_path, model)
                 except Exception as e:
                     print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
-                    print(e.with_traceback())
+                    print(e.with_traceback)
                     continue
 
                 #put extra information
