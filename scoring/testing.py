@@ -5,14 +5,14 @@ import os
 from argparse import ArgumentParser
 from tqdm import tqdm
 from keras.models import load_model
-from .Unet.metrics import *
+from Unet.metrics import *
 import sklearn.metrics as metrics
 from datetime import datetime
 import pandas as pd
 
 
 def predict(test_folder, model, maxsize=None):
-    input_files = [os.path.join(test_folder, "input",x) for x in os.listdir(os.path.join(test_folder,"input"))]
+    input_files = [os.path.join(test_folder, "input", x) for x in os.listdir(os.path.join(test_folder, "input"))]
 
     s = nb.load(input_files[0]).get_data().size
 
