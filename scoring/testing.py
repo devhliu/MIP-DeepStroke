@@ -1,5 +1,7 @@
 import numpy as np
 import nibabel as nb
+import sys
+sys.path.append('../')
 from Unet.predict import predict_patch
 import os
 from argparse import ArgumentParser
