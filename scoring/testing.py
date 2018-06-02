@@ -42,9 +42,10 @@ def predict(test_folder, model, maxsize=None):
     y_true = list_y
     y_pred = list_y_pred
 
+    # AUC without threshold
     fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred, pos_label=1)
     auc = metrics.auc(fpr, tpr)
-    dict_scores = {"auc":auc}
+    dict_scores = {"auc": auc}
 
     functions = {"ap":metrics.average_precision_score,
                  "f1-score":metrics.f1_score,
@@ -54,12 +55,16 @@ def predict(test_folder, model, maxsize=None):
                  "recall":metrics.recall_score
                 }
 
+    # Tresholding
+    y_pred[y_pred < 0.5] = 0
+    y_pred[y_pred >= 0.5] = 1
+
     for k in tqdm(functions.keys()):
         try:
             score = functions[k](y_true, y_pred)
         except Exception as e:
             print("error computing k")
-            print(e.with_traceback)
+            print(e)
             score = 0
         dict_scores[k] = score
 
@@ -95,18 +100,18 @@ if __name__ == '__main__':
             # For all checkpoints, evaluate.
             for ckpt in tqdm(checkpoints, desc=run):
 
-                model = load_model(ckpt, custom_objects={"dice_coefficient":dice_coefficient,
-                                                        "dice_coefficient_loss": dice_coefficient_loss,
-                                                        "weighted_dice_coefficient_loss":weighted_dice_coefficient_loss,
-                                                        "weighted_dice_coefficient":weighted_dice_coefficient,
-                                                        "tversky_loss": tversky_loss,
+                model = load_model(ckpt, custom_objects={"dice_coefficient" : dice_coefficient,
+                                                        "dice_coefficient_loss" : dice_coefficient_loss,
+                                                        "weighted_dice_coefficient_loss" : weighted_dice_coefficient_loss,
+                                                        "weighted_dice_coefficient" : weighted_dice_coefficient,
+                                                        "tversky_loss" : tversky_loss,
                                                         })
-                dict_scores={}
+                dict_scores = {}
                 try:
                     dict_scores = predict(data_path, model)
                 except Exception as e:
                     print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
-                    print(e.with_traceback)
+                    print(e)
                     continue
 
                 #put extra information
@@ -129,9 +134,9 @@ if __name__ == '__main__':
                     df.to_csv(output_file)
 
                 # Load CSV and append line
-                df = pd.read_csv(output_file,header=0)
+                df = pd.read_csv(output_file, header=0)
                 df = df[list(dict_scores.keys())]
-                new_df = pd.DataFrame(dict_scores,index=[0])
+                new_df = pd.DataFrame(dict_scores, index=[0])
                 df = df.append(new_df)
                 df.to_csv(output_file)
 
