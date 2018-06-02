@@ -5,7 +5,7 @@ import os
 from argparse import ArgumentParser
 from tqdm import tqdm
 from keras.models import load_model
-from Unet.metrics import *
+from .Unet.metrics import *
 import sklearn.metrics as metrics
 from datetime import datetime
 import pandas as pd
