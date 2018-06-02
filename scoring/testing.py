@@ -103,7 +103,7 @@ if __name__ == '__main__':
                                                         })
                 dict_scores={}
                 try:
-                    #dict_scores = predict(data_path, model)
+                    dict_scores = predict(data_path, model)
                 except Exception as e:
                     print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
                     print(e.with_traceback)
@@ -112,6 +112,7 @@ if __name__ == '__main__':
                 #put extra information
                 model_name = os.path.basename(ckpt)
                 str_info = model_name.replace("model.", "").replace("_", "").replace(".hdf5", "").split("-")
+                str_info = [x for x in str_info if len(x)>0]
                 it, val_acc = float(str_info[0]), float(str_info[1])
 
                 dict_scores["model_name"] = model_name
