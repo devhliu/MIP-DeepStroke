@@ -25,7 +25,7 @@ def predict_patient(patient_id, list_files, model):
 
     ys_true = []
     ys_pred = []
-    for i in range(len(patient_patches_names)):
+    for i in tqdm(range(len(patient_patches_names))):
         x_file = patient_patches_names[i]
         y_file = patient_patches_names[i].replace("input", "mask")
 
