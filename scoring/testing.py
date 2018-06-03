@@ -35,8 +35,8 @@ def predict_patient(patient_id, list_files, model):
         # Predict one patch
         y_pred = predict_patch(x, model=model)
 
-        ys_true += y.flatten()
-        ys_pred += y_pred.flatten()
+        ys_true += list(y.flatten())
+        ys_pred += list(y_pred.flatten())
 
     return np.array(ys_true), np.array(ys_pred)
 
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--data_path", help="Path to test data folder",
                         default="/home/simon/Datasets/Data/32x32x32/test/")
     parser.add_argument("-o", "--output_file", help="Name of the CSV where the data will be stored",
-                        type=str, default="/home/simon/models/results.csv")
+                        type=str, default="/home/simon/models/results-32.csv")
 
     args = parser.parse_args()
 
