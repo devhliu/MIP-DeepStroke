@@ -25,7 +25,7 @@ def predict_patient(patient_id, list_files, model):
 
     ys_true = []
     ys_pred = []
-    for i in patient_patches_names:
+    for i in range(len(patient_patches_names)):
         x_file = patient_patches_names[i]
         y_file = patient_patches_names[i].replace("input", "mask")
 
@@ -38,7 +38,7 @@ def predict_patient(patient_id, list_files, model):
         ys_true += y.flatten()
         ys_pred += y_pred.flatten()
 
-    return ys_true, ys_pred
+    return np.array(ys_true), np.array(ys_pred)
 
 
 def predict(test_folder, model, maxsize=None):
