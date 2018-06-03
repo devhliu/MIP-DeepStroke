@@ -59,7 +59,7 @@ def predict(test_folder, model, maxsize=None):
     aucs = []
     f1_scores = []
 
-    for i in tqdm(patient_list):
+    for i in tqdm(range(len(patient_list))):
         p = patient_list[i]
         y_true, y_pred = predict_patient(p, input_files, model)
 
