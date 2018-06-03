@@ -65,7 +65,12 @@ def predict(test_folder, model, maxsize=None):
 
         fpr, tpr, thresholds = metrics.roc_curve(y_true.flatten(), y_pred.flatten())
         auc = metrics.auc(fpr, tpr)
-        f1 = metrics.f1_score(y_true.flatten(), y_pred.flatten())
+
+        # Treshold
+        y_pred_t = y_pred.copy()
+        y_pred_t[y_pred_t < 0.5] = 0
+        y_pred_t[y_pred_t >= 0.5] = 1
+        f1 = metrics.f1_score(y_true, y_pred_t)
 
         aucs.append(auc)
         f1_scores.append(f1)
