@@ -9,8 +9,36 @@ from tqdm import tqdm
 from keras.models import load_model
 from Unet.metrics import *
 import sklearn.metrics as metrics
+
 from datetime import datetime
 import pandas as pd
+import re
+
+def specificity(y_true, y_pred):
+    tn, fp, fn, tp = metrics.confusion_matrix(y_true, y_pred).ravel()
+    specificity = tn / (tn + fp)
+    return specificity
+
+
+def predict_patient(patient_id, list_files, model):
+    patient_patches_names = [x for x in list_files if patient_id in x]
+
+    ys_true = []
+    ys_pred = []
+    for i in patient_patches_names:
+        x_file = patient_patches_names[i]
+        y_file = patient_patches_names[i].replace("input", "mask")
+
+        x = nb.load(x_file).get_data()
+        y = nb.load(y_file).get_data().astype(np.int8)
+
+        # Predict one patch
+        y_pred = predict_patch(x, model=model)
+
+        ys_true += y.flatten()
+        ys_pred += y_pred.flatten()
+
+    return ys_true, ys_pred
 
 
 def predict(test_folder, model, maxsize=None):
@@ -21,38 +49,51 @@ def predict(test_folder, model, maxsize=None):
     if maxsize is None:
         maxsize = len(input_files)
 
-    list_y = np.empty(maxsize*s)
-    list_y_pred = np.empty(maxsize*s)
+    patient_list = list(set([re.search('%s(.*)%s' % ("input_", "-"), x).group(1) for x in input_files]))
 
-    for i in tqdm(range(len(input_files))):
-        if(i>=maxsize):
-            continue
-        x_file = input_files[i]
-        y_file = input_files[i].replace("input", "mask")
+    files_per_patients = len([x for x in input_files if patient_list[0] in x])
 
-        x = nb.load(x_file).get_data()
-        y = nb.load(y_file).get_data().astype(np.int8)
+    list_y = np.empty(len(patient_list)*files_per_patients*s)
+    list_y_pred = np.empty(len(patient_list)*files_per_patients*s)
 
-        # Predict one patch
-        y_pred = predict_patch(x, model=model)
+    aucs = []
+    f1_scores = []
 
-        list_y[i:i+s] = y.flatten()
-        list_y_pred[i:i+s]=y_pred.flatten()
+    for i in tqdm(patient_list):
+        p = patient_list[i]
+        y_true, y_pred = predict_patient(p, input_files, model)
+
+        fpr, tpr, thresholds = metrics.roc_curve(y_true.flatten(), y_pred.flatten())
+        auc = metrics.auc(fpr, tpr)
+        f1 = metrics.f1_score(y_true.flatten(), y_pred.flatten())
+
+        aucs.append(auc)
+        f1_scores.append(f1)
+
+        list_y[i*len(y_true):(i+1)*len(y_true)] = y_true
+        list_y_pred[i * len(y_pred):(i + 1) * len(y_pred)] = y_pred
 
     y_true = list_y
     y_pred = list_y_pred
 
     # AUC without threshold
-    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred=)
+    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
     auc = metrics.auc(fpr, tpr)
     dict_scores = {"auc": auc}
+
+    # AUC per patient with std
+    dict_scores["auc_mean"] = np.mean(np.array(aucs))
+    dict_scores["auc_std"] = np.std(np.array(aucs))
+    dict_scores["f1_mean"] = np.mean(np.array(f1_scores))
+    dict_scores["f1_std"] = np.mean(np.array(f1_scores))
 
     functions = {"ap":metrics.average_precision_score,
                  "f1-score":metrics.f1_score,
                  "jaccard":metrics.jaccard_similarity_score,
                  "accuracy":metrics.accuracy_score,
                  "precision":metrics.precision_score,
-                 "recall":metrics.recall_score
+                 "sensitivity":metrics.recall_score,
+                 "specificity":specificity
                 }
 
     # Tresholding
@@ -88,8 +129,8 @@ if __name__ == '__main__':
     logdir = args.logdir
 
     df = None
-    columns = ["auc","ap","f1-score","jaccard","accuracy","precision","recall",
-               "model_name","run","date","iteration","val_acc"]
+    columns = ["auc", "auc_mean", "auc_std", "ap", "f1-score", "f1_mean", "f1_std", "jaccard", "accuracy", "precision",
+               "sensitivity", "specificity", "model_name", "run", "date", "iteration", "val_acc"]
 
     # Create DF if not exists
     if not os.path.exists(output_file):
