@@ -23,20 +23,31 @@ def specificity(y_true, y_pred):
 def predict_patient(patient_id, list_files, model):
     patient_patches_names = [x for x in list_files if patient_id in x]
 
-    ys_true = []
-    ys_pred = []
+    images_x = []
+    images_y = []
+
+    # Create a list of batches
     for i in tqdm(range(len(patient_patches_names))):
         x_file = patient_patches_names[i]
         y_file = patient_patches_names[i].replace("input", "mask")
 
         x = nb.load(x_file).get_data()
         y = nb.load(y_file).get_data().astype(np.int8)
+        images_x.append(x)
+        images_y.append(y)
 
-        # Predict one patch
-        y_pred = predict_patch(x, model=model)
+    patch_size = images_x[0].shape
+    images_input = [x.reshape(1, patch_size[0], patch_size[1], patch_size[2]) for x in images_x]
 
-        ys_true += list(y.flatten())
-        ys_pred += list(y_pred.flatten())
+    # predict by batches
+    predictions = model.predict(np.asarray(images_input), batch_size=10, verbose=0)[:, 0, :, :, :]
+
+    # Append to unidimensional list
+    ys_true = []
+    ys_pred = []
+    for i in range(len(predictions)):
+        ys_true += list(predictions[i].flatten())
+        ys_pred += list(images_y[i].flatten())
 
     return np.array(ys_true), np.array(ys_pred)
 
