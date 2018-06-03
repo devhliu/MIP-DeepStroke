@@ -91,7 +91,7 @@ def predict(test_folder, model, maxsize=None):
     dict_scores["auc_mean"] = np.mean(np.array(aucs))
     dict_scores["auc_std"] = np.std(np.array(aucs))
     dict_scores["f1_mean"] = np.mean(np.array(f1_scores))
-    dict_scores["f1_std"] = np.mean(np.array(f1_scores))
+    dict_scores["f1_std"] = np.std(np.array(f1_scores))
 
     functions = {"ap":metrics.average_precision_score,
                  "f1-score":metrics.f1_score,
