@@ -64,7 +64,7 @@ def predict(test_folder, model, maxsize=None):
         p = patient_list[i]
         y_true, y_pred = predict_patient(p, input_files, model)
 
-        fpr, tpr, thresholds = metrics.roc_curve(y_true.flatten(), y_pred.flatten())
+        fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
         auc = metrics.auc(fpr, tpr)
 
         # Treshold
@@ -165,8 +165,8 @@ if __name__ == '__main__':
                 df = pd.read_csv(output_file, header=0)
 
                 # Check that the model was not already tested
-                if run in df["run"].values:
-                    print(run,"already tested.")
+                if run in df["run"].values and model_name in df["model_name"].values:
+                    print(run, model_name, "already tested.")
                     continue
 
                 model = load_model(ckpt, custom_objects={"dice_coefficient" : dice_coefficient,
