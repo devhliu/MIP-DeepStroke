@@ -172,6 +172,7 @@ if __name__ == '__main__':
                                                         "weighted_dice_coefficient_loss" : weighted_dice_coefficient_loss,
                                                         "weighted_dice_coefficient" : weighted_dice_coefficient,
                                                         "tversky_loss" : tversky_loss,
+                                                        "tversky_coeff": tversky_coeff
                                                         })
                 dict_scores = {}
                 try:
