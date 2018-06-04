@@ -22,22 +22,27 @@ def specificity(y_true, y_pred):
 
 def predict_patient(patient_id, list_files, model, channels_input=["MTT", "Tmax", "CBV", "CBF"], channels_output=["lesion"]):
     patient_patches_names = [x for x in list_files if patient_id in x]
+    patch_size = nb.load(patient_patches_names[0]).get_data()
 
     ys_true = []
     ys_pred = []
 
     input_option = channels_input[0]
     for i in tqdm(range(len(patient_patches_names))):
-        inputs_patches = []
-        for c in channels_input:
+
+        inputs_patches = np.empty(shape=[len(channels_input), patch_size[0], patch_size[1], patch_size[2]])
+        for index_c in range(len(channels_input)):
+            c = channels_input[index_c]
             x_file = patient_patches_names[i].replace(input_option,c)
             x = nb.load(x_file).get_data()
-            inputs_patches.append(x)
-        output_patches = []
-        for c in channels_output:
+            inputs_patches[index_c, :, :, :] = x
+
+        output_patches = np.empty(shape=[len(channels_output), patch_size[0], patch_size[1], patch_size[2]])
+        for index_c in range(len(channels_output)):
+            c = channels_output[index_c]
             y_file = patient_patches_names[i].replace(input_option, c)
             y = nb.load(y_file).get_data().astype(np.int8)
-            output_patches.append(y)
+            output_patches[index_c, :, :, :] = y
 
         inputs_patches = np.array(inputs_patches)
         output_patches = np.array(output_patches)
@@ -135,8 +140,8 @@ if __name__ == '__main__':
                         default="/home/simon/Datasets/Data/32x32x32/test/")
     parser.add_argument("-o", "--output_file", help="Name of the CSV where the data will be stored",
                         type=str, default="/home/simon/models/results-32.csv")
-    parser.add_argument('-ic', '--input_channels', nargs='+', help='<Required> Set flag', required=True, default=None)
-    parser.add_argument('-oc', '--output_channels', nargs='+', help='<Required> Set flag', required=True, default=None)
+    parser.add_argument('-ic', '--input_channels', nargs='+', help='<Required> Set flag', default=None)
+    parser.add_argument('-oc', '--output_channels', nargs='+', help='<Required> Set flag', default=None)
 
     args = parser.parse_args()
     channels_input = args.input_channels
