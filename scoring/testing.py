@@ -64,8 +64,7 @@ def predict(test_folder, model, maxsize=None):
         p = patient_list[i]
         y_true, y_pred = predict_patient(p, input_files, model)
 
-        fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
-        auc = metrics.auc(fpr, tpr)
+        auc = metrics.roc_auc_score(y_true, y_pred)
 
         # Treshold
         y_pred_t = y_pred.copy()
@@ -83,8 +82,7 @@ def predict(test_folder, model, maxsize=None):
     y_pred = list_y_pred
 
     # AUC without threshold
-    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
-    auc = metrics.auc(fpr, tpr)
+    auc = metrics.roc_auc_score(y_true, y_pred)
     dict_scores = {"auc": auc}
 
     # AUC per patient with std
