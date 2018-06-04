@@ -143,7 +143,7 @@ if __name__ == '__main__':
     channels_output = args.output_channels
 
     if channels_input is None:
-        channels_input = ["Tmax"]
+        channels_input = ["CBV", "CBF", "MTT", "Tmax"]
     if channels_output is None:
         channels_output = ["lesion"]
 
