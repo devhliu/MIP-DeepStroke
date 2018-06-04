@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from Unet.image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
 from keras.models import load_model
 from .metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
-                            weighted_dice_coefficient_loss, weighted_dice_coefficient)
+                            weighted_dice_coefficient_loss, weighted_dice_coefficient,tversky_loss,tversky_coeff)
 import numpy as np
 
 
@@ -51,28 +51,38 @@ def predict(image, model, patch_size, verbose=0):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("-i", "--input", help="Path to .nii image")
-    parser.add_argument("-m", "--mask", help="Path to .nii image")
+    parser.add_argument("-i", "--input_path", help="Path to .nii image")
+    parser.add_argument("-m", "--model_path", help="Path to model")
+    parser.add_argument("-s", "--save_folder", help="Path to save the image")
+    parser.add_argument("-p", "--patch_size", type=int, help="Patch size", default=32)
 
     args = parser.parse_args()
 
-    image = nb.load(args.input).get_data()
-    mask = nb.load(args.mask).get_data()
-    patches = create_patches_from_images(image, [32, 32, 32])
+    input_path = args.input_path
+    model_path = args.model
+    save_folder = args.save_folder
+    p = args.patch_size
 
-    model = load_old_model("/home/Simon/Datasets/model.25--0.56.hdf5")
+    img_input = nb.load(input_path)
+    image = img_input.get_data()
+    patch_size = [p, p, p]
 
-    predicted = []
-    for p in patches:
-        predicted.append(model.predict(p))
+    model = load_old_model(model_path, custom_objects={"dice_coefficient" : dice_coefficient,
+                                                        "dice_coefficient_loss" : dice_coefficient_loss,
+                                                        "weighted_dice_coefficient_loss" : weighted_dice_coefficient_loss,
+                                                        "weighted_dice_coefficient" : weighted_dice_coefficient,
+                                                        "tversky_loss" : tversky_loss,
+                                                        "tversky_coeff": tversky_coeff
+                                                        })
 
-    # image.shape = (197, 233, 189)
-    y_pred = recreate_image_from_patches(image.shape, predicted)
-    new_filename = "predicted_{}"+os.path.basename(args.input)
+    image_pred = predict(image, model, patch_size)
 
-    old_mask_filename = args.mask
-    new_mask_filename = old_mask_filename.replace(os.path.basename(args.mask), new_filename)
+    image_extension = '.nii'
+    filename_save = os.path.join(save_folder, "predicted-{}".format(os.path.basename(input_path)))
+    if not filename_save.endswith(image_extension):
+        filename_save = filename_save+image_extension
 
-    nb.save(y_pred, new_mask_filename)
+    coordinate_space = img_input.affine
+    predicted_img = nb.Nifti1Image(image_pred, affine=coordinate_space)
+    nb.save(predicted_img, filename_save)
 
-    print(dice_coefficient_loss(mask,y_pred))
