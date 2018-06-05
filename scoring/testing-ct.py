@@ -44,9 +44,6 @@ def predict_patient(patient_id, list_files, model, channels_input=["MTT", "Tmax"
             y = nb.load(y_file).get_data().astype(np.int8)
             output_patches[index_c, :, :, :] = y
 
-        inputs_patches = np.array(inputs_patches)
-        output_patches = np.array(output_patches)
-
         # Predict one patch
         y_pred = predict_patch(inputs_patches, model=model)
 
