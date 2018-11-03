@@ -115,8 +115,8 @@ class PatientPlotCallback(TensorBoard):
             for layer in layers:
 
                 pred_image = predicted_image[:, :, layer]
-                image_original = images_input[0][:, :, layer]
-                lesion_original = images_target[0][:, :, layer]
+                image_original = normalize_numpy(images_input[0][:, :, layer],0,1)
+                lesion_original = normalize_numpy(images_target[0][:, :, layer])
 
                 # RGB
                 merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
