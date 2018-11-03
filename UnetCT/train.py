@@ -117,12 +117,13 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
         # load image and lesion
         patient_path = "/home/klug/data/preprocessed_original/{}".format(num_patient)
-        MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
+        MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path)
 
         dict_inputs = {"MTT": MTT,
                        "CBF": CBF,
                        "CBV": CBV,
                        "Tmax": Tmax,
+                       "T2":T2,
                        "lesion":lesion}
 
         print("Shapes of data : ")
@@ -220,14 +221,16 @@ if __name__ == '__main__':
 
     loss_function = tversky_loss
 
-    folders_input = ["CBV", "CBF", "MTT", "Tmax"]
+    #folders_input = ["CBV", "CBF", "MTT", "Tmax"]
     #folders_input = ["Tmax"]
+    folders_input = ["T2"]
+
     folders_target = ["lesion"]
 
     model = unet_model_3d([len(folders_input), patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
                           n_base_filters=16,
-                          depth=3,
+                          depth=5,
                           batch_normalization=False,
                           metrics=metrics,
                           initial_learning_rate=1e-6,

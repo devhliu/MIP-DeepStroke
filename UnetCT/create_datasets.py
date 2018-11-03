@@ -6,7 +6,8 @@ import numpy as np
 import nibabel as nb
 import os
 from tqdm import tqdm
-
+import pickle
+import datetime
 
 def _save_patches(patch_list, save_path, subject, type, extra=False):
     for i in range(len(patch_list)):
@@ -25,8 +26,9 @@ def load_data_for_patient(patient_path):
     Tmax = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_Tmax_{}.nii".format(p))).get_data()
     CBF = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_rCBF_{}.nii".format(p))).get_data()
     CBV = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_rCBV_{}.nii".format(p))).get_data()
+    T2 = nb.load(os.path.join(patient_path, "Neuro_Cerebrale_64Ch", "wcoreg_t2_tse_tra_{}.nii".format(p))).get_data()
 
-    return MTT, CBF, CBV, Tmax, lesion
+    return MTT, CBF, CBV, Tmax, T2, lesion
 
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3):
@@ -36,7 +38,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         subject = os.path.basename(patient_path)
         # load all data
         try:
-            MTT, CBF, CBV, Tmax, lesion = load_data_for_patient(patient_path)
+            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path)
         except Exception as e:
             print("Error while reading patient {}".format(patient_path))
             print(str(e))
@@ -48,6 +50,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         CBV = preprocess_image(CBV)
         Tmax = preprocess_image(Tmax)
         lesion = preprocess_image(lesion)
+        T2 = preprocess_image(T2)
 
         # create patches, by doing overlap in case of training set
         is_train = (dataset_type == 'train')
@@ -56,21 +59,24 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         CBV_patches = create_patches_from_images(CBV, patch_size, augment=is_train)
         Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=is_train)
         lesion_patches = create_patches_from_images(lesion, patch_size, augment=is_train)
+        T2_patches = create_patches_from_images(T2, patch_size, augment=is_train)
 
         _save_patches(MTT_patches, save_path, subject=subject, type="MTT")
         _save_patches(CBF_patches, save_path, subject=subject, type="CBF")
         _save_patches(CBV_patches, save_path, subject=subject, type="CBV")
         _save_patches(Tmax_patches, save_path, subject=subject, type="Tmax")
         _save_patches(lesion_patches, save_path, subject=subject, type="lesion")
+        _save_patches(T2_patches, save_path, subject=subject, type="T2")
 
         # create extra patches
         if is_train:
             number_extra = int(ratio_extra*len(MTT_patches))
-            MTT_extra, CBF_extra, CBV_extra, Tmax_extra, lesion_extra = create_extra_patches_from_list(
+            MTT_extra, CBF_extra, CBV_extra, Tmax_extra, lesion_extra, T2_extra = create_extra_patches_from_list(
                                                                             [MTT,
                                                                             CBF,
                                                                             CBV,
-                                                                            Tmax],
+                                                                            Tmax,
+                                                                            T2],
                                                                             lesion,
                                                                             patch_size,
                                                                             limit=number_extra)
@@ -80,6 +86,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
             _save_patches(CBV_extra, save_path, subject=subject, type="CBV", extra=True)
             _save_patches(Tmax_extra, save_path, subject=subject, type="Tmax", extra=True)
             _save_patches(lesion_extra, save_path, subject=subject, type="lesion", extra=True)
+            _save_patches(T2_extra, save_path, subject=subject, type="T2", extra=True)
 
 
 if __name__ == '__main__':
@@ -91,6 +98,8 @@ if __name__ == '__main__':
                         default="/home/klug/data")
     parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/simon/Datasets/HUG")
     parser.add_argument("-p", "--patch_size", help="Patch size", type=int, default=32)
+    parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
+
     args = parser.parse_args()
 
     patch_size = [args.patch_size, args.patch_size, args.patch_size]
@@ -100,16 +109,35 @@ if __name__ == '__main__':
     dataset_data_path = create_if_not_exists(os.path.join(dataset_path, "Data"))
     save_path = create_if_not_exists(os.path.join(dataset_data_path, string_patches))
 
-    # Load patients paths
-    sites = [os.path.join(args.data_path, x) for x in os.listdir(args.data_path)]
-    patients_paths = sites
-    #for site in sites:
-     #   patients = os.listdir(site)
-      #  patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
+    if(args.setfile is None):
+        # Load patients paths
+        sites = [os.path.join(args.data_path, x) for x in os.listdir(args.data_path)]
+        patients_paths = sites
+        #for site in sites:
+         #   patients = os.listdir(site)
+          #  patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
 
-    # Split set of patients into train, test and val sets
-    ratios = [0.7, 0.2, 0.1]
-    train, test, val, _, _, _ = split_train_test_val(patients_paths, ["" for x in range(len(patients_paths))], ratios=ratios)
+        # Split set of patients into train, test and val sets
+        ratios = [0.7, 0.2, 0.1]
+        train, test, val, _, _, _ = split_train_test_val(patients_paths, ["" for x in range(len(patients_paths))], ratios=ratios)
+
+        dict_sets = {"train":train,
+                     "test":test,
+                     "val":val}
+        filename = "sets_{}".format(datetime.datetime.now())
+
+        with open('{}.pickle'.format(filename), 'wb') as handle:
+            pickle.dump(dict_sets, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(args.setfile, 'rb') as handle:
+            dict_sets = pickle.load(handle)
+        #ratios
+        total = len(dict_sets["train"])+len(dict_sets["test"])+len(dict_sets["val"])
+        train = dict_sets["train"]
+        test = dict_sets["test"]
+        val = dict_sets["val"]
+        ratios = [len(train)/total, len(test)/total, len(val)/total]
+
     print("------ Total :", len(patients_paths), "patients ------")
     print(len(train), "patients will be used for train ({}%)".format(ratios[0]*100))
     print(len(test), "patients will be used for test ({}%)".format(ratios[1]*100))
