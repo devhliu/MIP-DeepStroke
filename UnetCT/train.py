@@ -187,10 +187,10 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 if __name__ == '__main__':
     parser = ArgumentParser(description="Train a 3D Model unet")
     parser.add_argument("-l", "--logdir", help="Directory where to log the data for tensorboard",
-                        default="/home/simon/")
+                        default="/home/snarduzz/Models")
 
     parser.add_argument("-d", "--data_path", help="Path to data folder",
-                        default="/home/simon/Datasets/HUG/32x32x32")
+                        default="/home/snarduzz/Data")
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)

@@ -90,32 +90,34 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description="Train a 3D Model unet")
-    parser.add_argument("-l", "--logdir", help="Directory where to log the data for tensorboard",
-                        default="/home/snarduzz/")
+    parser = ArgumentParser(description="Create a dataset from folder")
 
-    parser.add_argument("-d", "--data_path", help="Path to data folder (ATLAS)",
-                        default="/home/klug/data")
-    parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/simon/Datasets/HUG")
+    parser.add_argument("-d", "--data_path", help="Path to data folder",
+                        default="/home/snarduzz/Data/preprocessed_original_masked")
+    parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/")
     parser.add_argument("-p", "--patch_size", help="Patch size", type=int, default=32)
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
 
     args = parser.parse_args()
+
+    date = datetime.datetime.now().strftime("%d%m%y-%H%M")
 
     patch_size = [args.patch_size, args.patch_size, args.patch_size]
     string_patches = "x".join([str(x) for x in patch_size])
 
     dataset_path = create_if_not_exists(args.save_path)
     dataset_data_path = create_if_not_exists(os.path.join(dataset_path, "Data"))
+    dataset_data_path = create_if_not_exists(os.path.join(dataset_data_path, date))
     save_path = create_if_not_exists(os.path.join(dataset_data_path, string_patches))
 
     if(args.setfile is None):
         # Load patients paths
-        sites = [os.path.join(args.data_path, x) for x in os.listdir(args.data_path)]
-        patients_paths = sites
-        #for site in sites:
-         #   patients = os.listdir(site)
-          #  patients_paths = patients_paths+[os.path.join(site, x) for x in patients]
+        patients_paths = [os.path.join(args.data_path, x) for x in os.listdir(args.data_path) if x.isdigit()]
+
+        print("The following patients will be processed:")
+        print("")
+        print([os.path.basename(x) for x in patients_paths])
+        print("")
 
         # Split set of patients into train, test and val sets
         ratios = [0.7, 0.2, 0.1]
@@ -124,7 +126,7 @@ if __name__ == '__main__':
         dict_sets = {"train":train,
                      "test":test,
                      "val":val}
-        filename = "sets_{}".format(datetime.datetime.now())
+        filename = os.path.join(dataset_data_path, "sets_{}".format(date))
 
         with open('{}.pickle'.format(filename), 'wb') as handle:
             pickle.dump(dict_sets, handle, protocol=pickle.HIGHEST_PROTOCOL)
