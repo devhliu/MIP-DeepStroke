@@ -14,6 +14,7 @@ import tensorflow as tf
 from tensorflow.python.client import device_lib
 import keras
 from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss, tversky_coeff, tversky_loss
+from patient_plot_callback import PatientPlotCallback
 from keras.metrics import binary_crossentropy, binary_accuracy
 from create_datasets import load_data_for_patient
 import tensorflow as tf
@@ -100,8 +101,6 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
         yield np.array(x_list), np.array(y_list)
 
 
-
-
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'], num_patient=295742):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
@@ -116,32 +115,24 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # load image and lesion
-        patient_path = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(num_patient)
-        MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path)
+        patient_path1 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(758594)
+        patient_path2 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(num_patient)
 
-        dict_inputs = {"MTT": MTT,
-                       "CBF": CBF,
-                       "CBV": CBV,
-                       "Tmax": Tmax,
-                       "T2":T2,
-                       "lesion":lesion}
+        patients = dict({
+            patient_path1: ["train",[35]],
+            patient_path2: ["validation", [35]]
+        })
 
-        print("Shapes of data : ")
-        for k in dict_inputs.keys():
-            print("\t", k, " - ", dict_inputs[k].shape)
+        patient_callback = PatientPlotCallback(patients=patients, patch_size=patch_size,
+                                  folders_input=["T2"], folders_target=["lesion"],
+                                  verbose=0)
 
-        images_input = [dict_inputs[k] for k in folders_input]
-        images_target = [lesion]
-        layer = int(MTT.shape[2]/2.0)
-        layers = [layer]
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank,
                                                                      folders_input=folders_input,
-                                                                     folders_target=folders_target)
+                                                                    folders_target=folders_target)
+
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
-                                                   images=images_input,
-                                                   lesions=images_target,
-                                                   layers=layers,
                                                    patch_size=patch_size,
                                                    training_generator=training_generator_log,
                                                    validation_generator=validation_generator_log,
@@ -156,8 +147,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    embeddings_layer_names=None,
                                                    embeddings_metadata=None)
 
+
         # Start Tensorboard
-        print("tensorboard --logdir={}".format(log_path))
+        print("\033[94m" + "tensorboard --logdir={}".format(log_path) + "\033[0m")
 
     # Save checkpoint each 5 epochs
     checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))
@@ -176,7 +168,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     # Train the model, iterating on the data in batches of 32 samples
     history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
-                                  callbacks=[tensorboard_callback, checkpoint_callback],
+                                  callbacks=[tensorboard_callback, checkpoint_callback, patient_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=2*batch_size,
                                   workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)
