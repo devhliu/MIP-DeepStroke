@@ -51,7 +51,7 @@ class PatientPlotCallback(TensorBoard):
             self.val_writer.add_summary(summary, epoch, )
 
         # add image
-        self.__log_example_image(epoch, self.patients)
+        self.__log_example_image(epoch)
         self.val_writer.flush()
         self.writer.flush()
 
@@ -86,10 +86,10 @@ class PatientPlotCallback(TensorBoard):
 
     def __log_example_image(self, epoch):
 
-        patients = dict()
+        patients = self.patients
         for patient, [type_writer, layers] in patients.items():
             # select writer; default is train
-            writer = self.train_writer
+            writer = self.writer
             if type_writer=="validation":
                 writer = self.val_writer
 
@@ -112,7 +112,7 @@ class PatientPlotCallback(TensorBoard):
             # Predict the output.
             predicted_image = predict(images_input, self.model, self.patch_size, verbose=self.verbose)
 
-            for layer in self.layers:
+            for layer in layers:
 
                 pred_image = predicted_image[:, :, layer]
                 image_original = images_input[0][:, :, layer]
