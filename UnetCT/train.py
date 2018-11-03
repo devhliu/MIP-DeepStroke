@@ -125,7 +125,16 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
         patient_callback = PatientPlotCallback(patients=patients, patch_size=patch_size,
                                   folders_input=["T2"], folders_target=["lesion"],
-                                  verbose=0)
+                                  verbose=0,
+                                               histogram_freq=0,
+                                               batch_size=batch_size,
+                                               write_graph=True,
+                                               write_grads=True,
+                                               write_images=True,
+                                               embeddings_freq=0,
+                                               embeddings_layer_names=None,
+                                               embeddings_metadata=None
+                                               )
 
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank,
