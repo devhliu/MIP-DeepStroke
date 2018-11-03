@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/snarduzz/Data/preprocessed_original_masked")
-    parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/")
+    parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/Data")
     parser.add_argument("-p", "--patch_size", help="Patch size", type=int, default=32)
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
 
@@ -106,8 +106,7 @@ if __name__ == '__main__':
     string_patches = "x".join([str(x) for x in patch_size])
 
     dataset_path = create_if_not_exists(args.save_path)
-    dataset_data_path = create_if_not_exists(os.path.join(dataset_path, "Data"))
-    dataset_data_path = create_if_not_exists(os.path.join(dataset_data_path, date))
+    dataset_data_path = create_if_not_exists(os.path.join(dataset_path, date))
     save_path = create_if_not_exists(os.path.join(dataset_data_path, string_patches))
 
     if(args.setfile is None):
