@@ -1,9 +1,9 @@
 import os
 import nibabel as nb
 from argparse import ArgumentParser
-from .image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
+from image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
 from keras.models import load_model
-from .metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
+from metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
                             weighted_dice_coefficient_loss, weighted_dice_coefficient)
 import numpy as np
 

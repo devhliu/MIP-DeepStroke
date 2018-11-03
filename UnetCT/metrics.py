@@ -1,9 +1,6 @@
 from functools import partial
 
 from keras import backend as K
-import tensorflow as tf
-import numpy as np
-from sklearn.metrics import auc, roc_curve
 
 
 def dice_coefficient(y_true, y_pred, smooth=1.):
