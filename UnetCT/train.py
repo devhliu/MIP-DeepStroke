@@ -123,19 +123,6 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
             patient_path2: ["validation", [35]]
         })
 
-        patient_callback = PatientPlotCallback(patients=patients, patch_size=patch_size,
-                                  folders_input=["T2"], folders_target=["lesion"],
-                                  verbose=0,
-                                               histogram_freq=0,
-                                               batch_size=batch_size,
-                                               write_graph=True,
-                                               write_grads=True,
-                                               write_images=True,
-                                               embeddings_freq=0,
-                                               embeddings_layer_names=None,
-                                               embeddings_metadata=None
-                                               )
-
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank,
                                                                      folders_input=folders_input,
@@ -176,7 +163,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     # Train the model, iterating on the data in batches of 32 samples
     history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
-                                  callbacks=[tensorboard_callback, checkpoint_callback, patient_callback],
+                                  callbacks=[tensorboard_callback, checkpoint_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=2*batch_size,
                                   workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)

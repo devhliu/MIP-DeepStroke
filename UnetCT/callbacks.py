@@ -22,9 +22,12 @@ from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 import keras.backend as K
 
+from create_datasets import load_data_for_patient
+
 
 class TrainValTensorBoard(TensorBoard):
     def __init__(self, training_generator=None, validation_generator=None, validation_steps=None,
+                 patients=None, patch_size=None, folders_input=["T2"], folders_target=["lesion"],
                  verbose=0, log_dir='./logs', **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
@@ -40,6 +43,11 @@ class TrainValTensorBoard(TensorBoard):
         self.validation_steps = validation_steps
         self.training_generator = training_generator
         self.verbose = verbose
+        self.patch_size = patch_size
+        self.verbose = verbose
+        self.patients = patients
+        self.folders_input = folders_input
+        self.folders_target = folders_target
 
     def set_model(self, model):
         # Setup writer for validation metrics
@@ -74,6 +82,9 @@ class TrainValTensorBoard(TensorBoard):
 
         # Add PR Curve
         self.__add_pr_curve(epoch)
+
+        # add image
+        self.__log_example_image(epoch)
 
         if self.training_generator:
             self.__add_batch_visualization(self.training_generator, epoch, training=True)
@@ -145,6 +156,50 @@ class TrainValTensorBoard(TensorBoard):
 
             return merged_image
         return None
+
+    def __log_example_image(self, epoch):
+
+        patients = self.patients
+        for patient, [type_writer, layers] in patients.items():
+            # select writer; default is train
+            writer = self.writer
+            if type_writer=="validation":
+                writer = self.val_writer
+
+            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient)
+
+            dict_inputs = {"MTT": MTT,
+                           "CBF": CBF,
+                           "CBV": CBV,
+                           "Tmax": Tmax,
+                           "T2": T2,
+                           "lesion": lesion}
+
+            print("Shapes of data : ")
+            for k in dict_inputs.keys():
+                print("\t", k, " - ", dict_inputs[k].shape)
+
+            images_input = [dict_inputs[k] for k in self.folders_input]
+            images_target = [dict_inputs[k] for k in self.folders_target]
+
+            # Predict the output.
+            predicted_image = predict(images_input, self.model, self.patch_size, verbose=self.verbose)
+
+            for layer in layers:
+
+                pred_image = normalize_numpy(predicted_image[:, :, layer])
+                image_original = normalize_numpy(images_input[0][:, :, layer])
+                lesion_original = normalize_numpy(images_target[0][:, :, layer])
+
+                # RGB
+                merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
+                merged_image[:, :, 0] = lesion_original
+                merged_image[:, :, 1] = pred_image
+                merged_image[:, :, 2] = image_original
+
+                self.log_images(tag="Prediction example (layer{}), with first channel of inputs and lesions".format(layer),
+                                images=[pred_image, lesion_original, image_original, merged_image], step=epoch,
+                                writer=writer)
 
 
     def __add_batch_visualization(self, generator, epoch, training=True):
