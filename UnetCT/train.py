@@ -198,6 +198,7 @@ if __name__ == '__main__':
     parser.add_argument("-lr", "--initial_learning_rate", type=float, help="Initial learning rate", default=1e-6)
     parser.add_argument("-a", "--activation_name", type=str, help="activation name", default="sigmoid")
     parser.add_argument("-f", "--filters", type=int, help="number of base filters", default=16)
+    parser.add_argument("-gpu","--gpu", type=int, help="GPU number", default=0)
 
     args = parser.parse_args()
     data_path = args.data_path
@@ -208,6 +209,10 @@ if __name__ == '__main__':
     activation = args.activation_name
     learning_rate = args.initial_learning_rate
     n_filter = args.filters
+    GPU_ID = args.gpu
+
+    # Set the script to use GPU with GPU_ID
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)
 
     # Get patch size
     path_train = os.path.join(data_path, "train")
