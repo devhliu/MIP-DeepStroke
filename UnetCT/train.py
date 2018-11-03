@@ -116,7 +116,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # load image and lesion
-        patient_path = "/home/snarduzz/Data/preprocessed_original/{}".format(num_patient)
+        patient_path = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(num_patient)
         MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path)
 
         dict_inputs = {"MTT": MTT,
