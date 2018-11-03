@@ -133,7 +133,6 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                                     folders_target=folders_target)
 
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
-                                                   patch_size=patch_size,
                                                    training_generator=training_generator_log,
                                                    validation_generator=validation_generator_log,
                                                    validation_steps= int(dataset_val_size/batch_size),
