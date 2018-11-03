@@ -124,7 +124,8 @@ if __name__ == '__main__':
 
         dict_sets = {"train":train,
                      "test":test,
-                     "val":val}
+                     "validation":val}
+
         filename = os.path.join(dataset_data_path, "sets_{}".format(date))
 
         with open('{}.pickle'.format(filename), 'wb') as handle:
@@ -132,11 +133,12 @@ if __name__ == '__main__':
     else:
         with open(args.setfile, 'rb') as handle:
             dict_sets = pickle.load(handle)
+
         #ratios
         total = len(dict_sets["train"])+len(dict_sets["test"])+len(dict_sets["val"])
         train = dict_sets["train"]
         test = dict_sets["test"]
-        val = dict_sets["val"]
+        val = dict_sets["validation"]
         ratios = [len(train)/total, len(test)/total, len(val)/total]
 
     print("------ Total :", len(patients_paths), "patients ------")
