@@ -116,6 +116,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # load image and lesion
+
         patient_path = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(num_patient)
         MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path)
 
@@ -134,6 +135,29 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         images_target = [lesion]
         layer = int(MTT.shape[2]/2.0)
         layers = [layer]
+
+        patient_path1 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(758594)
+        patient_path2 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(num_patient)
+
+        patients = dict({
+            patient_path1: ["train",[35]],
+            patient_path2: ["validation", [35]]
+        })
+
+        patient_callback = PatientPlotCallback(patients=patients, patch_size=patch_size,
+                                               folders_input=folders_input, folders_target=folders_target,
+                                               verbose=0,
+                                               log_dir=log_path,
+                                               histogram_freq=0,
+                                               batch_size=batch_size,
+                                               write_graph=True,
+                                               write_grads=True,
+                                               write_images=True,
+                                               embeddings_freq=0,
+                                               embeddings_layer_names=None,
+                                               embeddings_metadata=None
+                                               )
+
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank,
                                                                      folders_input=folders_input,
