@@ -195,12 +195,19 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
     parser.add_argument("-p", "--patient", type=int, help="Patient from which to log an image in tensorboard", default=295742)
+    parser.add_argument("-lr", "--initial_learning_rate", type=float, help="Initial learning rate", default=1e-6)
+    parser.add_argument("-a", "--activation_name", type=str, help="activation name", default="sigmoid")
+    parser.add_argument("-f", "--filters", type=int, help="number of base filters", default=16)
 
     args = parser.parse_args()
     data_path = args.data_path
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
     batch_size = args.batch_size
     num_patient = args.patient
+
+    activation = args.activation_name
+    learning_rate = args.initial_learning_rate
+    n_filter = args.filters
 
     # Get patch size
     path_train = os.path.join(data_path, "train")
@@ -229,13 +236,13 @@ if __name__ == '__main__':
 
     model = unet_model_3d([len(folders_input), patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
-                          n_base_filters=16,
+                          n_base_filters=n_filter,
                           depth=5,
                           batch_normalization=False,
                           metrics=metrics,
-                          initial_learning_rate=1e-6,
+                          initial_learning_rate=learning_rate,
                           loss=loss_function,
-                          activation_name="sigmoid")
+                          activation_name=activation)
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
