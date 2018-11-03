@@ -25,7 +25,6 @@ class PatientPlotCallback(TensorBoard):
 
         super(PatientPlotCallback, self).__init__(training_log_dir, **kwargs)
 
-        # Get PR Curve
         self.patch_size = patch_size
         self.verbose = verbose
         self.patients = patients
@@ -53,7 +52,6 @@ class PatientPlotCallback(TensorBoard):
         # add image
         self.__log_example_image(epoch)
         self.val_writer.flush()
-        self.writer.flush()
 
         # Pass the remaining logs to `TensorBoard.on_epoch_end`
         logs = {k: v for k, v in logs.items() if not k.startswith('val_')}
