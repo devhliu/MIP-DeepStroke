@@ -25,16 +25,20 @@ if __name__ == '__main__':
 
     for f in folders:
         subdirectory = os.path.join(directory,f)
-        files = os.listdir(subdirectory)
-        files = [x for x in files if x.endswith(".nii")]
-        print("Found {} .nii files. Checking....".format(len(files)))
+        channels = os.listdir(subdirectory)
+        for c in channels:
+            subsubdir = os.path.join(subdirectory, c)
+            files = os.listdir(subsubdir)
+            files = [x for x in files if x.endswith(".nii")]
+            print("Found {} .nii files. Checking....".format(len(files)))
 
-        for file in tqdm(files):
-            img = nb.load(file).get_data()
-            max_img = np.max(img)
-            min_img = np.min(img)
-            if max_img>1 or min_img<-1:
-                dict_log[file] = (min_img,max_img)
+            for file in tqdm(files, desc=str(c)):
+                file = os.path.join(subsubdir, file)
+                img = nb.load(file).get_data()
+                max_img = np.max(img)
+                min_img = np.min(img)
+                if max_img>1 or min_img<-1:
+                    dict_log[file] = (min_img,max_img)
 
     # Save report
     json_file = os.path.join(directory,"report.json")
