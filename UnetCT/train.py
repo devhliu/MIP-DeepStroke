@@ -166,7 +166,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     shuffle = True         # Shuffle the data before creating a batch
 
     # Train the model, iterating on the data in batches of 32 samples
-    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
+    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=1000, verbose=1,
                                   callbacks=[tensorboard_callback, checkpoint_callback],
                                   validation_data=validation_generator, validation_steps=validation_steps,
                                   class_weight=None, max_queue_size=2*batch_size,
