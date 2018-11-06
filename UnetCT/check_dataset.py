@@ -20,12 +20,18 @@ if __name__ == '__main__':
 
     dict_log = dict()
 
+
     if len(folders)==0:
         raise Exception("The root directory should contain train/test/validation sets")
 
     for f in folders:
         subdirectory = os.path.join(directory,f)
         channels = os.listdir(subdirectory)
+
+        total_containing_lesion = 0
+        total_not_containing_lesion = 0
+        total_lesion_files = 0
+
         for c in channels:
             subsubdir = os.path.join(subdirectory, c)
             files = os.listdir(subsubdir)
@@ -40,9 +46,42 @@ if __name__ == '__main__':
                 if max_img>1 or min_img<-1:
                     dict_log[file] = (min_img,max_img)
 
+                if c == "lesion":
+                #Log number of files with lesion
+                    if np.max(img)>=1:
+                        total_containing_lesion+=1
+                #Log number of files without lesion
+                    if np.max(img)<1:
+                        total_not_containing_lesion+=1
+                    total_lesion_files+=1
+
+        dict["{}_CONTAINING_LESION".format(f)] = total_containing_lesion
+        dict["{}_NOT_CONTAINING_LESION".format(f)] = total_not_containing_lesion
+        dict["{}_TOTAL_FILES".format(f)] = total_lesion_files
+
     # Save report
-    json_file = os.path.join(directory,"report.json")
+    json_file = os.path.join(directory, "report.json")
     with open(json_file, 'w') as fp:
         json.dump(dict_log, fp)
 
     print("Found {} incorrect files. Report is available here : {}".format(len(dict_log), json_file))
+
+
+    total_dataset_size = np.array([dict["{}_TOTAL_FILES".format(f)] for f in folders]).sum()
+
+    print("\nDataset description----------")
+    for f in folders:
+        total_lesion = dict["{}_CONTAINING_LESION".format(f)]
+        total_not_lesion = dict["{}_NOT_CONTAINING_LESION".format(f)]
+        total = dict["{}_TOTAL_FILES".format(f)]
+
+        print("--- {} ")
+        print("Lesions : {} ({}%)".format(str(total_lesion), str(100*total_lesion/total)))
+        print("Not lesions : {} ({}%)".format(str(total_not_lesion), str(100*total_not_lesion / total)))
+        print("TOTAL : {} ({}% of total dataset)".format(str(100*total/total_dataset_size)))
+        print("")
+
+    print("Total dataset size : {} files.".format(total_dataset_size))
+
+
+
