@@ -142,7 +142,7 @@ if __name__ == '__main__':
     val = dict_sets["validation"]
     ratios = [len(train)/total, len(test)/total, len(val)/total]
 
-    print("------ Total :", len(total), "patients ------")
+    print("------ Total :", total, "patients ------")
     print(len(train), "patients will be used for train ({}%)".format(ratios[0]*100))
     print(len(test), "patients will be used for test ({}%)".format(ratios[1]*100))
     print(len(val), "patients will be used for validation ({}%)".format(ratios[2]*100))

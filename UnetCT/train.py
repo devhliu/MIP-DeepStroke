@@ -198,7 +198,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
-
+    create_if_not_exists(logdir)
+    
     # If parameters are not specified, load from command line arguments
     if args.parameters is None:
         parameters = dict()
@@ -211,7 +212,7 @@ if __name__ == '__main__':
         parameters["initial_learning_rate"] = args.initial_learning_rate
         parameters["decay"] = args.decay
         parameters["final_activation"] = args.activation_name
-        parameters["n_filters"] = args.filter
+        parameters["n_filters"] = args.filters
         parameters["depth"] = args.depth
         parameters["GPU_ID"] = args.gpu
         parameters["loss_function"] = args.loss
@@ -298,7 +299,6 @@ if __name__ == '__main__':
                           final_activation_name=final_activation,
                           lr_decay=decay)
 
-    create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
