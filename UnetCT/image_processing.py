@@ -12,7 +12,8 @@ def preprocess_image(img, preprocessing="standardize"):
         return standardize(img)
 
 def standardize(img):
-    img_new = (img-np.mean(img))/np.std(img)
+    img_norm = normalize_numpy(img)
+    img_new = (img-np.mean(img_norm))/np.std(img_norm)
     return img_new
 
 def load_data_atlas_for_patient(patient_path):
