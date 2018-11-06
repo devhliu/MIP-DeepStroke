@@ -4,12 +4,12 @@ from sklearn.model_selection import train_test_split
 from shutil import copyfile
 import numpy as np
 
-def normalize_numpy(v, max_value=1.0, min_value=0.0):
-    m = v.max()
-    if m==0:
-        return np.zeros(v.shape)
-    else:
-        return v*max_value/m
+def normalize_numpy(v, new_max=1.0, new_min=0.0):
+    min_v = np.min(v)
+    max_v = np.max(v)
+
+    v_new = (v-min_v)*(new_max-new_min)/(max_v-min_v) + new_min
+    return v_new
 
 
 def create_if_not_exists(directory):

@@ -44,7 +44,7 @@ if __name__ == '__main__':
                 max_img = np.max(img)
                 min_img = np.min(img)
                 if max_img>1 or min_img<-1:
-                    dict_log[file] = (min_img,max_img)
+                    dict_log[file] = (min_img, max_img)
 
                 if c == "lesion":
                 #Log number of files with lesion
