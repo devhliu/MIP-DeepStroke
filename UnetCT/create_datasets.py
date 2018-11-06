@@ -135,14 +135,14 @@ if __name__ == '__main__':
         with open(args.setfile, 'rb') as handle:
             dict_sets = pickle.load(handle)
 
-        #ratios
-        total = len(dict_sets["train"])+len(dict_sets["test"])+len(dict_sets["val"])
-        train = dict_sets["train"]
-        test = dict_sets["test"]
-        val = dict_sets["validation"]
-        ratios = [len(train)/total, len(test)/total, len(val)/total]
+    #ratios
+    total = len(dict_sets["train"])+len(dict_sets["test"])+len(dict_sets["validation"])
+    train = dict_sets["train"]
+    test = dict_sets["test"]
+    val = dict_sets["validation"]
+    ratios = [len(train)/total, len(test)/total, len(val)/total]
 
-    print("------ Total :", len(patients_paths), "patients ------")
+    print("------ Total :", len(total), "patients ------")
     print(len(train), "patients will be used for train ({}%)".format(ratios[0]*100))
     print(len(test), "patients will be used for test ({}%)".format(ratios[1]*100))
     print(len(val), "patients will be used for validation ({}%)".format(ratios[2]*100))
