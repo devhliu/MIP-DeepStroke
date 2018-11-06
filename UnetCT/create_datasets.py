@@ -31,7 +31,7 @@ def load_data_for_patient(patient_path):
     return MTT, CBF, CBV, Tmax, T2, lesion
 
 
-def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3):
+def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="normal"):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
@@ -45,12 +45,12 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
             continue
         
        # preprocess data (normalize data)
-        MTT = preprocess_image(MTT)
-        CBF = preprocess_image(CBF)
-        CBV = preprocess_image(CBV)
-        Tmax = preprocess_image(Tmax)
-        lesion = preprocess_image(lesion)
-        T2 = preprocess_image(T2)
+        MTT = preprocess_image(MTT, preprocessing=preprocessing)
+        CBF = preprocess_image(CBF, preprocessing=preprocessing)
+        CBV = preprocess_image(CBV, preprocessing=preprocessing)
+        Tmax = preprocess_image(Tmax, preprocessing=preprocessing)
+        T2 = preprocess_image(T2, preprocessing=preprocessing)
+        lesion = preprocess_image(lesion, preprocessing="normalize")
 
         # create patches, by doing overlap in case of training set
         is_train = (dataset_type == 'train')
@@ -97,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/Data")
     parser.add_argument("-p", "--patch_size", help="Patch size", type=int, default=32)
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
+    parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
 
     args = parser.parse_args()
 
@@ -151,7 +152,7 @@ if __name__ == '__main__':
     test_path = create_if_not_exists(os.path.join(save_path, "test"))
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
 
-    _create_data_for_patients(train, train_path, dataset_type="train")
-    _create_data_for_patients(test, test_path, dataset_type="test")
-    _create_data_for_patients(val, validation_path, dataset_type="validation")
+    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing)
+    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing)
+    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing)
 

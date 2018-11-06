@@ -5,8 +5,15 @@ import progressbar
 from utils import create_if_not_exists, normalize_numpy
 
 
-def preprocess_image(img):
-    return normalize_numpy(img)
+def preprocess_image(img, preprocessing="standardize"):
+    if preprocessing=="normalize":
+        return normalize_numpy(img)
+    if preprocessing=="standardize":
+        return standardize(img)
+
+def standardize(img):
+    img_new = (img-np.mean(img))/np.std(img)
+    return img_new
 
 def load_data_atlas_for_patient(patient_path):
     patient = os.path.basename(patient_path)

@@ -1,7 +1,7 @@
 import numpy as np
 from keras import backend as K
 from keras.engine import Input, Model
-from keras.layers import Conv3D, MaxPooling3D, UpSampling3D, Activation, BatchNormalization, PReLU, Deconvolution3D
+from keras.layers import Conv3D, MaxPooling3D, UpSampling3D, Activation, BatchNormalization, PReLU, Deconvolution3D, LeakyReLU
 from keras.optimizers import Adam
 import os
 from metrics import dice_coefficient_loss, get_label_dice_coefficient_function, dice_coefficient
@@ -19,7 +19,8 @@ except ImportError:
 
 def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning_rate=0.00001, deconvolution=False,
                   depth=4, n_base_filters=32, include_label_wise_dice_coefficients=False, metrics=dice_coefficient,
-                  batch_normalization=False, loss=dice_coefficient_loss, activation_name="sigmoid"):
+                  batch_normalization=False, loss=dice_coefficient_loss, layer_activation_name="relu", final_activation_name="sigmoid",
+                  lr_decay=1e-2):
     """
     Builds the 3D UNet Keras model.f
     :param metrics: List metrics to be calculated during model training (default is dice coefficient).
@@ -68,7 +69,7 @@ def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning
                                                  batch_normalization=batch_normalization)
 
     final_convolution = Conv3D(n_labels, (1, 1, 1))(current_layer)
-    act = Activation(activation_name)(final_convolution)
+    act = Activation(final_activation_name)(final_convolution)
     model = Model(inputs=inputs, outputs=act)
 
     if not isinstance(metrics, list):
@@ -81,7 +82,7 @@ def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning
         else:
             metrics = label_wise_dice_metrics
 
-    model.compile(optimizer=Adam(lr=initial_learning_rate), loss=loss, metrics=metrics)
+    model.compile(optimizer=Adam(lr=initial_learning_rate, decay=lr_decay), loss=loss, metrics=metrics)
     return model
 
 
@@ -110,6 +111,8 @@ def create_convolution_block(input_layer, n_filters, batch_normalization=False, 
         layer = InstanceNormalization(axis=1)(layer)
     if activation is None:
         return Activation('relu')(layer)
+    if activation is "LeakyReLU":
+        return LeakyReLU(alpha=0.3)
     else:
         return activation()(layer)
 

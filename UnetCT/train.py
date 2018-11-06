@@ -17,6 +17,7 @@ from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_c
 from keras.metrics import binary_crossentropy, binary_accuracy
 from create_datasets import load_data_for_patient
 import tensorflow as tf
+import json
 
 config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 6} )
 sess = tf.Session(config=config)
@@ -102,7 +103,8 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
 
 
-def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'], num_patient=295742):
+def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
+          test_patient=295742, train_patient=758594):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -136,8 +138,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         layer = int(MTT.shape[2]/2.0)
         layers = [layer]
 
-        patient_path1 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(758594)
-        patient_path2 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(num_patient)
+        patient_path1 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(train_patient)
+        patient_path2 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(test_patient)
 
         patients = dict({
             patient_path1: ["train",[35]],
@@ -199,11 +201,12 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     shuffle = True         # Shuffle the data before creating a batch
 
     # Train the model, iterating on the data in batches of 32 samples
-    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
-                                  callbacks=[tensorboard_callback, checkpoint_callback],
-                                  validation_data=validation_generator, validation_steps=validation_steps,
-                                  class_weight=None, max_queue_size=2*batch_size,
-                                  workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)
+    with tf.device("/device:GPU:{}".format(GPU_ID)):
+        history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=500, verbose=1,
+                                      callbacks=[tensorboard_callback, checkpoint_callback],
+                                      validation_data=validation_generator, validation_steps=validation_steps,
+                                      class_weight=None, max_queue_size=2*batch_size,
+                                      workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)
 
     return model, history
 
@@ -218,22 +221,66 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--batch_size", type=int, help="Batch size", default=32)
     parser.add_argument("-s", "--skip_blank", type=bool, help="Skip blank images - will not be fed to the network", default=False)
     parser.add_argument("-e", "--epoch_size", type=int, help="Steps per epoch", default=None)
-    parser.add_argument("-p", "--patient", type=int, help="Patient from which to log an image in tensorboard", default=295742)
+    parser.add_argument("-testp", "--test_patient", type=int, help="Patient from which to log an image in tensorboard", default=295742)
+    parser.add_argument("-trainp", "--train_patient", type=int, help="Patient from which to log an image in tensorboard",default=758594)
     parser.add_argument("-lr", "--initial_learning_rate", type=float, help="Initial learning rate", default=1e-6)
     parser.add_argument("-a", "--activation_name", type=str, help="activation name", default="sigmoid")
     parser.add_argument("-f", "--filters", type=int, help="number of base filters", default=16)
-    parser.add_argument("-gpu","--gpu", type=int, help="GPU number", default=0)
+    parser.add_argument("-gpu", "--gpu", type=int, help="GPU number", default=0)
+    parser.add_argument("-decay", "--decay", type=float, help="Decay rate of learning", default=1e-2)
+    parser.add_argument("-depth", "--depth", type=float, help="Depth of Unet", default=5)
+    parser.add_argument("-bn", "--batch_normalization", type=bool, help="Activate batch normalization", default=False)
+    parser.add_argument("-loss", "--loss", type=bool, help="Loss function : [tversky, dice, weighted_dice]", default="tversky")
+    parser.add_argument("-params", "--parameters", type=str, help="path to JSON containing the parameters of the model", default=None)
 
     args = parser.parse_args()
-    data_path = args.data_path
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
-    batch_size = args.batch_size
-    num_patient = args.patient
 
-    activation = args.activation_name
-    learning_rate = args.initial_learning_rate
-    n_filter = args.filters
-    GPU_ID = args.gpu
+    # If parameters are not specified, load from command line arguments
+    if args.parameters == None:
+        parameters = dict()
+        parameters["logdir"] = logdir
+        parameters["data_path"] = args.data_path
+        parameters["batch_size"] = args.batch_size
+        parameters["batch_normalization"] = args.batch_normalization
+        parameters["skip_blank"] = args.skip_blank
+        parameters["steps_per_epoch"] = args.epoch_size
+        parameters["initial_learning_rate"] = args.initial_learning_rate
+        parameters["decay"] = args.decay
+        parameters["final_activation"] = args.activation_name
+        parameters["n_filters"] = args.filter
+        parameters["depth"] = args.depth
+        parameters["GPU_ID"] = args.gpu
+        parameters["loss_function"] = args.loss
+        parameters["test_patient"] = args.test_patient
+        parameters["train_patient"] = args.train_patient
+    else:
+        # If parameters are specified, load them from JSON
+        print("Loading parameters from : "+args.parameters)
+        with open(args.parameters, 'r') as fp:
+            parameters = json.load(fp)
+
+    # Save copy of json in folder of the model
+    json_file = os.path.join(logdir, "parameters.json")
+    print("Saving parameters in : "+json_file)
+    with open(json_file, 'w') as fp:
+        json.dump(parameters, fp)
+
+    #Load values from parameters
+    data_path = parameters["data_path"]
+    batch_size = parameters["batch_size"]
+    batch_normalization = parameters["batch_normalization"]
+    skip_blank = parameters["skip_blank"]
+    steps_per_epoch = parameters["steps_per_epoch"]
+    initial_learning_rate = parameters["initial_learning_rate"]
+    decay = parameters["decay"]
+    final_activation = parameters["final_activation"]
+    n_filters = parameters["n_filters"]
+    depth = parameters["depth"]
+    GPU_ID = parameters["GPU_ID"]
+    loss_function = parameters["loss_function"]
+    test_patient = parameters["test_patient"]
+    train_patient = parameters["train_patient"]
 
     # Set the script to use GPU with GPU_ID
     os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)
@@ -243,7 +290,7 @@ if __name__ == '__main__':
     input_example = os.listdir(os.path.join(path_train, "MTT"))[0]
     patch_size = nb.load(os.path.join(path_train, "MTT", input_example)).get_data().shape
 
-    if(args.skip_blank):
+    if(skip_blank):
         print("Skipping blank images")
     print("Patch size detected : {}".format(patch_size))
 
@@ -255,7 +302,13 @@ if __name__ == '__main__':
                'mse',
                ]
 
-    loss_function = tversky_loss
+    losses = {
+        "tversky":tversky_loss,
+        "dice":dice_coefficient,
+        "weighted_dice":weighted_dice_coefficient
+    }
+
+    loss_function = losses[loss_function]
 
     #folders_input = ["CBV", "CBF", "MTT", "Tmax"]
     #folders_input = ["Tmax"]
@@ -265,15 +318,17 @@ if __name__ == '__main__':
 
     model = unet_model_3d([len(folders_input), patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
-                          n_base_filters=n_filter,
-                          depth=5,
-                          batch_normalization=False,
+                          n_base_filters=n_filters,
+                          depth=depth,
+                          batch_normalization=batch_normalization,
                           metrics=metrics,
-                          initial_learning_rate=learning_rate,
+                          initial_learning_rate=initial_learning_rate,
                           loss=loss_function,
-                          activation_name=activation)
+                          final_activation_name=final_activation,
+                          lr_decay=decay)
 
     create_if_not_exists(logdir)
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
-          skip_blank=args.skip_blank, epoch_size=args.epoch_size, patch_size=patch_size,
-          folders_input=folders_input, folders_target=folders_target, num_patient=num_patient)
+          skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
+          folders_input=folders_input, folders_target=folders_target, test_patient=test_patient,
+          train_patient=train_patient)
