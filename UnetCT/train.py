@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument("-decay", "--decay", type=float, help="Decay rate of learning", default=1e-2)
     parser.add_argument("-depth", "--depth", type=float, help="Depth of Unet", default=5)
     parser.add_argument("-bn", "--batch_normalization", type=bool, help="Activate batch normalization", default=False)
-    parser.add_argument("-loss", "--loss", type=bool, help="Loss function : [tversky, dice, weighted_dice, binary_crossentropy, binary_accuracy]", default="tversky")
+    parser.add_argument("-loss", "--loss", type=str, help="Loss function : [tversky, dice, weighted_dice, binary_crossentropy, binary_accuracy]", default="tversky")
     parser.add_argument("-params", "--parameters", type=str, help="path to JSON containing the parameters of the model", default=None)
     parser.add_argument('-i', '--input', nargs='+', action="append", help='Input : use -i T2, -i Tmax, -i CBV -i CBF, -i MTT', required=True)
     parser.add_argument('-o', '--output', nargs='+', action="append", help='Input : use -o lesion', required=True)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
     create_if_not_exists(logdir)
-    
+
     # If parameters are not specified, load from command line arguments
     if args.parameters is None:
         parameters = dict()
@@ -253,8 +253,8 @@ if __name__ == '__main__':
     if len(inputs) == 0 or len(targets) == 0:
         raise Exception("Please provide inputs and outputs channels")
 
-    print('\033[1m' + "INPUTS : " + inputs + '\033[0m')
-    print('\033[1m' + "TARGETS : " + targets + '\033[0m')
+    print('\033[1m' + "INPUTS : " + str(inputs) + '\033[0m')
+    print('\033[1m' + "TARGETS : " + str(targets) + '\033[0m')
 
     # Set the script to use GPU with GPU_ID
     os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)

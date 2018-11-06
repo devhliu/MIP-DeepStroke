@@ -37,7 +37,8 @@ class TrainValTensorBoard(TensorBoard):
         self.val_log_dir = os.path.join(log_dir, 'validation')
 
         # Get PR Curve
-        self.pr_curve = kwargs.pop('pr_curve', True)
+        # self.pr_curve = kwargs.pop('pr_curve', True)
+        self.pr_curve = None
         self.initialized = False
         self.validation_generator = validation_generator
         self.validation_steps = validation_steps
@@ -80,8 +81,8 @@ class TrainValTensorBoard(TensorBoard):
             summary_value.tag = name
             self.val_writer.add_summary(summary, epoch, )
 
-        # Add PR Curve
-        self.__add_pr_curve(epoch)
+        ## Add PR Curve
+        #self.__add_pr_curve(epoch)
 
         # add image
         self.__log_example_image(epoch)
