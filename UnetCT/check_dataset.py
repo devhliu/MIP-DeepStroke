@@ -55,9 +55,9 @@ if __name__ == '__main__':
                         total_not_containing_lesion+=1
                     total_lesion_files+=1
 
-        dict["{}_CONTAINING_LESION".format(f)] = total_containing_lesion
-        dict["{}_NOT_CONTAINING_LESION".format(f)] = total_not_containing_lesion
-        dict["{}_TOTAL_FILES".format(f)] = total_lesion_files
+        dict_log["{}_CONTAINING_LESION".format(f)] = total_containing_lesion
+        dict_log["{}_NOT_CONTAINING_LESION".format(f)] = total_not_containing_lesion
+        dict_log["{}_TOTAL_FILES".format(f)] = total_lesion_files
 
     # Save report
     json_file = os.path.join(directory, "report.json")
@@ -67,18 +67,18 @@ if __name__ == '__main__':
     print("Found {} incorrect files. Report is available here : {}".format(len(dict_log), json_file))
 
 
-    total_dataset_size = np.array([dict["{}_TOTAL_FILES".format(f)] for f in folders]).sum()
+    total_dataset_size = np.array([dict_log["{}_TOTAL_FILES".format(f)] for f in folders]).sum()
 
     print("\nDataset description----------")
     for f in folders:
-        total_lesion = dict["{}_CONTAINING_LESION".format(f)]
-        total_not_lesion = dict["{}_NOT_CONTAINING_LESION".format(f)]
-        total = dict["{}_TOTAL_FILES".format(f)]
+        total_lesion = dict_log["{}_CONTAINING_LESION".format(f)]
+        total_not_lesion = dict_log["{}_NOT_CONTAINING_LESION".format(f)]
+        total = dict_log["{}_TOTAL_FILES".format(f)]
 
-        print("--- {} ")
+        print("--- {} ".format(f.upper()))
         print("Lesions : {} ({}%)".format(str(total_lesion), str(100*total_lesion/total)))
         print("Not lesions : {} ({}%)".format(str(total_not_lesion), str(100*total_not_lesion / total)))
-        print("TOTAL : {} ({}% of total dataset)".format(str(100*total/total_dataset_size)))
+        print("TOTAL : {} ({}% of total dataset)".format(str(total),str(100*total/total_dataset_size)))
         print("")
 
     print("Total dataset size : {} files.".format(total_dataset_size))

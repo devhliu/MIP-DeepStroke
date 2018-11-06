@@ -6,14 +6,14 @@ from utils import create_if_not_exists, normalize_numpy
 
 
 def preprocess_image(img, preprocessing="standardize"):
-    if preprocessing=="normalize":
+    if preprocessing is "normalize":
         return normalize_numpy(img)
-    if preprocessing=="standardize":
+    if preprocessing is "standardize":
         return standardize(img)
 
 def standardize(img):
     img_norm = normalize_numpy(img)
-    img_new = (img-np.mean(img_norm))/np.std(img_norm)
+    img_new = (img_norm-np.mean(img_norm))/np.std(img_norm)
     return img_new
 
 def load_data_atlas_for_patient(patient_path):
@@ -181,13 +181,18 @@ def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,
 
     check(x_shape,y_shape,slices)
 
-    patches = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+    #patches = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+    patches = []
     for k in range(0,slices-PATCH_Z+STRIDE_PATCH_Z,STRIDE_PATCH_Z):
         for i in range(0,x_shape-PATCH_X+STRIDE_PATCH_X,STRIDE_PATCH_X):
             for j in range(0,y_shape-PATCH_Y+STRIDE_PATCH_Y,STRIDE_PATCH_Y):
-                cut = np.reshape(toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z],(1,PATCH_X,PATCH_Y,PATCH_Z))
-                patches = np.append(patches,cut,axis=0)
+                #cut = np.reshape(toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z],(1,PATCH_X,PATCH_Y,PATCH_Z))
+                # patches = np.append(patches,cut,axis=0)
+                cut = toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z]
+                patches.append(cut)
 
+    patches = np.array(patches)
+    print(patches.shape)
     return patches
 
 

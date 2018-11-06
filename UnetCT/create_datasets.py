@@ -32,7 +32,7 @@ def load_data_for_patient(patient_path):
     return MTT, CBF, CBV, Tmax, T2, lesion
 
 
-def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="normal"):
+def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize"):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
@@ -122,7 +122,12 @@ if __name__ == '__main__':
 
         # Split set of patients into train, test and val sets
         ratios = [0.7, 0.2, 0.1]
-        train, test, val, _, _, _ = split_train_test_val(patients_paths, ["" for x in range(len(patients_paths))], ratios=ratios)
+        if len(patients_paths)<4:
+            train = patients_paths
+            test = []
+            val = []
+        else:
+            train, test, val, _, _, _ = split_train_test_val(patients_paths, ["" for x in range(len(patients_paths))], ratios=ratios)
 
         dict_sets = {"train":train,
                      "test":test,
