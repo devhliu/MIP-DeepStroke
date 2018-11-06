@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from utils import create_if_not_exists, splits_sets, split_train_test_val, normalize_numpy
 from image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches_from_list, preprocess_image
 from image_processing import to_patches_3d, to_patches_3d_augmented_with_1
+from multiprocessing import Process
 import numpy as np
 import nibabel as nb
 import os
