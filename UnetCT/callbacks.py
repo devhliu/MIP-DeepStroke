@@ -176,10 +176,6 @@ class TrainValTensorBoard(TensorBoard):
                            "T2": T2,
                            "lesion": lesion}
 
-            print("Shapes of data : ")
-            for k in dict_inputs.keys():
-                print("\t", k, " - ", dict_inputs[k].shape)
-
             images_input = [dict_inputs[k] for k in self.folders_input]
             images_target = [dict_inputs[k] for k in self.folders_target]
 
