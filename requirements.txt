@@ -17,7 +17,7 @@ progressbar==2.5
 scikit-image==0.14.1
 scikit-learn==0.20.0
 scipy==1.1.0
-setuptools==40.5.0
+setuptools==39.1.0
 sklearn==0.0
 tensorboard==1.11.0
 tensorflow-gpu==1.11.0

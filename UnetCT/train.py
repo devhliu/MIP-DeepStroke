@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 import time
 import keras
 from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss, tversky_coeff, tversky_loss
-from keras.metrics import binary_crossentropy, binary_accuracy
+from keras.metrics import binary_crossentropy, binary_accuracy, mean_absolute_error,
 import tensorflow as tf
 import json
 
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument("-decay", "--decay", type=float, help="Decay rate of learning", default=1e-2)
     parser.add_argument("-depth", "--depth", type=float, help="Depth of Unet", default=5)
     parser.add_argument("-bn", "--batch_normalization", type=bool, help="Activate batch normalization", default=False)
-    parser.add_argument("-loss", "--loss", type=str, help="Loss function : [tversky, dice, weighted_dice, binary_crossentropy, binary_accuracy]", default="tversky")
+    parser.add_argument("-loss", "--loss", type=str, help="Loss function : [tversky, dice, weighted_dice, mean_absolute_error]", default="tversky")
     parser.add_argument("-params", "--parameters", type=str, help="path to JSON containing the parameters of the model", default=None)
     parser.add_argument('-i', '--input', nargs='+', action="append", help='Input : use -i T2, -i Tmax, -i CBV -i CBF, -i MTT', required=True)
     parser.add_argument('-o', '--output', nargs='+', action="append", help='Input : use -o lesion', required=True)
@@ -287,10 +287,9 @@ if __name__ == '__main__':
 
     losses = {
         "tversky":tversky_loss,
-        "dice":dice_coefficient,
-        "weighted_dice":weighted_dice_coefficient,
-        "binary_accuracy" : binary_accuracy,
-        "binary_crossentropy" : binary_crossentropy
+        "dice":dice_coefficient_loss,
+        "weighted_dice":weighted_dice_coefficient_loss,
+        "mean_absolute_error" : mean_absolute_error
     }
 
     loss_function = losses[loss_function]
