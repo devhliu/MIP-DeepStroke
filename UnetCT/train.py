@@ -250,6 +250,13 @@ if __name__ == '__main__':
     inputs = parameters['inputs']
     targets = parameters['targets']
 
+    #Display Parameters
+    print("---")
+    print("Parameters")
+    for key in parameters.keys():
+        print("{} : {}".format(key,parameters[key]))
+    print("---")
+
     if len(inputs) == 0 or len(targets) == 0:
         raise Exception("Please provide inputs and outputs channels")
 
