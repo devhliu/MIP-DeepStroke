@@ -226,7 +226,7 @@ class TrainValTensorBoard(TensorBoard):
             list_merged_images = []
             for i in range(0, len(images)+images_per_log, images_per_log):
                 image_merged = self.__merge_images(images[i:i+images_per_log])
-                
+
                 if image_merged is not None:
                     list_merged_images.append(image_merged)
             if len(list_merged_images)>0:

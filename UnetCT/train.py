@@ -16,7 +16,7 @@ from keras.metrics import binary_crossentropy, binary_accuracy
 import tensorflow as tf
 import json
 
-config = tf.ConfigProto(device_count={'GPU': 1 , 'CPU': 6} )
+config = tf.ConfigProto(device_count={'GPU': 1 , 'CPU': 1} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 

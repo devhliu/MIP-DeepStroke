@@ -105,7 +105,6 @@ ENV/
 
 
 #other
-*.txt
 *.csv
 
 #Data
