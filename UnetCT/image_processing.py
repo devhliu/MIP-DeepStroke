@@ -12,13 +12,16 @@ def preprocess_image(img, preprocessing="standardize"):
         return standardize(img)
 
 def standardize(img):
-    # scale between 0 and 1
-    img_norm = normalize_numpy(img, new_min=0.0, new_max=1.0)
-    # set mean = 0 and std = 1
-    img_new = (img_norm-np.mean(img_norm))/np.std(img_norm)
+    mean = np.mean(img)
+    std = np.std(img)
+    img_std = (img-mean)/std
+
+    #Clipping values between -2 and 3 to remove outliers
+    img_clipped = np.clip(img_std, -2, 3)
+
     # scaling between -1 and 1
-    img_new_norm = normalize_numpy(img_new, new_min=-1.0, new_max=1.0)
-    return img_new_norm
+    img_scaled = normalize_numpy(img_clipped, new_min=0, new_max=1)
+    return img_scaled
 
 def load_data_atlas_for_patient(patient_path):
     patient = os.path.basename(patient_path)
