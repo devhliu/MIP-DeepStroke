@@ -13,6 +13,7 @@ from datetime import datetime
 import pandas as pd
 import json
 import re
+import traceback
 
 def parseLoss(model_name):
     split = model_name.split("-")
@@ -169,7 +170,7 @@ def evaluate_dir(logdir, channels_input, channels_output):
     date = os.path.basename(logdir)
     # load parameters
     print("Loading parameters from : " + parameters_file)
-    with open(args.parameters, 'r') as fp:
+    with open(parameters_file, 'r') as fp:
         parameters = json.load(fp)
     data_path = os.path.join(parameters["data_path"], "test")
 
@@ -183,7 +184,7 @@ def evaluate_dir(logdir, channels_input, channels_output):
         if (len(checkpoints) < 1):
             print("No checkpoints found in {}".format(checkpoints_folder))
         else:
-            print("{} checkpoints found in folder.".format(len(checkpoints_folder)))
+            print("{} checkpoints found in folder.".format(len(checkpoints)))
         # For all checkpoints, evaluate.
         for ckpt in tqdm(checkpoints):
 
@@ -212,7 +213,7 @@ def evaluate_dir(logdir, channels_input, channels_output):
                 dict_scores = predict(data_path, model, channels_input, channels_output)
             except Exception as e:
                 print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
-                print(e)
+                traceback.print_exc()
                 continue
 
             dict_scores["model_name"] = model_name
