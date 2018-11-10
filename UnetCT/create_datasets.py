@@ -91,7 +91,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
             _save_patches(Tmax_extra, save_path, subject=subject, type="Tmax", extra=True)
             _save_patches(T2_extra, save_path, subject=subject, type="T2", extra=True)
             _save_patches(lesion_extra, save_path, subject=subject, type="lesion", extra=True)
-            _save_patches(1-lesion_extra, save_path, subject=subject, type="background", extra=True)
+            _save_patches(list(1-np.array(lesion_extra)), save_path, subject=subject, type="background", extra=True)
 
 
 if __name__ == '__main__':
