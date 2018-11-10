@@ -64,7 +64,7 @@ if __name__ == '__main__':
     with open(json_file, 'w') as fp:
         json.dump(dict_log, fp)
 
-    print("Found {} incorrect files. Report is available here : {}".format(len(dict_log), json_file))
+    print("Found {} incorrect files. Report is available here : {}".format(len(dict_log)-3*len(folders), json_file))
 
 
     total_dataset_size = np.array([dict_log["{}_TOTAL_FILES".format(f)] for f in folders]).sum()

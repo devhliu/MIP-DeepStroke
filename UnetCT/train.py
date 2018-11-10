@@ -12,9 +12,10 @@ from argparse import ArgumentParser
 import time
 import keras
 from metrics import dice_coefficient, weighted_dice_coefficient, weighted_dice_coefficient_loss, dice_coefficient_loss, tversky_coeff, tversky_loss
-from keras.metrics import binary_crossentropy, binary_accuracy, mean_absolute_error,
+from keras.metrics import binary_crossentropy, binary_accuracy, mean_absolute_error
 import tensorflow as tf
 import json
+from keras.callbacks import ReduceLROnPlateau
 
 config = tf.ConfigProto(device_count={'GPU': 1 , 'CPU': 1} )
 sess = tf.Session(config=config)
@@ -70,7 +71,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                     paths = inputs_paths+targets_paths
                     f.write("{} - {}".format(i, paths))
 
-            if not (np.all(inputs == 0) and skip_blank):
+            if not (np.all(targets[0] == 0) and skip_blank):
                 x_list.append(inputs)
                 y_list.append(targets)
 
@@ -99,7 +100,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
-          test_patient=295742, train_patient=758594):
+          test_patient=295742, train_patient=758594, learning_rate_patience=20):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -155,6 +156,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
                                     save_weights_only=False, mode='auto', period=1)
 
+    LRReduce = ReduceLROnPlateau(factor=decay, patience=learning_rate_patience)
+
     # Parameters
     validation_steps = 1   # Number of steps per evaluation (number of to pass)
     steps_per_epoch = (dataset_training_size/batch_size)  # Number of batches to pass before going to next epoch
@@ -164,7 +167,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     # Train the model, iterating on the data in batches of 32 samples
     with tf.device("/device:GPU:{}".format(GPU_ID)):
         history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=1000, verbose=1,
-                                      callbacks=[tensorboard_callback, checkpoint_callback],
+                                      callbacks=[tensorboard_callback, checkpoint_callback, LRReduce],
                                       validation_data=validation_generator, validation_steps=validation_steps,
                                       class_weight=None, max_queue_size=2*batch_size,
                                       workers=1, use_multiprocessing=False, shuffle=True, initial_epoch=0)

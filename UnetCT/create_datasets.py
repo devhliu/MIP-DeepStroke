@@ -52,6 +52,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         Tmax = preprocess_image(Tmax, preprocessing=preprocessing)
         T2 = preprocess_image(T2, preprocessing=preprocessing)
         lesion = preprocess_image(lesion, preprocessing="normalize")
+        background = preprocess_image((1-lesion), preprocessing="normalize")
 
         # create patches, by doing overlap in case of training set
         is_train = (dataset_type == 'train')
@@ -59,15 +60,17 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         CBF_patches = create_patches_from_images(CBF, patch_size, augment=is_train)
         CBV_patches = create_patches_from_images(CBV, patch_size, augment=is_train)
         Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=is_train)
-        lesion_patches = create_patches_from_images(lesion, patch_size, augment=is_train)
         T2_patches = create_patches_from_images(T2, patch_size, augment=is_train)
+        lesion_patches = create_patches_from_images(lesion, patch_size, augment=is_train)
+        background_patches = create_patches_from_images(background, patch_size, augment=is_train)
 
         _save_patches(MTT_patches, save_path, subject=subject, type="MTT")
         _save_patches(CBF_patches, save_path, subject=subject, type="CBF")
         _save_patches(CBV_patches, save_path, subject=subject, type="CBV")
         _save_patches(Tmax_patches, save_path, subject=subject, type="Tmax")
-        _save_patches(lesion_patches, save_path, subject=subject, type="lesion")
         _save_patches(T2_patches, save_path, subject=subject, type="T2")
+        _save_patches(lesion_patches, save_path, subject=subject, type="lesion")
+        _save_patches(background_patches, save_path, subject=subject, type="background")
 
         # create extra patches
         if is_train:
@@ -86,8 +89,9 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
             _save_patches(CBF_extra, save_path, subject=subject, type="CBF", extra=True)
             _save_patches(CBV_extra, save_path, subject=subject, type="CBV", extra=True)
             _save_patches(Tmax_extra, save_path, subject=subject, type="Tmax", extra=True)
-            _save_patches(lesion_extra, save_path, subject=subject, type="lesion", extra=True)
             _save_patches(T2_extra, save_path, subject=subject, type="T2", extra=True)
+            _save_patches(lesion_extra, save_path, subject=subject, type="lesion", extra=True)
+            _save_patches(1-lesion_extra, save_path, subject=subject, type="background", extra=True)
 
 
 if __name__ == '__main__':
