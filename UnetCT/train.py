@@ -100,7 +100,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
-          test_patient=295742, train_patient=758594, learning_rate_patience=20):
+          test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -138,7 +138,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    verbose=1,
                                                    histogram_freq=0,
                                                    batch_size=batch_size,
-                                                   write_graph=True,
+                                                   wte_graph=True,
                                                    write_grads=True,
                                                    write_images=True,
                                                    embeddings_freq=0,
@@ -156,7 +156,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
                                     save_weights_only=False, mode='auto', period=1)
 
-    LRReduce = ReduceLROnPlateau(factor=decay, patience=learning_rate_patience)
+    LRReduce = ReduceLROnPlateau(factor=learning_rate_decay, patience=learning_rate_patience)
 
     # Parameters
     validation_steps = 1   # Number of steps per evaluation (number of to pass)
@@ -250,8 +250,8 @@ if __name__ == '__main__':
     loss_function = parameters["loss_function"]
     test_patient = parameters["test_patient"]
     train_patient = parameters["train_patient"]
-    inputs = parameters['inputs']
-    targets = parameters['targets']
+    inputs = [x[0] for x in args.input]
+    targets = [x[0] for x in args.output]
 
     #Display Parameters
     print("---")
@@ -305,10 +305,9 @@ if __name__ == '__main__':
                           metrics=metrics,
                           initial_learning_rate=initial_learning_rate,
                           loss=loss_function,
-                          final_activation_name=final_activation,
-                          lr_decay=decay)
+                          final_activation_name=final_activation)
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient)
+          train_patient=train_patient, learning_rate_patience=20, learning_rate_decay=1-decay)
