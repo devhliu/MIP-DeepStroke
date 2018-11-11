@@ -71,7 +71,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                     paths = inputs_paths+targets_paths
                     f.write("{} - {}".format(i, paths))
 
-            if not (np.all(targets[0] == 0) and skip_blank):
+            if not (np.all(inputs == 0) and skip_blank):
                 x_list.append(inputs)
                 y_list.append(targets)
 
@@ -138,7 +138,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    verbose=1,
                                                    histogram_freq=0,
                                                    batch_size=batch_size,
-                                                   wte_graph=True,
+                                                   write_graph=True,
                                                    write_grads=True,
                                                    write_images=True,
                                                    embeddings_freq=0,
@@ -310,4 +310,4 @@ if __name__ == '__main__':
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient, learning_rate_patience=20, learning_rate_decay=1-decay)
+          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=1-decay)
