@@ -100,7 +100,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
-          test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0):
+          test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0, stage="wcoreg_"):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -143,7 +143,8 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    write_images=True,
                                                    embeddings_freq=0,
                                                    embeddings_layer_names=None,
-                                                   embeddings_metadata=None)
+                                                   embeddings_metadata=None,
+                                                   stage=stage)
 
 
         # Start Tensorboard
@@ -198,6 +199,7 @@ if __name__ == '__main__':
     parser.add_argument("-params", "--parameters", type=str, help="path to JSON containing the parameters of the model", default=None)
     parser.add_argument('-i', '--input', nargs='+', action="append", help='Input : use -i T2, -i Tmax, -i CBV -i CBF, -i MTT', required=True)
     parser.add_argument('-o', '--output', nargs='+', action="append", help='Input : use -o lesion', required=True)
+    parser.add_argument('-stage','--stage', help="Stage of registration : nothing, coreg_ or wcoreg_", default="wcoreg_")
 
     args = parser.parse_args()
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
@@ -223,6 +225,7 @@ if __name__ == '__main__':
         parameters["train_patient"] = args.train_patient
         parameters["inputs"] = [x[0] for x in args.input]
         parameters["targets"] = [x[0] for x in args.output]
+        parameters["stage"] = args.stage
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
@@ -252,6 +255,11 @@ if __name__ == '__main__':
     train_patient = parameters["train_patient"]
     inputs = [x[0] for x in args.input]
     targets = [x[0] for x in args.output]
+    if "stage" in parameters.keys():
+        stage = parameters["stage"]
+    else:
+        stage = args.stage
+
 
     #Display Parameters
     print("---")
@@ -310,4 +318,4 @@ if __name__ == '__main__':
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=1-decay)
+          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=1-decay, stage=stage)

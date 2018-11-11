@@ -28,7 +28,7 @@ from create_datasets import load_data_for_patient
 class TrainValTensorBoard(TensorBoard):
     def __init__(self, training_generator=None, validation_generator=None, validation_steps=None,
                  patients=None, patch_size=None, folders_input=["T2"], folders_target=["lesion"],
-                 verbose=0, log_dir='./logs', **kwargs):
+                 verbose=0, log_dir='./logs', stage="wcoreg_", **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
         super(TrainValTensorBoard, self).__init__(training_log_dir, **kwargs)
@@ -49,6 +49,7 @@ class TrainValTensorBoard(TensorBoard):
         self.patients = patients
         self.folders_input = folders_input
         self.folders_target = folders_target
+        self.stage = stage
 
     def set_model(self, model):
         # Setup writer for validation metrics
@@ -167,7 +168,7 @@ class TrainValTensorBoard(TensorBoard):
             if type_writer=="validation":
                 writer = self.val_writer
 
-            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient)
+            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient, stage=self.stage)
 
             dict_inputs = {"MTT": MTT,
                            "CBF": CBF,

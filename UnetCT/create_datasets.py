@@ -20,26 +20,26 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
             s = "{}_{}-{}-extra.nii"
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
-def load_data_for_patient(patient_path):
+def load_data_for_patient(patient_path, stage="wcoreg_"):
     p = os.path.basename(patient_path)
-    lesion = nb.load(os.path.join(patient_path, "Neuro_Cerebrale_64Ch", "wcoreg_VOI_lesion_{}.nii".format(p))).get_data()
-    MTT = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_MTT_{}.nii".format(p))).get_data()
-    Tmax = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_Tmax_{}.nii".format(p))).get_data()
-    CBF = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_rCBF_{}.nii".format(p))).get_data()
-    CBV = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "wcoreg_RAPID_rCBV_{}.nii".format(p))).get_data()
-    T2 = nb.load(os.path.join(patient_path, "Neuro_Cerebrale_64Ch", "wcoreg_t2_tse_tra_{}.nii".format(p))).get_data()
+    MTT = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "{}RAPID_MTT_{}.nii".format(stage, p))).get_data()
+    Tmax = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "{}RAPID_Tmax_{}.nii".format(stage, p))).get_data()
+    CBF = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "{}RAPID_rCBF_{}.nii".format(stage, p))).get_data()
+    CBV = nb.load(os.path.join(patient_path, "Ct2_Cerebrale", "{}RAPID_rCBV_{}.nii".format(stage, p))).get_data()
+    T2 = nb.load(os.path.join(patient_path, "Neuro_Cerebrale_64Ch", "{}t2_tse_tra_{}.nii".format(stage, p))).get_data()
+    lesion = nb.load(os.path.join(patient_path, "Neuro_Cerebrale_64Ch", "{}VOI_lesion_{}.nii".format(stage, p))).get_data()
 
     return MTT, CBF, CBV, Tmax, T2, lesion
 
 
-def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize"):
+def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize", stage="wcoreg_"):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
         subject = os.path.basename(patient_path)
         # load all data
         try:
-            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path)
+            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient_path, stage=stage)
         except Exception as e:
             print("Error while reading patient {}".format(patient_path))
             print(str(e))
@@ -103,6 +103,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--patch_size", help="Patch size", type=int, default=32)
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
     parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
+    parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="wcoreg_")
 
     args = parser.parse_args()
 
@@ -110,6 +111,7 @@ if __name__ == '__main__':
 
     patch_size = [args.patch_size, args.patch_size, args.patch_size]
     string_patches = "x".join([str(x) for x in patch_size])
+    stage = args.stage
 
     dataset_path = create_if_not_exists(args.save_path)
     dataset_data_path = create_if_not_exists(os.path.join(dataset_path, date))
@@ -162,7 +164,7 @@ if __name__ == '__main__':
     test_path = create_if_not_exists(os.path.join(save_path, "test"))
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
 
-    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing)
-    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing)
-    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing)
+    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage)
+    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing, stage=stage)
+    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing, stage=stage)
 
