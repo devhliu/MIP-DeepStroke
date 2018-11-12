@@ -66,6 +66,8 @@ def load_data_atlas_from_site(site_path):
 
 
 def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=False, patch_divider=4):
+    if (patch_size[0] == 1 or patch_size[1] == 1 or patch_size[2] == 1):
+        raise Exception("Patch size should at least be >[2,2,2] ")
     shape = numpy_image.shape
     missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
     numpy_image_padded = np.zeros(numpy_image.shape + missing)
@@ -76,13 +78,7 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
 
     shape = numpy_image_padded.shape
     dimension_size = np.array(np.ceil(np.array(numpy_image.shape) / patch_size), dtype=np.int64)
-    xMax = dimension_size[0] + 1
-    yMax = dimension_size[1] + 1
-    zMax = dimension_size[2] + 1
-    patches = [0 for x in range(
-        xMax * yMax * zMax)]  # Create patches array which handle structure of entire image (indexing of patches)
-
-    indices = []
+    patches = []
     if augment:
         # Create dataset using strides
         PATCH_X = patch_size[0]
@@ -97,16 +93,9 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
         for x in range(0, shape[0], patch_size[0]):
             for y in range(0, shape[1], patch_size[1]):
                 for z in range(0, shape[2], patch_size[2]):
-                    idx = int(x / patch_size[0])
-                    idy = int(y / patch_size[1])
-                    idz = int(z / patch_size[2])
                     patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]]
-                    index1D = to1D_index(idx, idy, idz, xMax, yMax, zMax)
-                    try:
-                        patches[index1D] = patch
-                    except:
-                        print(index1D, xMax * yMax * zMax)
-                    indices.append(index1D)
+                    patches.append(patch)
+
     return patches
 
 
@@ -284,21 +273,13 @@ def recreate_image_from_patches(original_image_size, list_patches, mode="extend"
     dimension_size = np.array(np.ceil(np.array(original_image_size) / patch_size), dtype=np.int64)
 
     size_image = np.array((patch_size * dimension_size), dtype=np.int64)
-    xMax = dimension_size[0] + 1
-    yMax = dimension_size[1] + 1
-    zMax = dimension_size[2] + 1
-
     image = np.zeros(size_image)
 
-    for x in range(0, size_image[0], patch_size[0]):
-        for y in range(0, size_image[1], patch_size[1]):
-            for z in range(0, size_image[2], patch_size[2]):
-                idx = int(x / patch_size[0])
-                idy = int(y / patch_size[1])
-                idz = int(z / patch_size[2])
-                index1D = to1D_index(idx, idy, idz, xMax, yMax, zMax)
-
-                image[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]] = list_patches[index1D]
+    for x in range(0, size_image[0] - 1, patch_size[0]):
+        for y in range(0, size_image[1] - 1, patch_size[1]):
+            for z in range(0, size_image[2] - 1, patch_size[2]):
+                p = list_patches.pop(0)
+                image[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]] = p
 
     if mode == "extend":
         ox, oy, oz = original_image_size
