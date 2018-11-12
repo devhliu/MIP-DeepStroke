@@ -124,5 +124,5 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
         imgsx, imgsy = adjust_contrast(imgsx, imgsy, contrast, brightness)
 
     imgsx = [normalize(x) for x in imgsx]
-    imgsy = [normalize(y) for y in imgsx]
+    imgsy = [normalize(y) for y in imgsy]
     return imgsx, imgsy

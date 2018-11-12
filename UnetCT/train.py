@@ -107,7 +107,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
-                                                                 folders_target=folders_target)
+                                                                 folders_target=folders_target, augment_prob=augment_prob)
 
     dataset_training_size = len(os.listdir(os.path.join(data_path, "train",folders_input[0])))
     dataset_val_size = len(os.listdir(os.path.join(data_path, "validation",folders_input[0])))
