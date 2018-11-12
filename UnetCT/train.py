@@ -16,13 +16,14 @@ from keras.metrics import binary_crossentropy, binary_accuracy, mean_absolute_er
 import tensorflow as tf
 import json
 from keras.callbacks import ReduceLROnPlateau
+from image_augmentation import randomly_augment
 
 config = tf.ConfigProto(device_count={'GPU': 1 , 'CPU': 1} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
 
-def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion']):
+def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion'], augment_prob=0.0):
     train_path = "train/"
     validation_path = "validation/"
     if data_path is not None:
@@ -35,7 +36,7 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
-    train_generator = dual_generator(train_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank)
+    train_generator = dual_generator(train_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank, augment_prob=augment_prob)
 
     validation_generator = dual_generator(validation_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank)
 
@@ -72,6 +73,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                     f.write("{} - {}".format(i, paths))
 
             if not (np.all(inputs == 0) and skip_blank):
+                inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
                 x_list.append(inputs)
                 y_list.append(targets)
 
@@ -100,7 +102,8 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
-          test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0, stage="wcoreg_"):
+          test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0, stage="wcoreg_",
+          augment_prob=0.0):
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -125,7 +128,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
                                                                      skip_blank=skip_blank,
                                                                      folders_input=folders_input,
-                                                                    folders_target=folders_target)
+                                                                    folders_target=folders_target, augment_prob=augment_prob)
 
         tensorboard_callback = TrainValTensorBoard(log_dir=log_path,
                                                    training_generator=training_generator_log,
@@ -200,6 +203,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', nargs='+', action="append", help='Input : use -i T2, -i Tmax, -i CBV -i CBF, -i MTT', required=True)
     parser.add_argument('-o', '--output', nargs='+', action="append", help='Input : use -o lesion', required=True)
     parser.add_argument('-stage','--stage', help="Stage of registration : nothing, coreg_ or wcoreg_", default="wcoreg_")
+    parser.add_argument('-augment', '--augment', help="Augmentation probability", default=0.0)
 
     args = parser.parse_args()
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
@@ -226,6 +230,7 @@ if __name__ == '__main__':
         parameters["inputs"] = [x[0] for x in args.input]
         parameters["targets"] = [x[0] for x in args.output]
         parameters["stage"] = args.stage
+        parameters["augment_prob"] = args.augment
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
@@ -259,7 +264,10 @@ if __name__ == '__main__':
         stage = parameters["stage"]
     else:
         stage = args.stage
-
+    if "augment_prob" in parameters.keys():
+        augment_prob = parameters["augment_prob"]
+    else:
+        augment_prob = args.augment
 
     #Display Parameters
     print("---")
@@ -318,4 +326,5 @@ if __name__ == '__main__':
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=1-decay, stage=stage)
+          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=1-decay, stage=stage,
+          augment_prob=augment_prob)
