@@ -108,9 +108,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    patch_size = set([x for x in args.patch_size])
+    patch_size = [x for x in args.patch_size]
     if len(patch_size)==1:
-        patch_size = [patch_size, patch_size, patch_size]
+        patch_size = [patch_size[0], patch_size[0], patch_size[0]]
 
     date = datetime.datetime.now().strftime("%d%m%y-%H%M")
 

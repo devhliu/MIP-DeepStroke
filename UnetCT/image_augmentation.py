@@ -31,7 +31,7 @@ def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
 
 
 def adjust_contrast(imgsx, imgsy, contrast=128, brightness=128):
-    def normalize(v, new_max=1.0, new_min=0.0):
+    def _normalize(v, new_max=1.0, new_min=0.0):
         new_max = float(new_max)
         new_min = float(new_min)
         min_v = np.min(v)
@@ -50,7 +50,7 @@ def adjust_contrast(imgsx, imgsy, contrast=128, brightness=128):
         img = contrast * (img - 128.0) + 128.0 + brightness
         img[img < 0] = 0
         img[img > 255] = 255
-        return normalize(img, new_max=np.max(img_base), new_min=np.min(img_base))
+        return _normalize(img, new_max=np.max(img_base), new_min=np.min(img_base))
 
     imgs_c = imgsx.copy()
     contrasted = []
@@ -110,17 +110,19 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
     r = random.random()
     if r < prob:
         ax = random.randint(0, 2)
-        imgsx, imgsy = flip(x, y, axis=ax)
+        imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
         ax = random.randint(0, 2)
-        imgsx, imgsy = flip(x, y, axis=ax)
+        imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
         ax = random.randint(0, 2)
-        imgsx, imgsy = flip(x, y, axis=ax)
+        imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
 
-    # randomly flip
+    # randomly change contrast and brightness
     r = random.random()
     if r < prob:
         contrast = int(np.random.normal(loc=1.0, scale=0.3) * 128)
         brightness = int(np.random.normal(loc=1.0, scale=0.3) * 128)
         imgsx, imgsy = adjust_contrast(imgsx, imgsy, contrast, brightness)
 
+    imgsx = [normalize(x) for x in imgsx]
+    imgsy = [normalize(y) for y in imgsx]
     return imgsx, imgsy

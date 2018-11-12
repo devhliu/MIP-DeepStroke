@@ -43,7 +43,7 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
     return train_generator, validation_generator
 
 
-def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile=None):
+def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile=None, augment_prob=0.0):
     while True:
         example_dir = os.path.join(data_directory, folders_input[0])
         image_paths = os.listdir(example_dir)

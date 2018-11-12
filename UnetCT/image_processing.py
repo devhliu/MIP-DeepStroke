@@ -272,6 +272,9 @@ def recreate_image_from_patches(original_image_size, list_patches, mode="extend"
     patch_size = np.array(list_patches[0].shape)
     dimension_size = np.array(np.ceil(np.array(original_image_size) / patch_size), dtype=np.int64)
 
+    if type(list_patches) is np.ndarray:
+        list_patches = list_patches.tolist()
+
     size_image = np.array((patch_size * dimension_size), dtype=np.int64)
     image = np.zeros(size_image)
 
