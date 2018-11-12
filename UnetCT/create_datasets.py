@@ -100,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/snarduzz/Data/preprocessed_original_masked")
     parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/Data")
-    parser.add_argument("-p", "--patch_size", help="Patch size", type=int, default=32)
+    parser.add_argument("-p", "--patch_size", help="Patch size",  nargs="*", default=[32])
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
     parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
     parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="wcoreg_")
@@ -108,9 +108,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    patch_size = set([x for x in args.patch_size])
+    if len(patch_size)==1:
+        patch_size = [patch_size, patch_size, patch_size]
+
     date = datetime.datetime.now().strftime("%d%m%y-%H%M")
 
-    patch_size = [args.patch_size, args.patch_size, args.patch_size]
     string_patches = "x".join([str(x) for x in patch_size])
     stage = args.stage
 

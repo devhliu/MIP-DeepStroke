@@ -66,23 +66,23 @@ def load_data_atlas_from_site(site_path):
 
 
 def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=False, patch_divider=4):
-
     shape = numpy_image.shape
-    missing = np.array([patch_size[i]-(shape[i]%patch_size[i]) for i in range(len(patch_size))])
-    numpy_image_padded = np.zeros(numpy_image.shape+missing)
-
+    missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
+    numpy_image_padded = np.zeros(numpy_image.shape + missing)
 
     if mode is "extend":
         numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
                                              mode="constant", constant_values=0)
 
     shape = numpy_image_padded.shape
-    dimension_size = np.array(np.ceil(np.array(numpy_image.shape[:3]) / patch_size), dtype=np.int64)
-    xMax = dimension_size[0]
-    yMax = dimension_size[1]
-    zMax = dimension_size[2]
-    patches = [0 for x in range(xMax*yMax*zMax)] # Create patches array which handle structure of entire image (indexing of patches)
+    dimension_size = np.array(np.ceil(np.array(numpy_image.shape) / patch_size), dtype=np.int64)
+    xMax = dimension_size[0] + 1
+    yMax = dimension_size[1] + 1
+    zMax = dimension_size[2] + 1
+    patches = [0 for x in range(
+        xMax * yMax * zMax)]  # Create patches array which handle structure of entire image (indexing of patches)
 
+    indices = []
     if augment:
         # Create dataset using strides
         PATCH_X = patch_size[0]
@@ -91,18 +91,22 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
         STRIDE_PATCH_X = int(patch_size[0] / patch_divider)
         STRIDE_PATCH_Y = int(patch_size[1] / patch_divider)
         STRIDE_PATCH_Z = int(patch_size[2] / patch_divider)
-        patches = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z, STRIDE_PATCH_Z)
+        patches = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z,
+                                STRIDE_PATCH_Z)
     else:
         for x in range(0, shape[0], patch_size[0]):
             for y in range(0, shape[1], patch_size[1]):
                 for z in range(0, shape[2], patch_size[2]):
-                    idx = int(x/patch_size[0])
-                    idy = int(y/patch_size[1])
-                    idz = int(z/patch_size[2])
-                    index1D = to1D_index(idx, idy, idz, xMax, yMax)
+                    idx = int(x / patch_size[0])
+                    idy = int(y / patch_size[1])
+                    idz = int(z / patch_size[2])
                     patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]]
-                    patches[index1D] = patch
-
+                    index1D = to1D_index(idx, idy, idz, xMax, yMax, zMax)
+                    try:
+                        patches[index1D] = patch
+                    except:
+                        print(index1D, xMax * yMax * zMax)
+                    indices.append(index1D)
     return patches
 
 
@@ -262,8 +266,9 @@ def get_lesion_ratio(patches_list):
     return float(ratio)/float(len(patches_list))
 
 
-def to1D_index(x, y, z, xMax,yMax):
-    return (z * xMax * yMax) + (y * xMax) + x
+def to1D_index(x, y, z, xMax, yMax, zMax):
+    k =  (z * xMax * yMax) + (y * xMax) + x
+    return k
 
 
 def to3D(idx, xMax, yMax):
@@ -276,30 +281,31 @@ def to3D(idx, xMax, yMax):
 
 def recreate_image_from_patches(original_image_size, list_patches, mode="extend"):
     patch_size = np.array(list_patches[0].shape)
-    dimension_size = np.array(np.ceil(np.array(original_image_size)/patch_size), dtype=np.int64)
+    dimension_size = np.array(np.ceil(np.array(original_image_size) / patch_size), dtype=np.int64)
 
-    size_image = np.array((patch_size*dimension_size), dtype=np.int64)
-    xMax = dimension_size[0]
-    yMax = dimension_size[1]
+    size_image = np.array((patch_size * dimension_size), dtype=np.int64)
+    xMax = dimension_size[0] + 1
+    yMax = dimension_size[1] + 1
+    zMax = dimension_size[2] + 1
 
     image = np.zeros(size_image)
 
     for x in range(0, size_image[0], patch_size[0]):
         for y in range(0, size_image[1], patch_size[1]):
             for z in range(0, size_image[2], patch_size[2]):
-
-                idx = int(x/patch_size[0])
-                idy = int(y/patch_size[1])
-                idz = int(z/patch_size[2])
-                index1D = to1D_index(idx, idy, idz, xMax, yMax)
+                idx = int(x / patch_size[0])
+                idy = int(y / patch_size[1])
+                idz = int(z / patch_size[2])
+                index1D = to1D_index(idx, idy, idz, xMax, yMax, zMax)
 
                 image[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]] = list_patches[index1D]
 
     if mode == "extend":
         ox, oy, oz = original_image_size
         image = image[:ox, :oy, :oz]
-    
+
     return image
+
 
 def create_and_save_patches(input_list, label_list, patching_save_path, patch_size=[32, 32, 32]):
     assert (len(input_list) == len(label_list))
