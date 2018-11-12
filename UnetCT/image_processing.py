@@ -198,7 +198,6 @@ def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,
                 cut = toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z]
                 patches.append(cut)
 
-    patches = np.array(patches)
     return patches
 
 

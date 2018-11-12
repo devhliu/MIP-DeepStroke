@@ -14,6 +14,7 @@ import pandas as pd
 import json
 import re
 import traceback
+import tensorflow as tf
 
 def parseLoss(model_name):
     split = model_name.split("-")
@@ -37,9 +38,9 @@ def specificity(y_true, y_pred):
     return specificity
 
 
-def predict_patient(patient_id, list_files, model, channels_input=["MTT", "Tmax", "CBV", "CBF"], channels_output=["lesion"]):
+def predict_patient(patient_id, list_files, model, channels_input=["T2"], channels_output=["lesion"]):
     patient_patches_names = [x for x in list_files if patient_id in x]
-    patch_size = nb.load(patient_patches_names[0]).get_data()
+    patch_size = nb.load(patient_patches_names[0]).get_data().shape
 
     ys_true = []
     ys_pred = []
@@ -102,8 +103,12 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
         y_pred_thresh[y_pred_thresh < 0.5] = 0
         y_pred_thresh[y_pred_thresh >= 0.5] = 1
         f1 = metrics.f1_score(y_true, y_pred_thresh)
-        dice = dice_coefficient(y_true=y_true, y_pred=y_pred)
-        tversky = tversky_coeff(y_true=y_true,y_pred=y_pred)
+
+        # Convert to Tensor for Dice and Tversky scores
+        y_true_tensor = tf.cast(y_true, tf.float64)
+        y_pred_tensor = tf.cast(y_pred, tf.float64)
+        dice = dice_coefficient(y_true=y_true_tensor, y_pred=y_pred_tensor)
+        tversky = tversky_coeff(y_true=y_true_tensor, y_pred=y_pred_tensor)
 
         aucs.append(auc)
         f1_scores.append(f1)

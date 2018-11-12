@@ -32,7 +32,7 @@ def load_data_for_patient(patient_path, stage="wcoreg_"):
     return MTT, CBF, CBV, Tmax, T2, lesion
 
 
-def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize", stage="wcoreg_"):
+def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize", stage="wcoreg_", augment=False):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
@@ -56,13 +56,13 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
 
         # create patches, by doing overlap in case of training set
         is_train = (dataset_type == 'train')
-        MTT_patches = create_patches_from_images(MTT, patch_size, augment=is_train)
-        CBF_patches = create_patches_from_images(CBF, patch_size, augment=is_train)
-        CBV_patches = create_patches_from_images(CBV, patch_size, augment=is_train)
-        Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=is_train)
-        T2_patches = create_patches_from_images(T2, patch_size, augment=is_train)
-        lesion_patches = create_patches_from_images(lesion, patch_size, augment=is_train)
-        background_patches = create_patches_from_images(background, patch_size, augment=is_train)
+        MTT_patches = create_patches_from_images(MTT, patch_size, augment=augment)
+        CBF_patches = create_patches_from_images(CBF, patch_size, augment=augment)
+        CBV_patches = create_patches_from_images(CBV, patch_size, augment=augment)
+        Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=augment)
+        T2_patches = create_patches_from_images(T2, patch_size, augment=augment)
+        lesion_patches = create_patches_from_images(lesion, patch_size, augment=augment)
+        background_patches = create_patches_from_images(background, patch_size, augment=augment)
 
         _save_patches(MTT_patches, save_path, subject=subject, type="MTT")
         _save_patches(CBF_patches, save_path, subject=subject, type="CBF")
@@ -104,6 +104,7 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
     parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
     parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="wcoreg_")
+    parser.add_argument("-a", "--augment", type=bool, default=False, help="Augment the dataset")
 
     args = parser.parse_args()
 
@@ -164,7 +165,7 @@ if __name__ == '__main__':
     test_path = create_if_not_exists(os.path.join(save_path, "test"))
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
 
-    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage)
-    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing, stage=stage)
-    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing, stage=stage)
+    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage, augment=args.augment)
+    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing, stage=stage, augment=False)
+    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing, stage=stage,augment=False)
 
