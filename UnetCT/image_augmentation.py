@@ -8,7 +8,7 @@ def normalize(v, new_max=1.0, new_min=0.0):
     max_v = np.max(v)
     if max_v==min_v:
         return v
-    
+
     v_new = (v-min_v)*(new_max-new_min)/(max_v-min_v) + new_min
     return v_new
 

@@ -116,7 +116,8 @@ class TrainValTensorBoard(TensorBoard):
 
         image_summaries = []
         for image_num, image in enumerate(images):
-            # Write the image to a string
+            # Cast and write the image to a string
+            image =np.array(image , dtype=np.uint8)
             try:
                 # Python 2.7
                 s = StringIO()
