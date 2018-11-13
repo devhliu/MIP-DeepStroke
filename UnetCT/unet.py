@@ -47,9 +47,9 @@ def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning
     # add levels with max pooling
     for layer_depth in range(depth):
         layer1 = create_convolution_block(input_layer=current_layer, n_filters=n_base_filters*(2**layer_depth),
-                                          batch_normalization=batch_normalization)
+                                          batch_normalization=batch_normalization, activation=layer_activation_name)
         layer2 = create_convolution_block(input_layer=layer1, n_filters=n_base_filters*(2**layer_depth)*2,
-                                          batch_normalization=batch_normalization)
+                                          batch_normalization=batch_normalization, activation=layer_activation_name)
         if layer_depth < depth - 1:
             current_layer = MaxPooling3D(pool_size=pool_size)(layer2)
             levels.append([layer1, layer2, current_layer])
@@ -63,10 +63,12 @@ def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning
                                             n_filters=current_layer._keras_shape[1])(current_layer)
         concat = concatenate([up_convolution, levels[layer_depth][1]], axis=1)
         current_layer = create_convolution_block(n_filters=levels[layer_depth][1]._keras_shape[1],
-                                                 input_layer=concat, batch_normalization=batch_normalization)
+                                                 input_layer=concat, batch_normalization=batch_normalization,
+                                                 activation=layer_activation_name)
         current_layer = create_convolution_block(n_filters=levels[layer_depth][1]._keras_shape[1],
                                                  input_layer=current_layer,
-                                                 batch_normalization=batch_normalization)
+                                                 batch_normalization=batch_normalization,
+                                                 activation=layer_activation_name)
 
     final_convolution = Conv3D(n_labels, (1, 1, 1))(current_layer)
     act = Activation(final_activation_name)(final_convolution)
@@ -111,8 +113,8 @@ def create_convolution_block(input_layer, n_filters, batch_normalization=False, 
         layer = InstanceNormalization(axis=1)(layer)
     if activation is None:
         return Activation('relu')(layer)
-    if activation is "LeakyReLU":
-        return LeakyReLU(alpha=0.3)
+    if activation is "lrelu":
+        return LeakyReLU(alpha=0.3)(layer)
     else:
         return activation()(layer)
 
