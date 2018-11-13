@@ -193,6 +193,7 @@ if __name__ == '__main__':
     parser.add_argument("-trainp", "--train_patient", type=int, help="Patient from which to log an image in tensorboard", default=758594)
     parser.add_argument("-lr", "--initial_learning_rate", type=float, help="Initial learning rate", default=1e-6)
     parser.add_argument("-a", "--activation_name", type=str, help="activation name", default="sigmoid")
+    parser.add_argument("-la", "--layer_activation", type=str, help="layer activation name", default="relu")
     parser.add_argument("-f", "--filters", type=int, help="number of base filters", default=16)
     parser.add_argument("-gpu", "--gpu", type=int, help="GPU number", default=0)
     parser.add_argument("-decay", "--decay", type=float, help="Decay rate of learning", default=0.0)
@@ -231,6 +232,7 @@ if __name__ == '__main__':
         parameters["targets"] = [x[0] for x in args.output]
         parameters["stage"] = args.stage
         parameters["augment_prob"] = args.augment
+        parameters["layer_activation"] = args.layer_activation
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
@@ -268,6 +270,10 @@ if __name__ == '__main__':
         augment_prob = parameters["augment_prob"]
     else:
         augment_prob = args.augment
+    if "layer_activation" in parameters.keys():
+        layer_activation = parameters["layer_activation"]
+    else:
+        layer_activation = args.layer_activation
 
     #Display Parameters
     print("---")
@@ -321,7 +327,8 @@ if __name__ == '__main__':
                           metrics=metrics,
                           initial_learning_rate=initial_learning_rate,
                           loss=loss_function,
-                          final_activation_name=final_activation)
+                          final_activation_name=final_activation,
+                          layer_activation_name=layer_activation)
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
