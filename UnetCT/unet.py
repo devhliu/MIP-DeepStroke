@@ -113,10 +113,11 @@ def create_convolution_block(input_layer, n_filters, batch_normalization=False, 
         layer = InstanceNormalization(axis=1)(layer)
     if activation is None:
         return Activation('relu')(layer)
-    if activation is "lrelu":
+    if activation == "lrelu":
         return LeakyReLU(alpha=0.3)(layer)
     else:
-        return activation()(layer)
+        print("Activation {} not found. Choosing ReLu as default.".format(activation))
+        return Activation('relu')(layer)
 
 
 def compute_level_output_shape(n_filters, depth, pool_size, image_shape):
