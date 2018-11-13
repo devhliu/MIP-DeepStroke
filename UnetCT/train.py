@@ -195,7 +195,7 @@ if __name__ == '__main__':
     parser.add_argument("-a", "--activation_name", type=str, help="activation name", default="sigmoid")
     parser.add_argument("-f", "--filters", type=int, help="number of base filters", default=16)
     parser.add_argument("-gpu", "--gpu", type=int, help="GPU number", default=0)
-    parser.add_argument("-decay", "--decay", type=float, help="Decay rate of learning", default=1e-2)
+    parser.add_argument("-decay", "--decay", type=float, help="Decay rate of learning", default=0.0)
     parser.add_argument("-depth", "--depth", type=float, help="Depth of Unet", default=5)
     parser.add_argument("-bn", "--batch_normalization", type=bool, help="Activate batch normalization", default=False)
     parser.add_argument("-loss", "--loss", type=str, help="Loss function : [tversky, dice, weighted_dice, mean_absolute_error]", default="tversky")
@@ -326,5 +326,5 @@ if __name__ == '__main__':
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=1-decay, stage=stage,
+          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=decay, stage=stage,
           augment_prob=augment_prob)
