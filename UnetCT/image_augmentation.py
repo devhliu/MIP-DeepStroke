@@ -32,32 +32,36 @@ def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
     return rotatedXs, rotatedYs
 
 
-def adjust_contrast(imgsx, imgsy, contrast=128, brightness=128):
+def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
     def _normalize(v, new_max=1.0, new_min=0.0):
         new_max = float(new_max)
         new_min = float(new_min)
-        min_v = np.min(v)
-        max_v = np.max(v)
+        min_v = float(v.min())
+        max_v = float(v.max())
 
-        v_new = ((v - min_v) * (new_max - new_min) / (max_v - min_v)) + new_min
+        arr = np.array((v - min_v) * (new_max - new_min))
+        arr = np.true_divide(arr, (max_v - min_v), out=None)
+        v_new = arr + new_min
         return v_new
 
-    def _adjust_contrast(img, contrast=128.0, brightness=128.0):
-        contrast = float(contrast) / 128.0
-        brightness = float(brightness) - 128
+    def _adjust_contrast(img, contrast=1.0, brightness=1.0):
+        max_v = img.max()
+        min_v = img.min()
+        if (min_v < 0 or max_v > 1):
+            raise Exception("Image should be between 0.0 and 1.0")
         img_base = img.copy()
-        img = normalize(img_base, new_max=255.0, new_min=0.0)
-        # factor = (259.0 * (contrast + 255.0)) / (255.0 * (259.0 - contrast))
-        # img = (factor*(img-128.0))+128.0
-        img = contrast * (img - 128.0) + 128.0 + brightness
-        img[img < 0] = 0
-        img[img > 255] = 255
-        return _normalize(img, new_max=np.max(img_base), new_min=np.min(img_base))
+        img = _normalize(img_base, new_max=1.0, new_min=0.0)
+        imgc = contrast * (img - 0.5) + 0.5 + (brightness - 1.0)
+        imgc[imgc > 1] = 1
+        imgc[imgc < 0] = 0
+        # img_norm = _normalize(imgc, new_max=max_v, new_min=min_v)
+        return imgc
 
     imgs_c = imgsx.copy()
     contrasted = []
     for x in imgs_c:
-        contrasted.append(_adjust_contrast(x, contrast, brightness))
+        b = _adjust_contrast(x, contrast, brightness)
+        contrasted.append(b)
 
     return contrasted, imgsy
 
@@ -98,9 +102,12 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
     # randomly rotate
     r = random.random()
     if r < prob:
-        degx = int(random.random() * 359.0)  # in degree
-        degy = int(random.random() * 359.0)  # in degree
-        degz = int(random.random() * 359.0)  # in degree
+        rotation = 1 if random.randint(-1, 1) > -1 else -1
+        degx = rotation*int(random.random() * 10.0)  # in degree
+        rotation = 1 if random.randint(-1, 1) > -1 else -1
+        degy = rotation*int(random.random() * 10.0)  # in degree
+        rotation = 1 if random.randint(-1, 1) > -1 else -1
+        degz = rotation*int(random.random() * 10.0)  # in degree
         imgsx, imgsy = rotate3D(imgsx, imgsy, degx, degy, degz)
 
     # randomly add salt and pepper
@@ -121,10 +128,10 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
     # randomly change contrast and brightness
     r = random.random()
     if r < prob:
-        contrast = int(np.random.normal(loc=1.0, scale=0.3) * 128)
-        brightness = int(np.random.normal(loc=1.0, scale=0.3) * 128)
+        contrast = int(np.random.normal(loc=1.0, scale=0.3))
+        brightness = int(np.random.normal(loc=1.0, scale=0.3))
         imgsx, imgsy = adjust_contrast(imgsx, imgsy, contrast, brightness)
 
     imgsx = [normalize(x) for x in imgsx]
-    imgsy = [y for y in imgsy]
+    imgsy = [normalize(y) for y in imgsy]
     return imgsx, imgsy

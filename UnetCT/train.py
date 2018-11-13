@@ -333,5 +333,5 @@ if __name__ == '__main__':
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient, learning_rate_patience=30, learning_rate_decay=decay, stage=stage,
+          train_patient=train_patient, learning_rate_patience=10, learning_rate_decay=decay, stage=stage,
           augment_prob=augment_prob)

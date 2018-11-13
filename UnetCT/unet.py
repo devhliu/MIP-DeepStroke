@@ -114,6 +114,7 @@ def create_convolution_block(input_layer, n_filters, batch_normalization=False, 
     if activation is None:
         return Activation('relu')(layer)
     if activation == "lrelu":
+        print("Using lrelu as activation")
         return LeakyReLU(alpha=0.3)(layer)
     else:
         print("Activation {} not found. Choosing ReLu as default.".format(activation))
