@@ -23,7 +23,7 @@ from tqdm import tqdm
 import keras.backend as K
 
 from create_datasets import load_data_for_patient
-
+from skimage import img_as_float
 
 class TrainValTensorBoard(TensorBoard):
     def __init__(self, training_generator=None, validation_generator=None, validation_steps=None,
@@ -117,7 +117,11 @@ class TrainValTensorBoard(TensorBoard):
         image_summaries = []
         for image_num, image in enumerate(images):
             # Cast and write the image to a string
-            image =np.array(image , dtype=np.uint8)
+            image = np.array(image,dtype=np.float32)
+            #print(image.dtype, image.shape, image.min(), image.max())
+            image = img_as_float(image)
+            image = normalize_numpy(image,1.0,0.0)
+            #print("->",image.dtype, image.shape, image.min(), image.min())
             try:
                 # Python 2.7
                 s = StringIO()
