@@ -139,7 +139,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
                                                    folders_input=folders_input,
                                                    folders_target=folders_target,
                                                    verbose=1,
-                                                   histogram_freq=0,
+                                                   histogram_freq=1,
                                                    batch_size=batch_size,
                                                    write_graph=True,
                                                    write_grads=True,
