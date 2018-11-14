@@ -128,8 +128,8 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
     # randomly change contrast and brightness
     r = random.random()
     if r < prob:
-        contrast = int(np.random.normal(loc=1.0, scale=0.3))
-        brightness = int(np.random.normal(loc=1.0, scale=0.3))
+        contrast = np.random.normal(loc=1.0, scale=0.3)
+        brightness = np.random.normal(loc=1.0, scale=0.3)
         imgsx, imgsy = adjust_contrast(imgsx, imgsy, contrast, brightness)
 
     imgsx = [normalize(x) for x in imgsx]

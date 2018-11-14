@@ -117,11 +117,9 @@ class TrainValTensorBoard(TensorBoard):
         image_summaries = []
         for image_num, image in enumerate(images):
             # Cast and write the image to a string
-            image = np.array(image,dtype=np.float32)
-            #print(image.dtype, image.shape, image.min(), image.max())
-            image = img_as_float(image)
-            image = normalize_numpy(image,1.0,0.0)
-            #print("->",image.dtype, image.shape, image.min(), image.min())
+            #image = np.array(image,dtype=np.float32)
+            #image = img_as_float(image)
+            #image = normalize_numpy(image,1.0,0.0)
             try:
                 # Python 2.7
                 s = StringIO()

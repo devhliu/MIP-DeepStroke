@@ -72,8 +72,10 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                     paths = inputs_paths+targets_paths
                     f.write("{} - {}".format(i, paths))
 
+            # perform data augmentation
+            inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
+
             if not (np.all(inputs == 0) and skip_blank):
-                inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
                 x_list.append(inputs)
                 y_list.append(targets)
 
@@ -205,6 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', nargs='+', action="append", help='Input : use -o lesion', required=True)
     parser.add_argument('-stage','--stage', help="Stage of registration : nothing, coreg_ or wcoreg_", default="wcoreg_")
     parser.add_argument('-augment', '--augment', help="Augmentation probability", default=0.0)
+    parser.add_argument('-patience', '--learning_rate_patience', help="Learning rate patience", type=int, default=10)
 
     args = parser.parse_args()
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
@@ -274,6 +277,10 @@ if __name__ == '__main__':
         layer_activation = parameters["layer_activation"]
     else:
         layer_activation = args.layer_activation
+    if "learning_rate_patience" in parameters.keys():
+        learning_rate_patience = parameters["learning_rate_patience"]
+    else:
+        learning_rate_patience = args.learning_rate_patience
 
     #Display Parameters
     print("---")
@@ -333,5 +340,5 @@ if __name__ == '__main__':
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
-          train_patient=train_patient, learning_rate_patience=10, learning_rate_decay=decay, stage=stage,
-          augment_prob=augment_prob)
+          train_patient=train_patient, learning_rate_patience=learning_rate_patience, learning_rate_decay=decay,
+          stage=stage, augment_prob=augment_prob)
