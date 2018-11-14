@@ -99,6 +99,11 @@ def flip(imgsx, imgsy, axis=0):
 
 
 def randomly_augment(imgsx, imgsy, prob=0.15):
+
+    # Normalize between 0 and 1
+    imgsx = [normalize(x) for x in imgsx]
+    imgsy = [normalize(y) for y in imgsy]
+
     # randomly rotate
     r = random.random()
     if r < prob:
