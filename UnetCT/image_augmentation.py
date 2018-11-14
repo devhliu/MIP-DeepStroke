@@ -48,7 +48,7 @@ def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
         max_v = img.max()
         min_v = img.min()
         if (min_v < 0 or max_v > 1):
-            raise Exception("Image should be between 0.0 and 1.0")
+            raise Exception("Image should be between 0.0 and 1.0, found {} and {}".format(min_v, max_v))
         img_base = img.copy()
         img = _normalize(img_base, new_max=1.0, new_min=0.0)
         imgc = contrast * (img - 0.5) + 0.5 + (brightness - 1.0)
@@ -100,10 +100,6 @@ def flip(imgsx, imgsy, axis=0):
 
 def randomly_augment(imgsx, imgsy, prob=0.15):
 
-    # Normalize between 0 and 1
-    imgsx = [normalize(x) for x in imgsx]
-    imgsy = [normalize(y) for y in imgsy]
-
     # randomly rotate
     r = random.random()
     if r < prob:
@@ -129,6 +125,10 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
         ax = random.randint(0, 2)
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
+
+    # Normalize between 0 and 1 to be sure that everything is correct
+    imgsx = [normalize(x) for x in imgsx]
+    imgsy = [normalize(y) for y in imgsy]
 
     # randomly change contrast and brightness
     r = random.random()
