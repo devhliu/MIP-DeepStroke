@@ -37,6 +37,17 @@ def specificity(y_true, y_pred):
     specificity = tn / (tn + fp)
     return specificity
 
+def dice_score(y_true,y_pred):
+    dice = np.sum(y_pred[y_true == 1]) * 2.0 / (np.sum(y_pred) + np.sum(y_true))
+    return dice
+
+def tversky_score(y_true, y_pred, alpha=0.3):
+    onlyA = np.sum(y_pred)
+    onlyB = np.sum(y_true)
+    bothAB = np.sum(y_pred[y_true == 1])
+
+    tversky = bothAB / (alpha*onlyA + (1-alpha)*onlyB + bothAB)
+    return tversky
 
 def predict_patient(patient_id, list_files, model, channels_input=["T2"], channels_output=["lesion"]):
     patient_patches_names = [x for x in list_files if patient_id in x]
@@ -102,13 +113,17 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
         y_pred_thresh = y_pred.copy()
         y_pred_thresh[y_pred_thresh < 0.5] = 0
         y_pred_thresh[y_pred_thresh >= 0.5] = 1
-        f1 = metrics.f1_score(y_true, y_pred_thresh)
+        try:
+            f1 = metrics.f1_score(y_true, y_pred_thresh)
+        except:
+            f1 = 0.0
+            print("F1 is ill-posed : set to 0.0")
 
         # Convert to Tensor for Dice and Tversky scores
         y_true_tensor = tf.cast(y_true, tf.float64)
         y_pred_tensor = tf.cast(y_pred, tf.float64)
-        dice = dice_coefficient(y_true=y_true_tensor, y_pred=y_pred_tensor)
-        tversky = tversky_coeff(y_true=y_true_tensor, y_pred=y_pred_tensor)
+        dice = dice_score(y_true=y_true, y_pred=y_pred_thresh)
+        tversky = tversky_score(y_true=y_true, y_pred=y_pred_thresh)
 
         aucs.append(auc)
         f1_scores.append(f1)
@@ -123,8 +138,8 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
 
     # Normal scoring on whole test set without threshold
     auc = metrics.roc_auc_score(y_true,  y_pred)
-    coeff_dice = dice_coefficient(y_true, y_pred)
-    coeff_tversky = tversky_coeff(y_true, y_pred)
+    coeff_dice = dice_score(y_true, y_pred)
+    coeff_tversky = tversky_score(y_true, y_pred)
 
     dict_scores = {"auc": auc}
     dict_scores["dice"] = coeff_dice
