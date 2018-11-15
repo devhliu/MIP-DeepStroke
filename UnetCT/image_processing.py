@@ -175,9 +175,23 @@ def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,
     slices = shape[2]
 
     def check(x,y,z):
-        assert(((float)((x-PATCH_X)/STRIDE_PATCH_X)).is_integer())
-        assert(((float)((y-PATCH_Y)/STRIDE_PATCH_Y)).is_integer())
-        assert(((float)((z-PATCH_Z)/STRIDE_PATCH_Z)).is_integer())
+        try:
+            val = (float)((x-PATCH_X)/STRIDE_PATCH_X)
+            assert((val).is_integer())
+        except:
+            print("{}-{}/{} = {} is not integer.".format(x,PATCH_X,STRIDE_PATCH_X, val))
+
+        try:
+            val = (float)((y-PATCH_Y)/STRIDE_PATCH_Y)
+            assert((val).is_integer())
+        except:
+            print("{}-{}/{} = {} is not integer.".format(y,PATCH_Y,STRIDE_PATCH_Y, val))
+
+        try:
+            val = (float)((z - PATCH_Z) / STRIDE_PATCH_Z)
+            assert ((val).is_integer())
+        except:
+            print("{}-{}/{} = {} is not integer.".format(z, PATCH_Z, STRIDE_PATCH_Z, val))
 
     check(x_shape,y_shape,slices)
 

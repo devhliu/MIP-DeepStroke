@@ -156,7 +156,6 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
     dict_scores["tversky_std"] = np.std(np.array(tverskys))
 
     functions = {"dice_thresh": dice_score,
-                 "weighted-dice":weighted_dice_coefficient,
                  "tversky_thresh": tversky_score,
                  "ap":metrics.average_precision_score,
                  "f1-score":metrics.f1_score,
@@ -172,7 +171,7 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
     y_pred[y_pred >= 0.5] = 1
 
     for k in tqdm(functions.keys()):
-        if k=="f1-score":
+        if k is "f1-score":
             try:
                 score = functions[k](y_true, y_pred)
             except:
@@ -182,7 +181,6 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
                 score = functions[k](y_true, y_pred)
             except Exception as e:
                 print("error computing {}".format(k))
-                print(e)
                 score = "NaN"
         dict_scores[k] = score
 
