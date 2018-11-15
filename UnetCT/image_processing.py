@@ -79,7 +79,7 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
     shape = numpy_image_padded.shape
     dimension_size = np.array(np.ceil(np.array(numpy_image.shape) / patch_size), dtype=np.int64)
     patches = []
-    if augment:
+    if augment is True:
         # Create dataset using strides
         PATCH_X = patch_size[0]
         PATCH_Y = patch_size[1]
@@ -193,7 +193,7 @@ def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,
         except:
             print("{}-{}/{} = {} is not integer.".format(z, PATCH_Z, STRIDE_PATCH_Z, val))
 
-    check(x_shape,y_shape,slices)
+    #check(x_shape-1,y_shape-1,slices-1)
 
     #patches = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
     patches = []
