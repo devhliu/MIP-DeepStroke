@@ -100,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/snarduzz/Data/preprocessed_original_masked")
     parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/Data")
-    parser.add_argument("-p", "--patch_size", help="Patch size",  nargs="*", default=[32])
+    parser.add_argument("-p", "--patch_size", help="Patch size",  nargs="*", default=32, type=int)
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
     parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
     parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="wcoreg_")
