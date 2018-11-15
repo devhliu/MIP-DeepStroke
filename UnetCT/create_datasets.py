@@ -173,6 +173,14 @@ if __name__ == '__main__':
     print("Tmax : {}".format(Tmax.shape))
     print("T2 : {}".format(T2.shape))
     print("lesion : {}".format(lesion.shape))
+    print("") 
+    print("------- Checking dimensions of dataset ----------------")
+    for patient in tqdm(train+val+test):
+        list_files = load_data_for_patient(train[0], stage=stage)
+        shape_base = list_files[0].shape
+        for x in list_files:
+            if x.shape != shape_base:
+                print("Size do not match : {} <-> {} in patient {}".format(shape_base, x.shape, x))
 
     # Create folders to save the data
     train_path = create_if_not_exists(os.path.join(save_path, "train"))
