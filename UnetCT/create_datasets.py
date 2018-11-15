@@ -164,6 +164,16 @@ if __name__ == '__main__':
     print(len(test), "patients will be used for test ({}%)".format(ratios[1]*100))
     print(len(val), "patients will be used for validation ({}%)".format(ratios[2]*100))
 
+    # Print dimensions
+    print("------ Data dimensions -----------------")
+    MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(train[0], stage=stage)
+    print("MTT : {}".format(MTT.shape))
+    print("CBF : {}".format(CBF.shape))
+    print("CBV : {}".format(CBV.shape))
+    print("Tmax : {}".format(Tmax.shape))
+    print("T2 : {}".format(T2.shape))
+    print("lesion : {}".format(lesion.shape))
+
     # Create folders to save the data
     train_path = create_if_not_exists(os.path.join(save_path, "train"))
     test_path = create_if_not_exists(os.path.join(save_path, "test"))
