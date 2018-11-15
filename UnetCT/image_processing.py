@@ -77,10 +77,10 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
         missing = np.array([0 for i in range(len(patch_size))])
         numpy_image_padded = np.zeros(numpy_image.shape)
 
-    if mode is "extend":
+    if mode=="extend":
         numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
                                              mode="constant", constant_values=0)
-    if mode is "crop":
+    if mode== "crop":
         numpy_image_padded = numpy_image[0:patch_size[0],0:patch_size[1],0:patch_size[2]]
 
     shape = numpy_image_padded.shape
