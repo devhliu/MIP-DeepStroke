@@ -32,7 +32,8 @@ def load_data_for_patient(patient_path, stage="wcoreg_"):
     return MTT, CBF, CBV, Tmax, T2, lesion
 
 
-def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize", stage="wcoreg_", augment=False):
+def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize",
+                              stage="wcoreg_", augment=False , mode=mode):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
@@ -56,13 +57,13 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
 
         # create patches, by doing overlap in case of training set
         is_train = (dataset_type == 'train')
-        MTT_patches = create_patches_from_images(MTT, patch_size, augment=augment)
-        CBF_patches = create_patches_from_images(CBF, patch_size, augment=augment)
-        CBV_patches = create_patches_from_images(CBV, patch_size, augment=augment)
-        Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=augment)
-        T2_patches = create_patches_from_images(T2, patch_size, augment=augment)
-        lesion_patches = create_patches_from_images(lesion, patch_size, augment=augment)
-        background_patches = create_patches_from_images(background, patch_size, augment=augment)
+        MTT_patches = create_patches_from_images(MTT, patch_size, augment=augment, mode=mode)
+        CBF_patches = create_patches_from_images(CBF, patch_size, augment=augment, mode=mode)
+        CBV_patches = create_patches_from_images(CBV, patch_size, augment=augment, mode=mode)
+        Tmax_patches = create_patches_from_images(Tmax, patch_size, augment=augment, mode=mode)
+        T2_patches = create_patches_from_images(T2, patch_size, augment=augment, mode=mode)
+        lesion_patches = create_patches_from_images(lesion, patch_size, augment=augment, mode=mode)
+        background_patches = create_patches_from_images(background, patch_size, augment=augment, mode=mode)
 
         _save_patches(MTT_patches, save_path, subject=subject, type="MTT")
         _save_patches(CBF_patches, save_path, subject=subject, type="CBF")
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
     parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="wcoreg_")
     parser.add_argument("-a", "--augment", type=bool, default=False, help="Augment the dataset")
-
+    parser.add_argument("-m", "--mode", type=str, default="extend", help="What to do in case of mismatch of size : crop or extend?")
     args = parser.parse_args()
 
     patch_size = [x for x in args.patch_size]
@@ -117,7 +118,7 @@ if __name__ == '__main__':
 
     string_patches = "x".join([str(x) for x in patch_size])
     stage = args.stage
-
+    mode = args.mode
     dataset_path = create_if_not_exists(args.save_path)
     dataset_data_path = create_if_not_exists(os.path.join(dataset_path, date))
     save_path = create_if_not_exists(os.path.join(dataset_data_path, string_patches))
@@ -187,7 +188,7 @@ if __name__ == '__main__':
     test_path = create_if_not_exists(os.path.join(save_path, "test"))
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
 
-    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage, augment=args.augment)
-    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing, stage=stage, augment=False)
-    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing, stage=stage,augment=False)
+    _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage, augment=args.augment, mode=mode)
+    _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing, stage=stage, augment=False, mode=mode)
+    _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing, stage=stage,augment=False, mode=mode)
 

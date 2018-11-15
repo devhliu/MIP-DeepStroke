@@ -70,7 +70,7 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
         raise Exception("Patch size should at least be >[2,2,2] ")
     shape = numpy_image.shape
     if(np.sum(np.array(patch_size)-shape)>0):
-        missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) if (shape[i] % patch_size[i])!= 0 else 0 for i in range(len(patch_size))])
+        missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
         numpy_image_padded = np.zeros(numpy_image.shape + missing)
         print("Adding padding of : {}".format(missing))
     else:
@@ -80,6 +80,8 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
     if mode is "extend":
         numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
                                              mode="constant", constant_values=0)
+    if mode is "crop":
+        numpy_image_padded = numpy_image[0:patch_size[0],0:patch_size[1],0:patch_size[2]]
 
     shape = numpy_image_padded.shape
     dimension_size = np.array(np.ceil(np.array(numpy_image.shape) / patch_size), dtype=np.int64)
