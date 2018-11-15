@@ -122,8 +122,8 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
         # Convert to Tensor for Dice and Tversky scores
         y_true_tensor = tf.cast(y_true, tf.float64)
         y_pred_tensor = tf.cast(y_pred, tf.float64)
-        dice = dice_score(y_true=y_true, y_pred=y_pred_thresh)
-        tversky = tversky_score(y_true=y_true, y_pred=y_pred_thresh)
+        dice = dice_score(y_true=y_true, y_pred=y_pred)
+        tversky = tversky_score(y_true=y_true, y_pred=y_pred)
 
         aucs.append(auc)
         f1_scores.append(f1)
@@ -155,9 +155,9 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
     dict_scores["tversky_mean"] = np.mean(np.array(tverskys))
     dict_scores["tversky_std"] = np.std(np.array(tverskys))
 
-    functions = {"dice_thresh": tversky_coeff,
+    functions = {"dice_thresh": dice_score,
                  "weighted-dice":weighted_dice_coefficient,
-                 "tversky_thresh": tversky_coeff,
+                 "tversky_thresh": tversky_score,
                  "ap":metrics.average_precision_score,
                  "f1-score":metrics.f1_score,
                  "jaccard":metrics.jaccard_similarity_score,
@@ -172,12 +172,18 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
     y_pred[y_pred >= 0.5] = 1
 
     for k in tqdm(functions.keys()):
-        try:
-            score = functions[k](y_true, y_pred)
-        except Exception as e:
-            print("error computing k")
-            print(e)
-            score = 0
+        if k=="f1-score":
+            try:
+                score = functions[k](y_true, y_pred)
+            except:
+                score = "NaN"
+        else:
+            try:
+                score = functions[k](y_true, y_pred)
+            except Exception as e:
+                print("error computing {}".format(k))
+                print(e)
+                score = "NaN"
         dict_scores[k] = score
 
     return dict_scores
