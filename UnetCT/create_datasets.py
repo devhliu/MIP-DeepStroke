@@ -75,6 +75,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         # create extra patches
         if is_train:
             number_extra = int(ratio_extra*len(MTT_patches))
+            print("Creating {}*{} = {} extra patches.".format(ratio_extra, len(MTT_patches), number_extra))
             MTT_extra, CBF_extra, CBV_extra, Tmax_extra, T2_extra, lesion_extra = create_extra_patches_from_list(
                                                                             [MTT,
                                                                             CBF,
