@@ -33,7 +33,7 @@ def load_data_for_patient(patient_path, stage="wcoreg_"):
 
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize",
-                              stage="wcoreg_", augment=False , mode=mode):
+                              stage="wcoreg_", augment=False , mode="extend"):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
