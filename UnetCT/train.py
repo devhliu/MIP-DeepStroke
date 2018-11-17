@@ -236,11 +236,17 @@ if __name__ == '__main__':
         parameters["stage"] = args.stage
         parameters["augment_prob"] = args.augment
         parameters["layer_activation"] = args.layer_activation
+        if parameters["loss_function"]=="tversky":
+            parameters["tversky_alpha-beta"] = (0.02,0.98)
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
         with open(args.parameters, 'r') as fp:
             parameters = json.load(fp)
+
+    #Edit JSON parameters to save tversky coefficients
+    if parameters["loss_function"]=="tversky":
+            parameters["tversky_alpha-beta"] = (0.02,0.98)
 
     # Save copy of json in folder of the model
     json_file = os.path.join(logdir, "parameters.json")
