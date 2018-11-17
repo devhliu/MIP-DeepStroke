@@ -100,7 +100,7 @@ if __name__ == '__main__':
         print("--- {} ".format(f.upper()))
         print("Lesions voxels: {} ({}%)".format(str(total_lesion_voxels), str(100 * total_lesion_voxels / total_voxels)))
         print("Not lesions voxels: {} ({}%)".format(str(total_not_lesion_voxels), str(100 * total_not_lesion_voxels / total_voxels)))
-        print("Total voxels : {}").format(str(total_voxels))
+        print("Total voxels : {}".format(str(total_voxels)))
         print("")
 
 
