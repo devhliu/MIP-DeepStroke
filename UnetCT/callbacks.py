@@ -6,29 +6,21 @@ from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
-from tensorboard.plugins.image import summary as im_summary
-from image_processing import create_patches_from_images, preprocess_image
 from utils import normalize_numpy
 from predict import predict
 import numpy as np
 import tensorflow as tf
 import skimage.io
-from io import StringIO,BytesIO
-from PIL import Image
+from io import StringIO, BytesIO
 from sklearn.metrics import roc_auc_score
-from keras.callbacks import Callback
-import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 import keras.backend as K
 
 from create_datasets import load_data_for_patient
-from skimage import img_as_float
-
 class TrainValTensorBoard(TensorBoard):
     def __init__(self, training_generator=None, validation_generator=None, validation_steps=None,
                  patients=None, patch_size=None, folders_input=["T2"], folders_target=["lesion"],
-                 verbose=0, log_dir='./logs', stage="wcoreg_", **kwargs):
+                 verbose=0, log_dir='./logs', stage="wcoreg_", batch_size=32, **kwargs):
         # Make the original `TensorBoard` log to a subdirectory 'training'
         training_log_dir = os.path.join(log_dir, 'training')
         super(TrainValTensorBoard, self).__init__(training_log_dir, **kwargs)
@@ -50,6 +42,7 @@ class TrainValTensorBoard(TensorBoard):
         self.folders_input = folders_input
         self.folders_target = folders_target
         self.stage = stage
+        self.batch_size = batch_size
 
     def set_model(self, model):
         # Setup writer for validation metrics
@@ -184,7 +177,7 @@ class TrainValTensorBoard(TensorBoard):
             images_target = [dict_inputs[k] for k in self.folders_target]
 
             # Predict the output.
-            predicted_image = predict(images_input, self.model, self.patch_size, verbose=self.verbose)
+            predicted_image = predict(images_input, self.model, self.patch_size, verbose=self.verbose, batch_size=self.batch_size)
 
             for layer in layers:
 

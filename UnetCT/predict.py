@@ -34,7 +34,7 @@ def predict_patch(patches, model):
     return model.predict(patch_extended)[0, 0, :, :, :]
 
 
-def predict(images, model, patch_size, verbose=0):
+def predict(images, model, patch_size, verbose=0, batch_size=32):
     if not isinstance(images, list):
         images = [images]  # Transform to 1 dimensional channel
 
@@ -55,7 +55,7 @@ def predict(images, model, patch_size, verbose=0):
         patch_tensor.append(channel_patch)
 
     try:
-        predictions = model.predict(np.asarray(patch_tensor), batch_size=32, verbose=verbose)[:, 0, :, :, :]
+        predictions = model.predict(np.asarray(patch_tensor), batch_size=batch_size, verbose=verbose)[:, 0, :, :, :]
     except: # Not enough memory : switch to mono prediction
         predictions = model.predict(np.asarray(patch_tensor), batch_size=1, verbose=verbose)[:, 0, :, :, :]
 

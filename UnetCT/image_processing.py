@@ -69,23 +69,23 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
     if (patch_size[0] == 1 or patch_size[1] == 1 or patch_size[2] == 1):
         raise Exception("Patch size should at least be >[2,2,2] ")
     shape = numpy_image.shape
-    if(np.sum(np.array(patch_size)-shape)>0):
-        missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
-        numpy_image_padded = np.zeros(numpy_image.shape + missing)
-        print("Adding padding of : {}".format(missing))
-    else:
-        missing = np.array([0 for i in range(len(patch_size))])
-        numpy_image_padded = np.zeros(numpy_image.shape)
+    missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
+    print(missing)
+    numpy_image_padded = np.zeros(numpy_image.shape + missing)
 
-    if mode=="extend":
+    if mode is "extend":
         numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
                                              mode="constant", constant_values=0)
-    if mode== "crop":
-        numpy_image_padded = numpy_image[0:patch_size[0],0:patch_size[1],0:patch_size[2]]
+    else:
+        raise Exception("Mode {} nor supported yet".format(mode))
 
-    shape = numpy_image_padded.shape
+    # shape = numpy_image_padded.shape
     dimension_size = np.array(np.ceil(np.array(numpy_image.shape) / patch_size), dtype=np.int64)
     patches = []
+    xMax = patch_size[0]
+    yMax = patch_size[1]
+    zMax = patch_size[2]
+
     if augment is True:
         # Create dataset using strides
         PATCH_X = patch_size[0]
@@ -101,6 +101,8 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
             for y in range(0, shape[1], patch_size[1]):
                 for z in range(0, shape[2], patch_size[2]):
                     patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]]
+                    # patches[to1D_index(x,y,z,xMax,yMax,zMax)] = patch
+                    # patches = patches +[patch]
                     patches.append(patch)
 
     return patches
@@ -290,24 +292,30 @@ def to3D(idx, xMax, yMax):
 
 
 def recreate_image_from_patches(original_image_size, list_patches, mode="extend"):
+    numpy_image = np.zeros(original_image_size)
     patch_size = np.array(list_patches[0].shape)
-    dimension_size = np.array(np.ceil(np.array(original_image_size) / patch_size), dtype=np.int64)
 
     if type(list_patches) is np.ndarray:
         list_patches = list_patches.tolist()
 
-    size_image = np.array((patch_size * dimension_size), dtype=np.int64)
-    image = np.zeros(size_image)
+    shape = original_image_size
+    missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
+    numpy_image_padded = np.zeros(shape + missing)
+    if mode is "extend":
+        numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
+                                             mode="constant", constant_values=0)
+    # image = np.zeros(size_image)
 
-    for x in range(0, size_image[0] - 1, patch_size[0]):
-        for y in range(0, size_image[1] - 1, patch_size[1]):
-            for z in range(0, size_image[2] - 1, patch_size[2]):
-                p = list_patches.pop(0)
-                image[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]] = p
+    for x in range(0, shape[0], patch_size[0]):
+        for y in range(0, shape[1], patch_size[1]):
+            for z in range(0, shape[2], patch_size[2]):
+                p = list_patches[0]
+                list_patches = list_patches[1:]
+                numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z:z + patch_size[2]] = p
 
     if mode == "extend":
         ox, oy, oz = original_image_size
-        image = image[:ox, :oy, :oz]
+        image = numpy_image_padded[:ox, :oy, :oz]
 
     return image
 

@@ -7,6 +7,10 @@ import numpy as np
 def normalize_numpy(v, new_max=1.0, new_min=0.0):
     min_v = np.min(v)
     max_v = np.max(v)
+    if min_v == max_v:
+        if max_v > 0:
+            return v / max_v
+        return v
 
     v_new = (v-min_v)*(new_max-new_min)/(max_v-min_v) + new_min
     return v_new

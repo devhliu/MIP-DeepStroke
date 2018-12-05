@@ -1,12 +1,8 @@
-import keras
-
-from keras.callbacks import TensorBoard
-import subprocess
 import os
 import nibabel as nb
 import numpy as np
 from utils import create_if_not_exists
-from unet import unet_model_3d
+from unet import unet_model_3d, isensee2017_model
 from callbacks import TrainValTensorBoard
 from argparse import ArgumentParser
 import time
@@ -122,9 +118,13 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         patient_path1 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(train_patient)
         patient_path2 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(test_patient)
 
+        img_test_path = os.path.join(patient_path1,"Neuro_Cerebrale_64Ch/{}VOI_lesion_{}.nii".format(stage,train_patient))
+        patient_img = nb.load(img_test_path).get_data()
+
+        layer = int(patient_img.shape[2]/2)
         patients = dict({
-            patient_path1: ["train", [35]],
-            patient_path2: ["validation", [35]]
+            patient_path1: ["train", [layer]],
+            patient_path2: ["validation", [layer]]
         })
 
         training_generator_log, validation_generator_log = create_generators(batch_size, data_path=data_path,
@@ -208,6 +208,7 @@ if __name__ == '__main__':
     parser.add_argument('-stage','--stage', help="Stage of registration : nothing, coreg_ or wcoreg_", default="wcoreg_")
     parser.add_argument('-augment', '--augment', help="Augmentation probability", default=0.0)
     parser.add_argument('-patience', '--learning_rate_patience', help="Learning rate patience", type=int, default=10)
+    parser.add_argument('-architecture', '--architecture',help="Model : 3dunet or isensee17", default="3dunet")
 
     args = parser.parse_args()
     logdir = os.path.join(args.logdir, time.strftime("%Y%m%d_%H-%M-%S", time.gmtime()))
@@ -236,8 +237,9 @@ if __name__ == '__main__':
         parameters["stage"] = args.stage
         parameters["augment_prob"] = args.augment
         parameters["layer_activation"] = args.layer_activation
-        if parameters["loss_function"]=="tversky":
-            parameters["tversky_alpha-beta"] = (0.02,0.98)
+        parameters["architecture"] = args.architecture
+        if parameters["loss_function"] == "tversky":
+            parameters["tversky_alpha-beta"] = (0.02, 0.98)
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
@@ -246,13 +248,13 @@ if __name__ == '__main__':
 
     #Edit JSON parameters to save tversky coefficients
     if parameters["loss_function"]=="tversky":
-            parameters["tversky_alpha-beta"] = (0.02,0.98)
+            parameters["tversky_alpha-beta"] = (0.02, 0.98)
 
     # Save copy of json in folder of the model
     json_file = os.path.join(logdir, "parameters.json")
     print("Saving parameters in : "+json_file)
     with open(json_file, 'w') as fp:
-        json.dump(parameters, fp)
+        json.dump(parameters, fp, indent=4)
 
     #Load values from parameters
     data_path = parameters["data_path"]
@@ -269,6 +271,8 @@ if __name__ == '__main__':
     loss_function = parameters["loss_function"]
     test_patient = parameters["test_patient"]
     train_patient = parameters["train_patient"]
+    architecture = parameters["architecture"]
+
     inputs = [x[0] for x in args.input]
     targets = [x[0] for x in args.output]
     if "stage" in parameters.keys():
@@ -324,14 +328,15 @@ if __name__ == '__main__':
                ]
 
     losses = {
-        "tversky":tversky_loss,
-        "dice":dice_coefficient_loss,
+        "tversky": tversky_loss,
+        "dice": dice_coefficient_loss,
         "weighted_dice":weighted_dice_coefficient_loss,
         "mean_absolute_error" : mean_absolute_error
     }
 
     loss_function = losses[loss_function]
 
+    # load model : default is 3dunet
     model = unet_model_3d([len(inputs), patch_size[0], patch_size[1], patch_size[2]],
                           pool_size=[2, 2, 2],
                           n_base_filters=n_filters,
@@ -342,6 +347,21 @@ if __name__ == '__main__':
                           loss=loss_function,
                           final_activation_name=final_activation,
                           layer_activation_name=layer_activation)
+
+    if architecture == "isensee17":
+        print("Loading architecture isensee17")
+        model = isensee2017_model(input_shape=[len(inputs), patch_size[0], patch_size[1], patch_size[2]],
+                                  n_base_filters=n_filters,
+                                  depth=depth,
+                                  n_labels=len(targets),
+                                  n_segmentation_levels=len(targets),
+                                  dropout_rate=0.3,
+                                  loss_function=loss_function,
+                                  initial_learning_rate=initial_learning_rate,
+                                  activation_name=final_activation,
+                                  metrics=metrics
+                                  )
+
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
