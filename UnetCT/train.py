@@ -39,7 +39,16 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
     return train_generator, validation_generator
 
 
-def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile=None, augment_prob=0.0):
+def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile=None,
+                   augment_prob={"rotation": 0.0,
+                                 "rotxmax": 90.0,
+                                 "rotymax": 90.0,
+                                 "rotzmax": 90.0,
+                                 "rotation_step": 1.0,
+                                 "salt_and_pepper": 0.0,
+                                 "flip": 0.0,
+                                 "contrast_and_brightness": 0.0,
+                                 "only_positives": False}):
     while True:
         example_dir = os.path.join(data_directory, folders_input[0])
         image_paths = os.listdir(example_dir)
@@ -69,7 +78,10 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
                     f.write("{} - {}".format(i, paths))
 
             # perform data augmentation
-            inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
+            if augment_prob["only_positives"] and np.sum(targets) > 0:
+                inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
+            else:
+                inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
 
             if not (np.all(inputs == 0) and skip_blank):
                 x_list.append(inputs)
@@ -101,7 +113,18 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
           test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0, stage="wcoreg_",
-          augment_prob=0.0):
+          augment_prob=None):
+
+    if augment_prob is None:
+        augment_prob = {"rotation": args.augment,
+                        "rotxmax": 90.0,
+                        "rotymax": 90.0,
+                        "rotzmax": 90.0,
+                        "rotation_step": 1.0,
+                        "salt_and_pepper": args.augment,
+                        "flip": args.augment,
+                        "contrast_and_brightness": args.augment,
+                        "only_positives": True}
 
     training_generator, validation_generator = create_generators(batch_size, data_path=data_path, skip_blank=skip_blank,
                                                                  folders_input=folders_input,
@@ -165,7 +188,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
     LRReduce = ReduceLROnPlateau(factor=learning_rate_decay, patience=learning_rate_patience)
 
     # Parameters
-    validation_steps = 1   # Number of steps per evaluation (number of to pass)
+    validation_steps = (dataset_val_size/batch_size)   # Number of steps per evaluation (number of to pass)
     steps_per_epoch = (dataset_training_size/batch_size)  # Number of batches to pass before going to next epoch
     if epoch_size is not None :
         steps_per_epoch = epoch_size
@@ -235,7 +258,16 @@ if __name__ == '__main__':
         parameters["inputs"] = [x[0] for x in args.input]
         parameters["targets"] = [x[0] for x in args.output]
         parameters["stage"] = args.stage
-        parameters["augment_prob"] = args.augment
+        parameters["augment_prob"] = {"rotation": args.augment,
+                                      "rotxmax": 90.0,
+                                      "rotymax": 90.0,
+                                      "rotzmax": 90.0,
+                                      "rotation_step": 1.0,
+                                      "salt_and_pepper": args.augment,
+                                      "flip": args.augment,
+                                      "contrast_and_brightness": args.augment,
+                                      "only_positives": True}
+
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
         if parameters["loss_function"] == "tversky":
@@ -249,12 +281,6 @@ if __name__ == '__main__':
     #Edit JSON parameters to save tversky coefficients
     if parameters["loss_function"]=="tversky":
             parameters["tversky_alpha-beta"] = (0.02, 0.98)
-
-    # Save copy of json in folder of the model
-    json_file = os.path.join(logdir, "parameters.json")
-    print("Saving parameters in : "+json_file)
-    with open(json_file, 'w') as fp:
-        json.dump(parameters, fp, indent=4)
 
     #Load values from parameters
     data_path = parameters["data_path"]
@@ -282,15 +308,34 @@ if __name__ == '__main__':
     if "augment_prob" in parameters.keys():
         augment_prob = parameters["augment_prob"]
     else:
-        augment_prob = args.augment
+        augment_prob = {"rotation": args.augment,
+                        "rotxmax": 90.0,
+                        "rotymax": 90.0,
+                        "rotzmax": 90.0,
+                        "rotation_step": 1.0,
+                        "salt_and_pepper": args.augment,
+                        "flip": args.augment,
+                        "contrast_and_brightness": args.augment,
+                        "only_positives": True}
+        parameters["augment_prob"] = augment_prob
+
     if "layer_activation" in parameters.keys():
         layer_activation = parameters["layer_activation"]
     else:
         layer_activation = args.layer_activation
+        parameters["layer_activation"] = layer_activation
+
     if "learning_rate_patience" in parameters.keys():
         learning_rate_patience = parameters["learning_rate_patience"]
     else:
         learning_rate_patience = args.learning_rate_patience
+        parameters["learning_rate_patience"] = learning_rate_patience
+
+    # Save copy of json in folder of the model
+    json_file = os.path.join(logdir, "parameters.json")
+    print("Saving parameters in : " + json_file)
+    with open(json_file, 'w') as fp:
+        json.dump(parameters, fp, indent=4)
 
     #Display Parameters
     print("---")
@@ -330,24 +375,13 @@ if __name__ == '__main__':
     losses = {
         "tversky": tversky_loss,
         "dice": dice_coefficient_loss,
-        "weighted_dice":weighted_dice_coefficient_loss,
+        "weighted_dice": weighted_dice_coefficient_loss,
         "mean_absolute_error" : mean_absolute_error
     }
 
     loss_function = losses[loss_function]
 
     # load model : default is 3dunet
-    model = unet_model_3d([len(inputs), patch_size[0], patch_size[1], patch_size[2]],
-                          pool_size=[2, 2, 2],
-                          n_base_filters=n_filters,
-                          depth=depth,
-                          batch_normalization=batch_normalization,
-                          metrics=metrics,
-                          initial_learning_rate=initial_learning_rate,
-                          loss=loss_function,
-                          final_activation_name=final_activation,
-                          layer_activation_name=layer_activation)
-
     if architecture == "isensee17":
         print("Loading architecture isensee17")
         model = isensee2017_model(input_shape=[len(inputs), patch_size[0], patch_size[1], patch_size[2]],
@@ -361,7 +395,18 @@ if __name__ == '__main__':
                                   activation_name=final_activation,
                                   metrics=metrics
                                   )
-
+    else:
+        print("Loading default : 3DUnet")
+        model = unet_model_3d([len(inputs), patch_size[0], patch_size[1], patch_size[2]],
+                              pool_size=[2, 2, 2],
+                              n_base_filters=n_filters,
+                              depth=depth,
+                              batch_normalization=batch_normalization,
+                              metrics=metrics,
+                              initial_learning_rate=initial_learning_rate,
+                              loss=loss_function,
+                              final_activation_name=final_activation,
+                              layer_activation_name=layer_activation)
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,

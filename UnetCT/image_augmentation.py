@@ -98,27 +98,34 @@ def flip(imgsx, imgsy, axis=0):
     return flippedXs, flippedYs
 
 
-def randomly_augment(imgsx, imgsy, prob=0.15):
+def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
+                                         "rotxmax": 90.0,
+                                         "rotymax": 90.0,
+                                         "rotzmax": 90.0,
+                                         "rotation_step": 1.0,
+                                         "salt_and_pepper": 0.15,
+                                         "flip": 0.15,
+                                         "contrast_and_brightness": 0.15}):
 
     # randomly rotate
     r = random.random()
-    if r < prob:
+    if r < prob["rotation"]:
         rotation = 1 if random.randint(-1, 1) > -1 else -1
-        degx = rotation*int(random.random() * 10.0)  # in degree
+        degx = rotation*random.randrange(0, prob["rotxmax"], prob["rotation_step"])  # in degree
         rotation = 1 if random.randint(-1, 1) > -1 else -1
-        degy = rotation*int(random.random() * 10.0)  # in degree
+        degy = rotation*random.randrange(0, prob["rotymax"], prob["rotation_step"])  # in degree
         rotation = 1 if random.randint(-1, 1) > -1 else -1
-        degz = rotation*int(random.random() * 10.0)  # in degree
+        degz = rotation*random.randrange(0, prob["rotzmax"], prob["rotation_step"])
         imgsx, imgsy = rotate3D(imgsx, imgsy, degx, degy, degz)
 
     # randomly add salt and pepper
     r = random.random()
-    if r < prob:
+    if r < prob["salt_and_pepper"]:
         imgsx, imgsy = salt_and_pepper(imgsx, imgsy, salt_vs_pepper=0.4, amount=0.05)
 
     # randomly flip
     r = random.random()
-    if r < prob:
+    if r < prob["flip"]:
         ax = random.randint(0, 2)
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
         ax = random.randint(0, 2)
@@ -132,7 +139,7 @@ def randomly_augment(imgsx, imgsy, prob=0.15):
 
     # randomly change contrast and brightness
     r = random.random()
-    if r < prob:
+    if r < prob["contrast_and_brightness"]:
         contrast = np.random.normal(loc=1.0, scale=0.3)
         brightness = np.random.normal(loc=1.0, scale=0.3)
         imgsx, imgsy = adjust_contrast(imgsx, imgsy, contrast, brightness)
