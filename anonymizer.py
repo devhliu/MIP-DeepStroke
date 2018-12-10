@@ -1,11 +1,11 @@
 import os
-from progress.bar import IncrementalBar
+from tqdm import tqdm
 import shutil
 from distutils.dir_util import copy_tree
 import csv
 import pandas as pd
 
-database_patients = "c:\\Users\\simon\\Documents\\EPFL\\Master\\Semester4\\SemesterProject\\patient_db.csv"
+database_patients = "/home/snarduzz/patient_db.xlsx"
 
 def is_patient(folder):
     try:
@@ -138,14 +138,12 @@ def copy_to(main_dir, output_dir):
     subjects = [folder_name for folder_name in folders if(is_patient(folder_name))]
     not_subjects = [folder_name for folder_name in folders if not (is_patient(folder_name))]
 
-    bar = IncrementalBar(max=len(subjects))
     total_size_need = 0
     print("Estimating required size:")
-    for subject in subjects[:3]:
+    for subject in tqdm(subjects[:3]):
         size = get_size(os.path.join(main_dir, subject))
         total_size_need += size
-        bar.next()
-    bar.finish()
+
     print(total_size_need)
 
     free_space = get_free_space(output_dir)
@@ -153,13 +151,10 @@ def copy_to(main_dir, output_dir):
         raise Exception("No enough space available in {}".format(output_dir))
 
     print("Copy files in output folder:")
-    bar_copy = IncrementalBar(max=len(subjects))
-    for subject in subjects[:3]:
+    for subject in tqdm(subjects[:3]):
         subject_path = os.path.join(main_dir, subject)
         output_subject_path = os.path.join(output_dir, subject)
         copy_tree(subject_path, output_subject_path)
-        bar_copy.next()
-    bar_copy.finish()
 
     return output_dir
 
@@ -173,12 +168,10 @@ def get_size(start_path='.'):
     return total_size
 
 if __name__ == '__main__':
-    IN_PLACE = True
-    main_dir = "d:\\Anonymized_Data"
+    IN_PLACE = False
+    main_dir = "/media/exfat"
     # data_dir = os.path.join(main_dir, 'working_data')
     output_dir = os.path.join(main_dir, 'Anonymized_Data')
-    dcm2niix_path = "c:\\Program Files\\dcm2niix\\dcm2niix.exe"
-    patient_data_file = "c:"
 
     if not IN_PLACE:
         main_dir = copy_to(main_dir, output_dir)
@@ -195,7 +188,7 @@ if __name__ == '__main__':
             print(e.with_traceback())
             print("Error anonymizing the following folder:")
 
-    filename = os.path.join(main_dir,"anonymized_patients.csv")
+    filename = os.path.join(main_dir, "anonymized_patients.csv")
     with open(filename, 'a') as f:
         w = csv.writer(f)
         w.writerows(dict_hash.items())

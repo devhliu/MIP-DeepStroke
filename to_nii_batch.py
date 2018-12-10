@@ -6,7 +6,7 @@ import subprocess
 main_dir = 'd:'
 data_dir = os.path.join(main_dir, '\Anonymized_Data')
 output_dir = os.path.join(main_dir, '\Data')
-dcm2niix_path = "C:\Program Files\dcm2niix\dcm2niix.exe"
+dcm2niix_path = "/usr/bin/dcm2niix"
 
 subjects = os.listdir(data_dir)
 print(subjects)

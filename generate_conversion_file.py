@@ -3,17 +3,19 @@ import os
 import csv
 
 mappings = {
-        "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_MTT": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_rCBF": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_rCBV": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*\\RAPID_37\\*\\*\\RAPID_Tmax": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*\\SPC_301*Std*": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*\\DE_SPC_30*Std*": "{}\\Ct2_Cerebrale\\",
-        "*\\{}\\*Neuro*\\t2*tse*tra": "{}\\Neuro_Cerebrale_64Ch\\",
-        "*\\{}\\VOI*" : "{}\\"
+        os.path.join("*", "{}", "*", "RAPID_37", "*", "*", "RAPID_MTT"): os.path.join("{}", "Ct2_Cerebrale"),
+         os.path.join("*", "{}", "*", "RAPID_37", "*", "*", "RAPID_rCBF") : os.path.join("{}", "Ct2_Cerebrale"),
+         os.path.join("*", "{}", "*", "RAPID_37", "*", "*", "RAPID_rCBV") : os.path.join("{}", "Ct2_Cerebrale"),
+         os.path.join("*", "{}", "*", "RAPID_37", "*", "*", "RAPID_Tmax") : os.path.join("{}", "Ct2_Cerebrale"),
+         os.path.join("*", "{}", "*", "SPC_301*Std*") : os.path.join("{}", "Ct2_Cerebrale"),
+         os.path.join("*", "{}", "*", "DE_SPC_30*Std*") : os.path.join("{}", "Ct2_Cerebrale"),
+         os.path.join("*", "{}", "*Neuro*", "t2*tse*tra") : os.path.join("{}", "Neuro_Cerebrale_64Ch"),
+         os.path.join("*", "{}", "VOI*") : os.path.join("{}"),
+         os.path.join("*", "{}", "*Neuro*", "*TRACEW*") : os.path.join("{}", "Neuro_Cerebrale_64Ch"),
+         os.path.join("*", "{}", "*Neuro*", "*ADC*") : os.path.join("{}", "Neuro_Cerebrale_64Ch"),
 }
 
-main_dir = "d:"
+main_dir = "/media/exfat"
 patients = []
 for folder in os.listdir(main_dir):
     if anonymizer.is_patient(os.path.join(main_dir, folder)):
