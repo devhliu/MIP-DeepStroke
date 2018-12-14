@@ -1,4 +1,4 @@
-import anonymizer
+from extraction import anonymizer
 import os
 import csv
 
@@ -35,7 +35,7 @@ for patient in patients:
 
 filename = "patient_mappings.csv"
 for dict_patient in patient_mapping:
-    with open(filename, 'a') as f:
+    with open(filename, 'w') as f:
         w = csv.writer(f)
         w.writerows(dict_patient.items())
 

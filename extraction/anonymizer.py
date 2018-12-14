@@ -37,10 +37,10 @@ def get_patient_number(folder):
     year = number[-8:-4]
     birthdate = "{}.{}.{}".format(day, month,year)
     patient_data.append(birthdate)
-    df = pd.read_csv(database_patients, sep=";")
+    df = pd.read_excel(database_patients, sep=";")
     df['name'] = df['name'].str.lower()
     df['first_name'] = df['first_name'].str.lower()
-    df['birth_date'] = df['birth_date'].str.lower()
+    df['birth_date'] = df['birth_date']
 
     df_selected = pd.DataFrame(columns=df.columns)
 
@@ -48,7 +48,7 @@ def get_patient_number(folder):
         data = str(data).lower()
         selected = df[(df.name.str.contains(data))
                 | (df.first_name.str.contains(data))
-                | (df.birth_date.str.contains(data))]
+                | (data in df.birth_date.values)]
 
         df_selected = pd.concat([df_selected,selected])
         if len(df_selected) == 1:
@@ -61,7 +61,7 @@ def get_patient_number(folder):
         score = 0
         for attribute in row:
             for data in patient_data:
-                if data in str(attribute):
+                if data.lower() in str(attribute) or str(attribute).lower() in data.lower():
                     score += 1
         df_selected.loc[id,'score'] = score
 
@@ -70,6 +70,7 @@ def get_patient_number(folder):
         print("could not retrieve patient number for patient : {}".format(patient_data))
     if len(df_selected)>1:
         print("Multiple results for patient {}".format(patient_data))
+        print(df_selected)
         #print(df_selected)
     number = str(df_selected['id_hospital_case'].values[0])
 
@@ -140,7 +141,7 @@ def copy_to(main_dir, output_dir):
 
     total_size_need = 0
     print("Estimating required size:")
-    for subject in tqdm(subjects[:3]):
+    for subject in tqdm(subjects):
         size = get_size(os.path.join(main_dir, subject))
         total_size_need += size
 
@@ -151,7 +152,7 @@ def copy_to(main_dir, output_dir):
         raise Exception("No enough space available in {}".format(output_dir))
 
     print("Copy files in output folder:")
-    for subject in tqdm(subjects[:3]):
+    for subject in tqdm(subjects):
         subject_path = os.path.join(main_dir, subject)
         output_subject_path = os.path.join(output_dir, subject)
         copy_tree(subject_path, output_subject_path)
@@ -168,10 +169,10 @@ def get_size(start_path='.'):
     return total_size
 
 if __name__ == '__main__':
-    IN_PLACE = False
-    main_dir = "/media/exfat"
+    IN_PLACE = True
+    main_dir = "/media/exfat/stroke_db/2016/DATA_T2_TRACE_LESION"
     # data_dir = os.path.join(main_dir, 'working_data')
-    output_dir = os.path.join(main_dir, 'Anonymized_Data')
+    output_dir = os.path.join(main_dir)
 
     if not IN_PLACE:
         main_dir = copy_to(main_dir, output_dir)
