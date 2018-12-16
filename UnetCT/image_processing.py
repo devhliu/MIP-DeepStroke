@@ -65,7 +65,7 @@ def load_data_atlas_from_site(site_path):
     return list_x, list_y
 
 
-def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=False, patch_divider=4):
+def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=False, patch_divider=2):
     if (patch_size[0] == 1 or patch_size[1] == 1 or patch_size[2] == 1):
         raise Exception("Patch size should at least be >[2,2,2] ")
     shape = numpy_image.shape

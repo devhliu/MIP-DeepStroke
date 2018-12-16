@@ -355,8 +355,8 @@ if __name__ == '__main__':
 
     # Get patch size
     path_train = os.path.join(data_path, "train")
-    input_example = os.listdir(os.path.join(path_train, "MTT"))[0]
-    patch_size = nb.load(os.path.join(path_train, "MTT", input_example)).get_data().shape
+    input_example = os.listdir(os.path.join(path_train, inputs[0]))[0]
+    patch_size = nb.load(os.path.join(path_train, inputs[0], input_example)).get_data().shape
 
     if(skip_blank):
         print("Skipping blank images")

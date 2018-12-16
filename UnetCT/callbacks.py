@@ -164,14 +164,7 @@ class TrainValTensorBoard(TensorBoard):
             if type_writer=="validation":
                 writer = self.val_writer
 
-            MTT, CBF, CBV, Tmax, T2, lesion = load_data_for_patient(patient, stage=self.stage)
-
-            dict_inputs = {"MTT": MTT,
-                           "CBF": CBF,
-                           "CBV": CBV,
-                           "Tmax": Tmax,
-                           "T2": T2,
-                           "lesion": lesion}
+            dict_inputs = load_data_for_patient(patient, stage=self.stage)
 
             images_input = [dict_inputs[k] for k in self.folders_input]
             images_target = [dict_inputs[k] for k in self.folders_target]
