@@ -9,6 +9,7 @@ import os
 from tqdm import tqdm
 import pickle
 import datetime
+import json
 
 def _save_patches(patch_list, save_path, subject, type, extra=False):
     for i in range(len(patch_list)):
@@ -143,13 +144,13 @@ if __name__ == '__main__':
                      "test":test,
                      "validation":val}
 
-        filename = os.path.join(dataset_data_path, "sets_{}".format(date))
+        filename = os.path.join(dataset_data_path, "sets_{}.json".format(date))
 
-        with open('{}.pickle'.format(filename), 'wb') as handle:
-            pickle.dump(dict_sets, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(filename, 'w') as fp:
+            json.dump(dict_sets, fp, indent=4)
     else:
-        with open(args.setfile, 'rb') as handle:
-            dict_sets = pickle.load(handle)
+        with open(args.parameters, 'r') as fp:
+            dict_sets = json.load(fp)
 
     #ratios
     total = len(dict_sets["train"])+len(dict_sets["test"])+len(dict_sets["validation"])
