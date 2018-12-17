@@ -12,7 +12,7 @@ def normalize_numpy(v, new_max=1.0, new_min=0.0):
             return v / max_v
         return v
 
-    v_new = (v-min_v)*(new_max-new_min)/(max_v-min_v) + new_min
+    v_new = (v-min_v)*(new_max-new_min)/(max_v-min_v) + new_min + 0.000000001
     return v_new
 
 

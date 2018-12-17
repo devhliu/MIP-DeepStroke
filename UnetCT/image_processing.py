@@ -12,6 +12,7 @@ def preprocess_image(img, preprocessing="standardize"):
         return standardize(img)
 
 def standardize(img):
+    img = np.nan_to_num(img)
     mean = np.mean(img)
     std = np.std(img)
     img_std = (img-mean)/std
@@ -20,7 +21,8 @@ def standardize(img):
     #img_clipped = np.clip(img_std, -2, 3)
 
     # scaling between -1 and 1
-    img_scaled = normalize_numpy(img_std, new_min=0, new_max=1)
+    # img_scaled = normalize_numpy(img_std, new_min=0, new_max=1)
+    img_scaled = np.interp(img_std, (img_std.min(), img_std.max()), (0, 1))
     return img_scaled
 
 def load_data_atlas_for_patient(patient_path):
