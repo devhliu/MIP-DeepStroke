@@ -17,10 +17,10 @@ def standardize(img):
     img_std = (img-mean)/std
 
     #Clipping values between -2 and 3 to remove outliers
-    img_clipped = np.clip(img_std, -2, 3)
+    #img_clipped = np.clip(img_std, -2, 3)
 
     # scaling between -1 and 1
-    img_scaled = normalize_numpy(img_clipped, new_min=0, new_max=1)
+    img_scaled = normalize_numpy(img_std, new_min=0, new_max=1)
     return img_scaled
 
 def load_data_atlas_for_patient(patient_path):
