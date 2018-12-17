@@ -4,6 +4,7 @@ import numpy as np
 
 
 def normalize(v, new_max=1.0, new_min=0.0):
+    v = np.nan_to_num(v)
     min_v = np.min(v)
     max_v = np.max(v)
     if max_v==min_v:
@@ -15,6 +16,7 @@ def normalize(v, new_max=1.0, new_min=0.0):
 
 def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
     def _rotateArray(x, pitch, yaw, roll, reshape=False):
+        x = np.nan_to_num(x)
         # pitch
         pitched = sn.rotate(x, angle=pitch, axes=(0, 2), reshape=reshape)
         # yaw
@@ -34,6 +36,7 @@ def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
 
 def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
     def _normalize(v, new_max=1.0, new_min=0.0):
+        v = np.nan_to_num(v)
         new_max = float(new_max)
         new_min = float(new_min)
         min_v = float(v.min())
@@ -45,6 +48,7 @@ def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
         return v_new
 
     def _adjust_contrast(img, contrast=1.0, brightness=1.0):
+        img = np.nan_to_num(img)
         max_v = img.max()
         min_v = img.min()
         if (min_v < 0 or max_v > 1):
@@ -68,6 +72,7 @@ def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
 
 def salt_and_pepper(imgsx, imgsy, salt_vs_pepper=0.2, amount=0.04):
     def _salt_and_pepper(x, salt_vs_pepper=0.2, amount=0.04):
+        x = np.nan_to_num(x)
         num_salt = np.ceil(amount * x.shape[0] * x.shape[1] * x.shape[2] * salt_vs_pepper)
         num_pepper = np.ceil(amount * x.shape[0] * x.shape[1] * x.shape[2] * (1.0 - salt_vs_pepper))
         coords = [np.random.randint(0, i - 1, int(num_salt)) for i in x.shape]
@@ -86,6 +91,7 @@ def salt_and_pepper(imgsx, imgsy, salt_vs_pepper=0.2, amount=0.04):
 
 def flip(imgsx, imgsy, axis=0):
     def _flip(img, axis):
+        img = np.nan_to_num(img)
         img = np.flip(img, axis)
         return img
 
@@ -106,7 +112,6 @@ def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
                                          "salt_and_pepper": 0.15,
                                          "flip": 0.15,
                                          "contrast_and_brightness": 0.15}):
-
     # randomly rotate
     r = random.random()
     if r < prob["rotation"]:

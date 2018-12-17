@@ -26,8 +26,8 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
         train_path = os.path.join(data_path, train_path)
         validation_path = os.path.join(data_path, validation_path)
 
-    training_size = len(os.listdir(os.path.join(train_path, "MTT")))
-    validation_size = len(os.listdir(os.path.join(validation_path, "MTT")))
+    training_size = len(os.listdir(os.path.join(train_path, folders_input[0])))
+    validation_size = len(os.listdir(os.path.join(validation_path, folders_input[0])))
 
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
@@ -145,7 +145,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         if not p1.isdigit() or not p2.isdigit():
             raise Exception("Patients for validation should be digits")
 
-        img_test_path = os.path.join(patient_path1,"Neuro_Cerebrale_64Ch/{}VOI_lesion_{}.nii".format(stage, p))
+        img_test_path = os.path.join(patient_path1,"Neuro_Cerebrale_64Ch/{}VOI_lesion_{}.nii".format(stage, p1))
         patient_img = nb.load(img_test_path).get_data()
 
         layer = int(patient_img.shape[2]/2)

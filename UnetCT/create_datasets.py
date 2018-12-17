@@ -149,7 +149,7 @@ if __name__ == '__main__':
         with open(filename, 'w') as fp:
             json.dump(dict_sets, fp, indent=4)
     else:
-        with open(args.parameters, 'r') as fp:
+        with open(args.setfile, 'r') as fp:
             dict_sets = json.load(fp)
 
     #ratios

@@ -6,6 +6,7 @@ from utils import create_if_not_exists, normalize_numpy
 
 
 def preprocess_image(img, preprocessing="standardize"):
+    img = np.nan_to_num(img)
     if preprocessing is "normalize":
         return normalize_numpy(img)
     if preprocessing is "standardize":
