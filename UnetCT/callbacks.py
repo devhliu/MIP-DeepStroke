@@ -113,14 +113,15 @@ class TrainValTensorBoard(TensorBoard):
             #image = np.array(image,dtype=np.float32)
             #image = img_as_float(image)
             #image = normalize_numpy(image,1.0,0.0)
+
+            image = np.nan_to_num(image)
             try:
-                # Python 2.7
-                s = StringIO()
-                skimage.io.imsave(s, image)
-            except TypeError:
                 # Python 3.X
                 s = BytesIO()
                 skimage.io.imsave(s, image)
+            except Exception as e:
+                print("MIN = {}, MAX = {}".format(np.min(image), np.max(image)))
+                raise e
             # Create an Image object
             img_sum = tf.Summary.Image(encoded_image_string=s.getvalue(),
                                        height=image.shape[0],
