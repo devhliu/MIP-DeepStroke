@@ -138,10 +138,14 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         log_path = create_if_not_exists(os.path.join(logdir, "logs"))
 
         # Define patient paths and layers to display
-        patient_path1 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(train_patient)
-        patient_path2 = "/home/snarduzz/Data/preprocessed_original_masked/{}".format(test_patient)
+        patient_path1 = train_patient
+        patient_path2 = test_patient
+        p1 = os.path.basename(train_patient)
+        p2 = os.path.basename(test_patient)
+        if not p1.isdigit() or not p2.isdigit():
+            raise Exception("Patients for validation should be digits")
 
-        img_test_path = os.path.join(patient_path1,"Neuro_Cerebrale_64Ch/{}VOI_lesion_{}.nii".format(stage,train_patient))
+        img_test_path = os.path.join(patient_path1,"Neuro_Cerebrale_64Ch/{}VOI_lesion_{}.nii".format(stage, p))
         patient_img = nb.load(img_test_path).get_data()
 
         layer = int(patient_img.shape[2]/2)

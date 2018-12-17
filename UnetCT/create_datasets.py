@@ -66,7 +66,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         is_train = (dataset_type == 'train')
         image_patch = None
         for modality in modalities:
-            image_patch = create_patches_from_images(MTT, patch_size, augment=augment, mode=mode)
+            image_patch = create_patches_from_images(dict_preprocess[modality], patch_size, augment=augment, mode=mode)
             _save_patches(image_patch, save_path, subject=subject, type=modality)
 
         # create extra patches
