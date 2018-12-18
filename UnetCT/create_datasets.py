@@ -1,13 +1,10 @@
 from argparse import ArgumentParser
-from utils import create_if_not_exists, splits_sets, split_train_test_val, normalize_numpy
-from image_processing import load_data_atlas_for_patient, create_patches_from_images, create_extra_patches_from_list, preprocess_image
-from image_processing import to_patches_3d, to_patches_3d_augmented_with_1
-from multiprocessing import Process
+from utils import create_if_not_exists, split_train_test_val
+from image_processing import create_patches_from_images, create_extra_patches_from_list, preprocess_image
 import numpy as np
 import nibabel as nb
 import os
 from tqdm import tqdm
-import pickle
 import datetime
 import json
 
@@ -35,7 +32,8 @@ def load_data_for_patient(patient_path, stage="wcoreg_", modalities=["TRACE","T2
 
     returned_dict = dict()
     for modality in modalities:
-        returned_dict[modality] = nb.load(dict_modalities_path[modality]).get_data()
+        img = nb.load(dict_modalities_path[modality]).get_data()
+        returned_dict[modality] = np.nan_to_num(img)
 
     return returned_dict
 
@@ -60,7 +58,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
             if modality!="LESION" and modality!="BACKGROUND":
                 image = preprocess_image(returned_dict[modality], preprocessing=preprocessing)
             else:
-                image = preprocess_image(returned_dict[modality], preprocessing="normalize")
+                image = preprocess_image(returned_dict[modality], preprocessing="clip")
             dict_preprocess[modality] = image
 
         # create patches, by doing overlap in case of training set

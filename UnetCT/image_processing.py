@@ -1,8 +1,8 @@
 import os
 import nibabel as nb
 import numpy as np
-import progressbar
 from utils import create_if_not_exists, normalize_numpy
+from tqdm import tqdm
 
 
 def preprocess_image(img, preprocessing="standardize"):
@@ -11,6 +11,14 @@ def preprocess_image(img, preprocessing="standardize"):
         return normalize_numpy(img)
     if preprocessing is "standardize":
         return standardize(img)
+    if preprocessing is "clip":
+        return clip(normalize_numpy(img),0 , 1)
+
+def clip(img, min=0, max=1):
+    img = np.nan_to_num(img)
+    img[img>0] = max
+    img[img<=0] = min
+    return img
 
 def standardize(img):
     img = np.nan_to_num(img)
@@ -55,15 +63,11 @@ def load_data_atlas_from_site(site_path):
     list_x = []
     list_y = []
     patients = os.listdir(site_path)
-    with progressbar.ProgressBar(max_value=len(patients)) as bar:
-        i = 0
-        for patient in patients:
-            bar.update(i)
-            brain_structure, lesion = load_data_atlas_for_patient(os.path.join(site_path,patient))
+    for patient in tqdm(patients):
+        brain_structure, lesion = load_data_atlas_for_patient(os.path.join(site_path,patient))
 
-            list_x.append(brain_structure)
-            list_y.append(lesion)
-            i = i + 1
+        list_x.append(brain_structure)
+        list_y.append(lesion)
 
     return list_x, list_y
 
@@ -72,7 +76,10 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
     if (patch_size[0] == 1 or patch_size[1] == 1 or patch_size[2] == 1):
         raise Exception("Patch size should at least be >[2,2,2] ")
     shape = numpy_image.shape
-    missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
+    missing = np.array(
+        [(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (shape[i] % patch_size[i])
+         for i in range(len(patch_size))])
+
     numpy_image_padded = np.zeros(numpy_image.shape + missing)
 
     if mode is "extend":
@@ -88,17 +95,7 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
     yMax = patch_size[1]
     zMax = patch_size[2]
 
-    if augment is True:
-        # Create dataset using strides
-        PATCH_X = patch_size[0]
-        PATCH_Y = patch_size[1]
-        PATCH_Z = patch_size[2]
-        STRIDE_PATCH_X = int(patch_size[0] / patch_divider)
-        STRIDE_PATCH_Y = int(patch_size[1] / patch_divider)
-        STRIDE_PATCH_Z = int(patch_size[2] / patch_divider)
-        patches = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z,
-                                STRIDE_PATCH_Z)
-    else:
+    if not augment:
         for x in range(0, shape[0], patch_size[0]):
             for y in range(0, shape[1], patch_size[1]):
                 for z in range(0, shape[2], patch_size[2]):
@@ -106,6 +103,17 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
                     # patches[to1D_index(x,y,z,xMax,yMax,zMax)] = patch
                     # patches = patches +[patch]
                     patches.append(patch)
+    else:
+        # Create dataset using strides
+        PATCH_X = patch_size[0]
+        PATCH_Y = patch_size[1]
+        PATCH_Z = patch_size[2]
+        STRIDE_PATCH_X = int(patch_size[0] / patch_divider)
+        STRIDE_PATCH_Y = int(patch_size[1] / patch_divider)
+        STRIDE_PATCH_Z = int(patch_size[2] / patch_divider)
+        patches_augmented = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z,
+                                STRIDE_PATCH_Z)
+        patches=patches+patches_augmented
 
     return patches
 
@@ -301,7 +309,8 @@ def recreate_image_from_patches(original_image_size, list_patches, mode="extend"
         list_patches = list_patches.tolist()
 
     shape = original_image_size
-    missing = np.array([patch_size[i] - (shape[i] % patch_size[i]) for i in range(len(patch_size))])
+    missing = np.array([(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (shape[i] % patch_size[i])
+         for i in range(len(patch_size))])
     numpy_image_padded = np.zeros(shape + missing)
     if mode is "extend":
         numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
