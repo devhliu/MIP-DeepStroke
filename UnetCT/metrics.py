@@ -13,7 +13,7 @@ def dice_coefficient(y_true, y_pred, smooth=1.):
 def dice_coefficient_loss(y_true, y_pred):
     return -dice_coefficient(y_true, y_pred)
 
-def tversky_coeff(y_true, y_pred, alpha=0.02, beta=0.98, smooth=1.):
+def tversky_coeff(y_true, y_pred, alpha=0.3, beta=0.7, smooth=1.):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)

@@ -14,7 +14,7 @@ import json
 from keras.callbacks import ReduceLROnPlateau
 from image_augmentation import randomly_augment
 
-config = tf.ConfigProto(device_count={'GPU': 1 , 'CPU': 1} )
+config = tf.ConfigProto(device_count={'GPU': 2 , 'CPU': 1} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
@@ -184,7 +184,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     # Save checkpoint each 5 epochs
     checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))
-    checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_loss:.2f}.hdf5")
+    checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_loss:.4f}.hdf5")
 
     checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0, save_best_only=False,
                                     save_weights_only=False, mode='auto', period=1)
@@ -198,8 +198,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         steps_per_epoch = epoch_size
 
     # Train the model, iterating on the data in batches of 32 samples
-    with tf.device("/device:GPU:{}".format(GPU_ID)):
-        history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=1000, verbose=1,
+    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=1000, verbose=1,
                                       callbacks=[tensorboard_callback, checkpoint_callback, LRReduce],
                                       validation_data=validation_generator, validation_steps=validation_steps,
                                       class_weight=None, max_queue_size=2*batch_size,
@@ -275,7 +274,7 @@ if __name__ == '__main__':
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
         if parameters["loss_function"] == "tversky":
-            parameters["tversky_alpha-beta"] = (0.02, 0.98)
+            parameters["tversky_alpha-beta"] = (0.3, 0.7)
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
@@ -353,9 +352,10 @@ if __name__ == '__main__':
 
     print('\033[1m' + "INPUTS : " + str(inputs) + '\033[0m')
     print('\033[1m' + "TARGETS : " + str(targets) + '\033[0m')
-
-    # Set the script to use GPU with GPU_ID
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)
+    
+    if GPU_ID>0:
+        # Set the script to use GPU with GPU_ID
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_ID)
 
     # Get patch size
     path_train = os.path.join(data_path, "train")

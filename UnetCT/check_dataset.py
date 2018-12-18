@@ -50,7 +50,7 @@ if __name__ == '__main__':
                 if max_img>1 or min_img<-1:
                     dict_log[file] = (min_img, max_img)
 
-                if c == "lesion":
+                if c.lower() == "lesion":
                 #Log number of files with lesion
                     if np.max(img)>=1:
                         total_containing_lesion+=1
