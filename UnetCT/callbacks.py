@@ -15,6 +15,7 @@ from io import StringIO, BytesIO
 from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 import keras.backend as K
+from image_processing import clip
 
 from create_datasets import load_data_for_patient
 class TrainValTensorBoard(TensorBoard):
@@ -176,7 +177,7 @@ class TrainValTensorBoard(TensorBoard):
             for layer in layers:
 
                 pred_image = normalize_numpy(predicted_image[:, :, layer])
-                image_original = normalize_numpy(images_input[0][:, :, layer])
+                image_original = clip(normalize_numpy(images_input[0][:, :, layer]))
                 lesion_original = normalize_numpy(images_target[0][:, :, layer])
 
                 # RGB

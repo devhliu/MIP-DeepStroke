@@ -7,12 +7,12 @@ from tqdm import tqdm
 
 def preprocess_image(img, preprocessing="standardize"):
     img = np.nan_to_num(img)
-    if preprocessing is "normalize":
+    if preprocessing == "normalize":
         return normalize_numpy(img)
-    if preprocessing is "standardize":
+    if preprocessing == "standardize":
         return standardize(img)
-    if preprocessing is "clip":
-        return clip(normalize_numpy(img),0 , 1)
+    if preprocessing == "clip":
+        return clip(normalize_numpy(img), 0, 1)
 
 def clip(img, min=0, max=1):
     img = np.nan_to_num(img)

@@ -39,7 +39,7 @@ def load_data_for_patient(patient_path, stage="wcoreg_", modalities=["TRACE","T2
 
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize",
-                              stage="wcoreg_", augment=False , mode="extend", modalities=["TRACE","T2","LESION"]):
+                              stage="wcoreg_", augment=False , mode="extend", modalities=["TRACE","T2","LESION"], patch_divider=patch_divider):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):
@@ -65,7 +65,7 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         is_train = (dataset_type == 'train')
         image_patch = None
         for modality in modalities:
-            image_patch = create_patches_from_images(dict_preprocess[modality], patch_size, augment=augment, mode=mode)
+            image_patch = create_patches_from_images(dict_preprocess[modality], patch_size, augment=augment, mode=mode, patch_divider=patch_divider)
             _save_patches(image_patch, save_path, subject=subject, type=modality)
 
         # create extra patches
@@ -104,9 +104,11 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--mode", type=str, default="extend", help="What to do in case of mismatch of size : crop or extend?")
     parser.add_argument("-o", "--modalities", type=str, default=["T2", "TRACE", "LESION"],
                         help="What modalitites to extract")
+    parser.add_argument("-pd", "--patch_divider", type=int, help="Number of overlapping patchers", default=2)
     args = parser.parse_args()
 
     patch_size = [x for x in args.patch_size]
+    patch_divider = args.patch_divider
     if len(patch_size)==1:
         patch_size = [patch_size[0], patch_size[0], patch_size[0]]
 
@@ -177,7 +179,7 @@ if __name__ == '__main__':
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
 
     _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage,
-                              augment=args.augment, mode=mode, modalities=modalities)
+                              augment=args.augment, mode=mode, modalities=modalities, patch_divider=patch_divider)
     _create_data_for_patients(test, test_path, dataset_type="test", preprocessing=args.preprocessing, stage=stage,
                               augment=False, mode=mode, modalities=modalities)
     _create_data_for_patients(val, validation_path, dataset_type="validation", preprocessing=args.preprocessing,
