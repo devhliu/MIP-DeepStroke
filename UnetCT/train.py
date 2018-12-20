@@ -83,7 +83,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
             else:
                 inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
 
-            if not (np.all(inputs == 0) and skip_blank):
+            if not (np.all(targets == 0) and skip_blank):
                 x_list.append(inputs)
                 y_list.append(targets)
 
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
     #Edit JSON parameters to save tversky coefficients
     if parameters["loss_function"]=="tversky":
-            parameters["tversky_alpha-beta"] = (0.02, 0.98)
+            parameters["tversky_alpha-beta"] = (0.3, 0.7)
 
     #Load values from parameters
     data_path = parameters["data_path"]
