@@ -39,7 +39,7 @@ def load_data_for_patient(patient_path, stage="wcoreg_", modalities=["TRACE","T2
 
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize",
-                              stage="wcoreg_", augment=False , mode="extend", modalities=["TRACE","T2","LESION"], patch_divider=patch_divider):
+                              stage="wcoreg_", augment=False , mode="extend", modalities=["TRACE","T2","LESION"], patch_divider=2):
     print("Creating dataset {} : ".format(dataset_type))
     # Create patches for train
     for patient_path in tqdm(dataset):

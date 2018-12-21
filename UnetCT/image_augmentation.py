@@ -36,15 +36,7 @@ def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
 
 def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
     def _normalize(v, new_max=1.0, new_min=0.0):
-        v = np.nan_to_num(v)
-        new_max = float(new_max)
-        new_min = float(new_min)
-        min_v = float(v.min())
-        max_v = float(v.max())
-
-        arr = np.array((v - min_v) * (new_max - new_min))
-        arr = np.true_divide(arr, (max_v - min_v), out=None)
-        v_new = arr + new_min
+        v_new = normalize(v,new_max,new_min)
         return v_new
 
     def _adjust_contrast(img, contrast=1.0, brightness=1.0):
@@ -112,15 +104,21 @@ def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
                                          "salt_and_pepper": 0.15,
                                          "flip": 0.15,
                                          "contrast_and_brightness": 0.15}):
+
+    def get_random_angle(rotation_max, rotation_step):
+        if rotation_max == 0:
+            return 0
+        # rotate forward or backward
+        rotation = 1 if random.randint(-1, 1) > -1 else -1
+        deg_rotation = rotation*random.randrange(0, rotation_max, rotation_step)
+        return deg_rotation
+
     # randomly rotate
     r = random.random()
     if r < prob["rotation"]:
-        rotation = 1 if random.randint(-1, 1) > -1 else -1
-        degx = rotation*random.randrange(0, prob["rotxmax"], prob["rotation_step"])  # in degree
-        rotation = 1 if random.randint(-1, 1) > -1 else -1
-        degy = rotation*random.randrange(0, prob["rotymax"], prob["rotation_step"])  # in degree
-        rotation = 1 if random.randint(-1, 1) > -1 else -1
-        degz = rotation*random.randrange(0, prob["rotzmax"], prob["rotation_step"])
+        degx = get_random_angle(prob["rotxmax"], prob["rotation_step"])
+        degy = get_random_angle(prob["rotymax"], prob["rotation_step"])
+        degz = get_random_angle(prob["rotzmax"], prob["rotation_step"])
         imgsx, imgsy = rotate3D(imgsx, imgsy, degx, degy, degz)
 
     # randomly add salt and pepper

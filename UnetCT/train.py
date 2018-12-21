@@ -83,7 +83,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
             else:
                 inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
 
-            if not (np.all(inputs == 0) and skip_blank):
+            if not (np.all(targets == 0) and skip_blank):
                 x_list.append(inputs)
                 y_list.append(targets)
 
