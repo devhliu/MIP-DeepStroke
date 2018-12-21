@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
     #Edit JSON parameters to save tversky coefficients
     if parameters["loss_function"]=="tversky":
-            parameters["tversky_alpha-beta"] = (0.02, 0.98)
+            parameters["tversky_alpha-beta"] = (0.3, 0.7)
 
     #Load values from parameters
     data_path = parameters["data_path"]

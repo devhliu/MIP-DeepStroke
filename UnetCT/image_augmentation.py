@@ -36,7 +36,7 @@ def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
 
 def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
     def _normalize(v, new_max=1.0, new_min=0.0):
-        v_new = normalize(v,new_max,new_min)
+        v_new = normalize(v, new_max, new_min)
         return v_new
 
     def _adjust_contrast(img, contrast=1.0, brightness=1.0):
@@ -48,8 +48,9 @@ def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
         img_base = img.copy()
         img = _normalize(img_base, new_max=1.0, new_min=0.0)
         imgc = contrast * (img - 0.5) + 0.5 + (brightness - 1.0)
-        imgc[imgc > 1] = 1
-        imgc[imgc < 0] = 0
+        imgc = np.nan_to_num(imgc)
+        imgc[imgc >= 1] = 1
+        imgc[imgc <= 0] = 0
         # img_norm = _normalize(imgc, new_max=max_v, new_min=min_v)
         return imgc
 
