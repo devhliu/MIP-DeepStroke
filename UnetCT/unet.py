@@ -2,7 +2,7 @@ import numpy as np
 from keras import backend as K
 from keras.engine import Input, Model
 from keras.layers import MaxPooling3D, BatchNormalization, Deconvolution3D, LeakyReLU, Input, Add, UpSampling3D, \
-    Activation, SpatialDropout3D, Conv3D
+    Activation, SpatialDropout3D, Conv3D, Dropout
 from keras.optimizers import Adam
 from metrics import dice_coefficient_loss, get_label_dice_coefficient_function, dice_coefficient
 
@@ -106,7 +106,7 @@ def create_context_module(input_layer, n_level_filters, dropout_rate=0.3, data_f
 def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning_rate=0.00001, deconvolution=False,
                   depth=4, n_base_filters=32, include_label_wise_dice_coefficients=False, metrics=dice_coefficient,
                   batch_normalization=False, loss=dice_coefficient_loss, layer_activation_name="relu", final_activation_name="sigmoid",
-                  lr_decay=0.0):
+                  lr_decay=0.0, dropout=0.5):
     """
     Builds the 3D UNet Keras model.f
     :param metrics: List metrics to be calculated during model training (default is dice coefficient).
@@ -138,6 +138,7 @@ def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning
                                           batch_normalization=batch_normalization, activation=layer_activation_name)
         if layer_depth < depth - 1:
             current_layer = MaxPooling3D(pool_size=pool_size)(layer2)
+            current_layer = Dropout(dropout)(current_layer)
             levels.append([layer1, layer2, current_layer])
         else:
             current_layer = layer2
@@ -148,6 +149,7 @@ def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning
         up_convolution = get_up_convolution(pool_size=pool_size, deconvolution=deconvolution,
                                             n_filters=current_layer._keras_shape[1])(current_layer)
         concat = concatenate([up_convolution, levels[layer_depth][1]], axis=1)
+        concat = Dropout(dropout)(concat)
         current_layer = create_convolution_block(n_filters=levels[layer_depth][1]._keras_shape[1],
                                                  input_layer=concat, batch_normalization=batch_normalization)
         current_layer = create_convolution_block(n_filters=levels[layer_depth][1]._keras_shape[1],
