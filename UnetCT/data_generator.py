@@ -38,7 +38,7 @@ class DataGenerator(keras.utils.Sequence):
 
         example_image = os.path.join(self.data_directory, self.folders_input[0], self.image_paths[0])
         self.dim = nb.load(example_image).get_data().shape
-
+        self.actual_index = -1  # will be incremented in next()
         self.on_epoch_end()
 
     def __len__(self):
@@ -57,6 +57,12 @@ class DataGenerator(keras.utils.Sequence):
         X, y = self.__data_generation(list_IDs_temp)
 
         return X, y
+
+    def next(self):
+        self.actual_index = self.actual_index+1
+        if self.actual_index > self.__len__()-1:
+            self.actual_index = 0
+        return self.__getitem__(self.actual_index)
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'

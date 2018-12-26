@@ -192,7 +192,7 @@ class TrainValTensorBoard(TensorBoard):
 
 
     def __add_batch_visualization(self, generator, epoch, training=True):
-        batch = next(generator)
+        batch = generator.next()
         if training:
             t = "training"
             writer = self.writer
@@ -237,7 +237,7 @@ class TrainValTensorBoard(TensorBoard):
 
             generator = self.validation_generator
             for b in tqdm(range(self.validation_steps)):
-                x, y = next(generator)
+                x, y = generator.next()
 
                 pred_batch = self.model.predict_on_batch(x)
 
