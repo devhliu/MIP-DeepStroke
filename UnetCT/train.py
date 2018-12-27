@@ -13,13 +13,14 @@ import tensorflow as tf
 import json
 from keras.callbacks import ReduceLROnPlateau
 from data_generator import DataGenerator
+from image_augmentation import randomly_augment
 
 config = tf.ConfigProto(device_count={'GPU': 2 , 'CPU': 1} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
 
-def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion'], augment_prob=0.0):
+def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion'], augment_prob=None):
     train_path = "train/"
     validation_path = "validation/"
     if data_path is not None:
@@ -32,19 +33,96 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
-    train_generator = DataGenerator(data_directory=train_path,
+    train_generator = dual_generator(data_directory=train_path,
                                     folders_input=folders_input,
                                     folders_output=folders_target,
                                     batch_size=batch_size,
                                     augment_prob=augment_prob)
 
-    validation_generator = DataGenerator(data_directory=validation_path,
+    validation_generator = dual_generator(data_directory=validation_path,
                                     folders_input=folders_input,
                                     folders_output=folders_target,
                                     batch_size=batch_size,
                                     augment_prob=augment_prob)
 
     return train_generator, validation_generator
+
+
+def dual_generator(data_directory, folders_input, folders_output, batch_size, skip_blank=False, logfile=None,
+                   augment_prob=None):
+    #default values
+    if augment_prob is None:
+        augment_prob= {"rotation": 0.0,
+         "rotxmax": 90.0,
+         "rotymax": 90.0,
+         "rotzmax": 90.0,
+         "rotation_step": 1.0,
+         "salt_and_pepper": 0.0,
+         "flip": 0.0,
+         "contrast_and_brightness": 0.0,
+         "only_positives": False}
+
+    while True:
+        example_dir = os.path.join(data_directory, folders_input[0])
+        image_paths = os.listdir(example_dir)
+
+        x_list = []
+        y_list = []
+        for i in range(len(image_paths)):
+
+            inputs = []
+            inputs_paths = []
+            for x in folders_input:
+                image_path = image_paths[i].replace(folders_input[0], x)
+                image_input = nb.load(os.path.join(data_directory, x, image_path)).get_data()
+                inputs.append(image_input)
+                inputs_paths.append(image_path)
+
+            targets = []
+            targets_paths = []
+            for y in folders_output:
+                target_path = image_paths[i].replace(folders_input[0], y)
+                image_target = nb.load(os.path.join(data_directory, y, target_path)).get_data()
+                targets.append(image_target)
+                targets_paths.append(target_path)
+            if logfile:
+                with open(logfile, "a") as f:
+                    paths = inputs_paths+targets_paths
+                    f.write("{} - {}".format(i, paths))
+
+            # perform data augmentation
+            if augment_prob["only_positives"] and np.sum(targets) > 0:
+                inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
+            else:
+                inputs, targets = randomly_augment(inputs, targets, prob=augment_prob)
+
+            if not (np.all(targets == 0) and skip_blank):
+                x_list.append(inputs)
+                y_list.append(targets)
+
+            if len(x_list) == batch_size:
+                x_list_batch = np.array(x_list)
+                y_list_batch = np.array(y_list)
+                x_list = []
+                y_list = []
+
+                yield x_list_batch, y_list_batch
+
+        while len(x_list)<batch_size:
+           input_size = nb.load(os.path.join(data_directory, folders_input[0], image_paths[0])).get_data().shape
+           zero = np.zeros(input_size)
+
+           inputs = []
+           for x in folders_input:
+               inputs.append(zero)
+           targets = []
+           for y in folders_output:
+               targets.append(zero)
+
+           x_list.append(inputs)
+           y_list.append(targets)
+        yield np.array(x_list), np.array(y_list)
+
 
 def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
           test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0, stage="wcoreg_",
@@ -205,6 +283,7 @@ if __name__ == '__main__':
                                       "flip": args.augment,
                                       "contrast_and_brightness": args.augment,
                                       "only_positives": True}
+        parameters["dropout"] = 0.0
 
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
@@ -236,6 +315,7 @@ if __name__ == '__main__':
     test_patient = parameters["test_patient"]
     train_patient = parameters["train_patient"]
     architecture = parameters["architecture"]
+    dropout = parameters["dropout"]
 
     inputs = [x[0] for x in args.input]
     targets = [x[0] for x in args.output]
@@ -345,7 +425,8 @@ if __name__ == '__main__':
                               initial_learning_rate=initial_learning_rate,
                               loss=loss_function,
                               final_activation_name=final_activation,
-                              layer_activation_name=layer_activation)
+                              layer_activation_name=layer_activation,
+                              dropout=dropout)
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,

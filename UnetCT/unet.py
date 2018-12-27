@@ -106,7 +106,7 @@ def create_context_module(input_layer, n_level_filters, dropout_rate=0.3, data_f
 def unet_model_3d(input_shape, pool_size=(2, 2, 2), n_labels=1, initial_learning_rate=0.00001, deconvolution=False,
                   depth=4, n_base_filters=32, include_label_wise_dice_coefficients=False, metrics=dice_coefficient,
                   batch_normalization=False, loss=dice_coefficient_loss, layer_activation_name="relu", final_activation_name="sigmoid",
-                  lr_decay=0.0, dropout=0.5):
+                  lr_decay=0.0, dropout=0.0):
     """
     Builds the 3D UNet Keras model.f
     :param metrics: List metrics to be calculated during model training (default is dice coefficient).
