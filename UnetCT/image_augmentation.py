@@ -138,8 +138,8 @@ def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
 
     # Normalize between 0 and 1 to be sure that everything is correct
-    imgsx = [normalize(x) for x in imgsx]
-    imgsy = [normalize(y) for y in imgsy]
+    #imgsx = [normalize(x) for x in imgsx]
+    #imgsy = [normalize(y) for y in imgsy]
 
     # randomly change contrast and brightness
     r = random.random()

@@ -12,6 +12,7 @@ from keras.metrics import binary_crossentropy, binary_accuracy, mean_absolute_er
 import tensorflow as tf
 import json
 from keras.callbacks import ReduceLROnPlateau
+from data_generator import DataGenerator
 from image_augmentation import randomly_augment
 
 config = tf.ConfigProto(device_count={'GPU': 2 , 'CPU': 1} )
@@ -19,7 +20,7 @@ sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
 
-def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion'], augment_prob=0.0):
+def create_generators(batch_size, data_path=None, skip_blank=True, folders_input=['input'], folders_target=['lesion'], augment_prob=None):
     train_path = "train/"
     validation_path = "validation/"
     if data_path is not None:
@@ -32,23 +33,35 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
-    train_generator = dual_generator(train_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank, augment_prob=augment_prob)
+    train_generator = dual_generator(data_directory=train_path,
+                                    folders_input=folders_input,
+                                    folders_output=folders_target,
+                                    batch_size=batch_size,
+                                    augment_prob=augment_prob)
 
-    validation_generator = dual_generator(validation_path, folders_input, folders_target, batch_size=batch_size, skip_blank=skip_blank)
+    validation_generator = dual_generator(data_directory=validation_path,
+                                    folders_input=folders_input,
+                                    folders_output=folders_target,
+                                    batch_size=batch_size,
+                                    augment_prob=augment_prob)
 
     return train_generator, validation_generator
 
 
-def dual_generator(data_directory, folders_input, folders_target, batch_size, skip_blank=False, logfile=None,
-                   augment_prob={"rotation": 0.0,
-                                 "rotxmax": 90.0,
-                                 "rotymax": 90.0,
-                                 "rotzmax": 90.0,
-                                 "rotation_step": 1.0,
-                                 "salt_and_pepper": 0.0,
-                                 "flip": 0.0,
-                                 "contrast_and_brightness": 0.0,
-                                 "only_positives": False}):
+def dual_generator(data_directory, folders_input, folders_output, batch_size, skip_blank=False, logfile=None,
+                   augment_prob=None):
+    #default values
+    if augment_prob is None:
+        augment_prob= {"rotation": 0.0,
+         "rotxmax": 90.0,
+         "rotymax": 90.0,
+         "rotzmax": 90.0,
+         "rotation_step": 1.0,
+         "salt_and_pepper": 0.0,
+         "flip": 0.0,
+         "contrast_and_brightness": 0.0,
+         "only_positives": False}
+
     while True:
         example_dir = os.path.join(data_directory, folders_input[0])
         image_paths = os.listdir(example_dir)
@@ -67,7 +80,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
 
             targets = []
             targets_paths = []
-            for y in folders_target:
+            for y in folders_output:
                 target_path = image_paths[i].replace(folders_input[0], y)
                 image_target = nb.load(os.path.join(data_directory, y, target_path)).get_data()
                 targets.append(image_target)
@@ -103,7 +116,7 @@ def dual_generator(data_directory, folders_input, folders_target, batch_size, sk
            for x in folders_input:
                inputs.append(zero)
            targets = []
-           for y in folders_target:
+           for y in folders_output:
                targets.append(zero)
 
            x_list.append(inputs)
@@ -270,6 +283,7 @@ if __name__ == '__main__':
                                       "flip": args.augment,
                                       "contrast_and_brightness": args.augment,
                                       "only_positives": True}
+        parameters["dropout"] = 0.0
 
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
@@ -301,6 +315,7 @@ if __name__ == '__main__':
     test_patient = parameters["test_patient"]
     train_patient = parameters["train_patient"]
     architecture = parameters["architecture"]
+    dropout = parameters["dropout"]
 
     inputs = [x[0] for x in args.input]
     targets = [x[0] for x in args.output]
@@ -410,7 +425,8 @@ if __name__ == '__main__':
                               initial_learning_rate=initial_learning_rate,
                               loss=loss_function,
                               final_activation_name=final_activation,
-                              layer_activation_name=layer_activation)
+                              layer_activation_name=layer_activation,
+                              dropout=dropout)
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
           skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
