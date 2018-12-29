@@ -274,7 +274,7 @@ if __name__ == '__main__':
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
         if parameters["loss_function"] == "tversky":
-            parameters["tversky_alpha-beta"] = (0.3, 0.7)
+            parameters["tversky_alpha-beta"] = (0.7, 0.3)
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
     #Edit JSON parameters to save tversky coefficients
     if parameters["loss_function"]=="tversky":
-            parameters["tversky_alpha-beta"] = (0.3, 0.7)
+            parameters["tversky_alpha-beta"] = (0.7, 0.3)
 
     #Load values from parameters
     data_path = parameters["data_path"]
