@@ -24,7 +24,7 @@ def remove(file):
     os.remove(file)
 
 
-def keep_checkpoints(path):
+def keep_checkpoints(path, top):
     # list all checkpoints files
     files = os.listdir(path)
     files = sorted(files, key=parseLoss, reverse=True)
@@ -64,10 +64,11 @@ if __name__ == '__main__':
             path = os.path.join(logdir, m, "checkpoints")
             if not os.path.exists(path):
                 raise Exception("No checkpoints folder found in {}".format(folders))
+            keep_checkpoints(path, top)
     else:
         path = os.path.join(logdir, "checkpoints")
         if not os.path.exists(path):
             raise Exception("No checkpoints folder found in {}".format(folders))
-        keep_checkpoints(path)
+        keep_checkpoints(path, top)
 
 
