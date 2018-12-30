@@ -258,8 +258,8 @@ if __name__ == '__main__':
     parser = ArgumentParser(description="Evaluates a 3D Unet model")
     parser.add_argument("-l", "--logdir", help="Directory where the Keras models are stored",
                         default="/home/snarduzz/Models")
-    parser.add_argument('-i', '--input_channels', nargs='+', help='<Required> Set flag', default=None)
-    parser.add_argument('-o', '--output_channels', nargs='+', help='<Required> Set flag', default=None)
+    parser.add_argument('-i', '--input_channels', nargs='+', action="append", help='<Required> Set flag', default=None)
+    parser.add_argument('-o', '--output_channels', nargs='+', action="append", help='<Required> Set flag', default=None)
 
     args = parser.parse_args()
     channels_input = args.input_channels
@@ -267,9 +267,9 @@ if __name__ == '__main__':
     logdir = os.path.expanduser(args.logdir)
 
     if channels_input is None:
-        channels_input = ["T2"]
+        channels_input = ["TRACE", "T2"]
     if channels_output is None:
-        channels_output = ["lesion"]
+        channels_output = ["LESION"]
 
     print("INPUTS : {}".format(channels_input))
     print("OUTPUTS : {}".format(channels_output))
