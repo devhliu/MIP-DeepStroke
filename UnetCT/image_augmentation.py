@@ -57,6 +57,7 @@ def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
     imgs_c = imgsx.copy()
     contrasted = []
     for x in imgs_c:
+        x = normalize(x)
         b = _adjust_contrast(x, contrast, brightness)
         contrasted.append(b)
 

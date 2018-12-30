@@ -192,7 +192,10 @@ class TrainValTensorBoard(TensorBoard):
 
 
     def __add_batch_visualization(self, generator, epoch, training=True):
-        batch = generator.next()
+        try:
+            batch = generator.next() #custom generator
+        except:
+            batch = next(generator) #classic generator
         if training:
             t = "training"
             writer = self.writer
