@@ -187,7 +187,7 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
     return dict_scores
 
 
-def evaluate_dir(logdir, channels_input, channels_output):
+def evaluate_dir(logdir, channels_input, channels_output, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"}):
     checkpoints_folder = os.path.join(logdir, "checkpoints")
     parameters_file = os.path.join(logdir, "parameters.json")
     output_file = os.path.join(logdir, "evaluation.csv")
@@ -196,7 +196,18 @@ def evaluate_dir(logdir, channels_input, channels_output):
     print("Loading parameters from : " + parameters_file)
     with open(parameters_file, 'r') as fp:
         parameters = json.load(fp)
-    data_path = os.path.join(parameters["data_path"], "test")
+
+    path_replaced = parameters["data_path"]
+    if not os.path.exists(path_replaced):
+        # try by replacing the value
+        for k in to_replace.keys():
+            path_replaced = path_replaced.replace(k, to_replace[k])
+
+    # if still not valid
+    if os.path.exists(path_replaced):
+        raise Exception("Path to data {} not found.".format(path_replaced))
+
+    data_path = os.path.join(path_replaced, "test")
 
     # Create DF if not exists
     if not os.path.exists(output_file):
@@ -260,16 +271,24 @@ if __name__ == '__main__':
                         default="/home/snarduzz/Models")
     parser.add_argument('-i', '--input_channels', nargs='+', action="append", help='<Required> Set flag', default=None)
     parser.add_argument('-o', '--output_channels', nargs='+', action="append", help='<Required> Set flag', default=None)
+    parser.add_argument('-r', '--root_data_folder', help="Root folder to replace", default="/home/snarduzz/Data")
+    parser.add_argument('-b', '--backup_data_folder', help="Backup folder that replace root folder", default="/home/snarduzz/Data")
 
     args = parser.parse_args()
     channels_input = args.input_channels
     channels_output = args.output_channels
     logdir = os.path.expanduser(args.logdir)
+    to_replace_dict = {args.root_data_folder: args.backup_data_folder}
 
     if channels_input is None:
         channels_input = ["TRACE", "T2"]
+    else:
+        channels_input = [x[0] for x in channels_input]
+
     if channels_output is None:
         channels_output = ["LESION"]
+    else:
+        channels_output = [x[0] for x in channels_output]
 
     print("INPUTS : {}".format(channels_input))
     print("OUTPUTS : {}".format(channels_output))
@@ -290,7 +309,7 @@ if __name__ == '__main__':
         for x in os.listdir(logdir):
             model_dir = os.path.join(logdir, x)
             print("Evaluating {}...".format(x))
-            evaluate_dir(model_dir, channels_input, channels_output)
+            evaluate_dir(model_dir, channels_input, channels_output, to_replace=to_replace_dict)
     else:
-        evaluate_dir(logdir, channels_input, channels_output)
+        evaluate_dir(logdir, channels_input, channels_output, to_replace=to_replace_dict)
 
