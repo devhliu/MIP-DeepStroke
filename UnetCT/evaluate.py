@@ -82,14 +82,11 @@ def predict_patient(patient_id, list_files, model, channels_input=["T2"], channe
     return np.array(ys_true), np.array(ys_pred)
 
 
-def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_output=["lesion"]):
+def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"]):
     input_option = channels_input[0]
     input_files = [os.path.join(test_folder, input_option, x) for x in os.listdir(os.path.join(test_folder, input_option))]
 
     s = nb.load(input_files[0]).get_data().size
-
-    if maxsize is None:
-        maxsize = len(input_files)
 
     patient_list = list(set([re.search('%s(.*)%s' % ("{}_".format(input_option), "-"), x).group(1) for x in input_files]))
 
@@ -187,7 +184,7 @@ def predict(test_folder, model, maxsize=None, channels_input=["T2"], channels_ou
     return dict_scores
 
 
-def evaluate_dir(logdir, channels_input, channels_output, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"}):
+def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"}):
     checkpoints_folder = os.path.join(logdir, "checkpoints")
     parameters_file = os.path.join(logdir, "parameters.json")
     output_file = os.path.join(logdir, "evaluation.csv")
@@ -198,13 +195,19 @@ def evaluate_dir(logdir, channels_input, channels_output, to_replace={"/home/sna
         parameters = json.load(fp)
 
     path_replaced = parameters["data_path"]
+    channels_input = parameters["inputs"]
+    channels_output = parameters["targets"]
+    
+    print("INPUTS : {}".format(channels_input))
+    print("OUTPUTS : {}".format(channels_output))
+
     if not os.path.exists(path_replaced):
         # try by replacing the value
         for k in to_replace.keys():
             path_replaced = path_replaced.replace(k, to_replace[k])
 
     # if still not valid
-    if os.path.exists(path_replaced):
+    if not os.path.exists(path_replaced):
         raise Exception("Path to data {} not found.".format(path_replaced))
 
     data_path = os.path.join(path_replaced, "test")
@@ -269,8 +272,6 @@ if __name__ == '__main__':
     parser = ArgumentParser(description="Evaluates a 3D Unet model")
     parser.add_argument("-l", "--logdir", help="Directory where the Keras models are stored",
                         default="/home/snarduzz/Models")
-    parser.add_argument('-i', '--input_channels', nargs='+', action="append", help='<Required> Set flag', default=None)
-    parser.add_argument('-o', '--output_channels', nargs='+', action="append", help='<Required> Set flag', default=None)
     parser.add_argument('-r', '--root_data_folder', help="Root folder to replace", default="/home/snarduzz/Data")
     parser.add_argument('-b', '--backup_data_folder', help="Backup folder that replace root folder", default="/home/snarduzz/Data")
 
@@ -290,26 +291,23 @@ if __name__ == '__main__':
     else:
         channels_output = [x[0] for x in channels_output]
 
-    print("INPUTS : {}".format(channels_input))
-    print("OUTPUTS : {}".format(channels_output))
-
     df = None
     columns = ["model_name", "date", "iteration", "loss_function",
                "auc", "auc_mean", "auc_std",
                "dice", "dice_mean", "dice_std", "dice_thresh",
                "tversky", "tversky_mean", "tversky_std", "tversky_thresh",
                "weighted-dice",
-               "ap", "f1-score", "f1_mean", "f1_std", "jaccard", "accuracy", "precision",
+               "ap", "jaccard", "accuracy", "precision",
                "sensitivity", "specificity", "val_loss",
                "parameters_file"]
 
     if "checkpoints" not in os.listdir(logdir):
         print("No checkpoints found. Assuming this is a root folder of all models.")
 
-        for x in os.listdir(logdir):
+        for x in sorted(os.listdir(logdir)):
             model_dir = os.path.join(logdir, x)
             print("Evaluating {}...".format(x))
-            evaluate_dir(model_dir, channels_input, channels_output, to_replace=to_replace_dict)
+            evaluate_dir(model_dir, to_replace=to_replace_dict)
     else:
-        evaluate_dir(logdir, channels_input, channels_output, to_replace=to_replace_dict)
+        evaluate_dir(logdir, to_replace=to_replace_dict)
 
