@@ -96,7 +96,6 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
     list_y_pred = np.empty(len(patient_list)*files_per_patients*s)
 
     aucs = []
-    f1_scores = []
     dices = []
     tverskys = []
 
@@ -110,11 +109,6 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
         y_pred_thresh = y_pred.copy()
         y_pred_thresh[y_pred_thresh < 0.5] = 0
         y_pred_thresh[y_pred_thresh >= 0.5] = 1
-        try:
-            f1 = metrics.f1_score(y_true, y_pred_thresh)
-        except:
-            f1 = 0.0
-            print("F1 is ill-posed : set to 0.0")
 
         # Convert to Tensor for Dice and Tversky scores
         y_true_tensor = tf.cast(y_true, tf.float64)
@@ -123,7 +117,6 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
         tversky = tversky_score(y_true=y_true, y_pred=y_pred)
 
         aucs.append(auc)
-        f1_scores.append(f1)
         dices.append(dice)
         tverskys.append(tversky)
 
@@ -145,8 +138,6 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
     # AUC per patient with std
     dict_scores["auc_mean"] = np.mean(np.array(aucs))
     dict_scores["auc_std"] = np.std(np.array(aucs))
-    dict_scores["f1_mean"] = np.mean(np.array(f1_scores))
-    dict_scores["f1_std"] = np.std(np.array(f1_scores))
     dict_scores["dice_mean"] = np.mean(np.array(dices))
     dict_scores["dice_std"] = np.std(np.array(dices))
     dict_scores["tversky_mean"] = np.mean(np.array(tverskys))
@@ -155,7 +146,6 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
     functions = {"dice_thresh": dice_score,
                  "tversky_thresh": tversky_score,
                  "ap":metrics.average_precision_score,
-                 "f1-score":metrics.f1_score,
                  "jaccard":metrics.jaccard_similarity_score,
                  "accuracy":metrics.accuracy_score,
                  "precision":metrics.precision_score,
@@ -197,7 +187,7 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
     path_replaced = parameters["data_path"]
     channels_input = parameters["inputs"]
     channels_output = parameters["targets"]
-    
+
     print("INPUTS : {}".format(channels_input))
     print("OUTPUTS : {}".format(channels_output))
 
@@ -276,20 +266,8 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--backup_data_folder', help="Backup folder that replace root folder", default="/home/snarduzz/Data")
 
     args = parser.parse_args()
-    channels_input = args.input_channels
-    channels_output = args.output_channels
     logdir = os.path.expanduser(args.logdir)
     to_replace_dict = {args.root_data_folder: args.backup_data_folder}
-
-    if channels_input is None:
-        channels_input = ["TRACE", "T2"]
-    else:
-        channels_input = [x[0] for x in channels_input]
-
-    if channels_output is None:
-        channels_output = ["LESION"]
-    else:
-        channels_output = [x[0] for x in channels_output]
 
     df = None
     columns = ["model_name", "date", "iteration", "loss_function",
