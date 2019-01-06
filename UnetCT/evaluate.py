@@ -97,79 +97,71 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
 
     aucs = []
     dices = []
-    tverskys = []
+    precisions = []
+    recalls = []
+
+    aucs_thresh = []
+    dices_thresh = []
+    precisions_thresh = []
+    recalls_thresh = []
 
     for i in tqdm(range(len(patient_list))):
         p = patient_list[i]
         y_true, y_pred = predict_patient(p, input_files, model, channels_input, channels_output)
 
-        auc = metrics.roc_auc_score(y_true, y_pred)
+        y_true = y_true.flatten()
+        y_pred = y_pred.flatten()
 
-        # Treshold
+
+        # without threshold
+        auc = metrics.roc_auc_score(y_true, y_pred)
+        dice = dice_score(y_true=y_true, y_pred=y_pred)
+        precision = metrics.precision_score(y_true=y_true, y_pred=y_pred)
+        recall = metrics.recall_score(y_true=y_true, y_pred=y_pred)
+
+        aucs.append(auc)
+        dices.append(dice)
+        precisions.append(precision)
+        recalls.append(recall)
+
+        # with threshold
+        # compute threshold
         y_pred_thresh = y_pred.copy()
         y_pred_thresh[y_pred_thresh < 0.5] = 0
         y_pred_thresh[y_pred_thresh >= 0.5] = 1
 
-        # Convert to Tensor for Dice and Tversky scores
-        y_true_tensor = tf.cast(y_true, tf.float64)
-        y_pred_tensor = tf.cast(y_pred, tf.float64)
-        dice = dice_score(y_true=y_true, y_pred=y_pred)
-        tversky = tversky_score(y_true=y_true, y_pred=y_pred)
+        auc_t = metrics.roc_auc_score(y_true, y_pred_thresh)
+        dice_t = dice_score(y_true=y_true, y_pred=y_pred_thresh)
+        precision_t = metrics.precision_score(y_true=y_true, y_pred=y_pred_thresh)
+        recall_t = metrics.recall_score(y_true=y_true, y_pred=y_pred_thresh)
 
-        aucs.append(auc)
-        dices.append(dice)
-        tverskys.append(tversky)
+        aucs_thresh.append(auc_t)
+        dices_thresh.append(dice_t)
+        precisions_thresh.append(precision_t)
+        recalls_thresh.append(recall_t)
 
-        list_y[i*len(y_true):(i+1)*len(y_true)] = y_true
-        list_y_pred[i * len(y_pred):(i + 1) * len(y_pred)] = y_pred
 
-    y_true = list_y
-    y_pred = list_y_pred
+    dict_scores = {}
 
-    # Normal scoring on whole test set without threshold
-    auc = metrics.roc_auc_score(y_true,  y_pred)
-    coeff_dice = dice_score(y_true, y_pred)
-    coeff_tversky = tversky_score(y_true, y_pred)
+    # without threshold
+    dict_scores["AUC"] = np.mean(aucs)
+    dict_scores["AUC_std"] = np.std(aucs)
+    dict_scores["DSC"] = np.mean(dices)
+    dict_scores["DSC_std"] = np.std(dices)
+    dict_scores["Recall"] = np.mean(recalls)
+    dict_scores["Recall_std"] = np.std(recalls)
+    dict_scores["Precision"] = np.mean(precisions)
+    dict_scores["Precision_std"] = np.std(precisions)
+    # with threshold
+    dict_scores["thresh_AUC"] = np.mean(aucs_thresh)
+    dict_scores["thresh_AUC_std"] = np.std(aucs_thresh)
+    dict_scores["thresh_DSC"] = np.mean(dices_thresh)
+    dict_scores["thresh_DSC_std"] = np.std(dices_thresh)
+    dict_scores["thresh_Recall"] = np.mean(recalls_thresh)
+    dict_scores["thresh_Recall_std"] = np.std(recalls_thresh)
+    dict_scores["thresh_Precision"] = np.mean(precisions_thresh)
+    dict_scores["thresh_Precision_std"] = np.std(precisions_thresh)
 
-    dict_scores = {"auc": auc}
-    dict_scores["dice"] = coeff_dice
-    dict_scores["tversky"] = coeff_tversky
-
-    # AUC per patient with std
-    dict_scores["auc_mean"] = np.mean(np.array(aucs))
-    dict_scores["auc_std"] = np.std(np.array(aucs))
-    dict_scores["dice_mean"] = np.mean(np.array(dices))
-    dict_scores["dice_std"] = np.std(np.array(dices))
-    dict_scores["tversky_mean"] = np.mean(np.array(tverskys))
-    dict_scores["tversky_std"] = np.std(np.array(tverskys))
-
-    functions = {"dice_thresh": dice_score,
-                 "tversky_thresh": tversky_score,
-                 "ap":metrics.average_precision_score,
-                 "jaccard":metrics.jaccard_similarity_score,
-                 "accuracy":metrics.accuracy_score,
-                 "precision":metrics.precision_score,
-                 "sensitivity":metrics.recall_score,
-                 "specificity":specificity
-                }
-
-    # Tresholding
-    y_pred[y_pred < 0.5] = 0
-    y_pred[y_pred >= 0.5] = 1
-
-    for k in tqdm(functions.keys()):
-        if k is "f1-score":
-            try:
-                score = functions[k](y_true, y_pred)
-            except:
-                score = "NaN"
-        else:
-            try:
-                score = functions[k](y_true, y_pred)
-            except Exception as e:
-                print("error computing {}".format(k))
-                score = "NaN"
-        dict_scores[k] = score
 
     return dict_scores
 
@@ -249,10 +241,15 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
             dict_scores["iteration"] = iteration
             dict_scores["val_loss"] = loss_value
             dict_scores["loss_function"] = parameters["loss_function"]
-            dict_scores["parameters_file"] = parameters_file
+
+            columns_meta = ["date", "model_name", "iteration", "val_loss", "loss_function"]
+            columns_metrics = ["AUC", "AUC_std", "DSC", "DSC_std", "Recall", "Recall_std", "Precision", "Precision_std"]
+            columns_metrics_tresh = ["tresh_"+x for x in columns_metrics]
+
+            columns = columns_meta + columns_metrics + columns_metrics_tresh
 
             # Append line to CSV by keeping only relevant columns
-            df = df[list(dict_scores.keys())]
+            df = df[columns]
             new_df = pd.DataFrame(dict_scores, index=[0])
             df = df.append(new_df)
             df.to_csv(output_file)
@@ -270,22 +267,25 @@ if __name__ == '__main__':
     to_replace_dict = {args.root_data_folder: args.backup_data_folder}
 
     df = None
-    columns = ["model_name", "date", "iteration", "loss_function",
-               "auc", "auc_mean", "auc_std",
-               "dice", "dice_mean", "dice_std", "dice_thresh",
-               "tversky", "tversky_mean", "tversky_std", "tversky_thresh",
-               "weighted-dice",
-               "ap", "jaccard", "accuracy", "precision",
-               "sensitivity", "specificity", "val_loss",
-               "parameters_file"]
 
     if "checkpoints" not in os.listdir(logdir):
         print("No checkpoints found. Assuming this is a root folder of all models.")
+
+        output_file = os.path.join(logdir, "total_evaluation.csv")
+        list_frames = []
 
         for x in sorted(os.listdir(logdir)):
             model_dir = os.path.join(logdir, x)
             print("Evaluating {}...".format(x))
             evaluate_dir(model_dir, to_replace=to_replace_dict)
+
+            #load recently created evaluation file
+            evaluation_file = os.path.join(model_dir, "evaluation.csv")
+            df = pd.read_csv(evaluation_file, index_col=None, header=0)
+            list_frames.append(df)
+
+        frame = pd.concat(list_frames, axis=0, ignore_index=True)
+
     else:
         evaluate_dir(logdir, to_replace=to_replace_dict)
 
