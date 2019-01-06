@@ -196,6 +196,13 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
 
     # Create DF if not exists
     if not os.path.exists(output_file):
+
+        columns_meta = ["date", "model_name", "iteration", "val_loss", "loss_function"]
+        columns_metrics = ["AUC", "AUC_std", "DSC", "DSC_std", "Recall", "Recall_std", "Precision", "Precision_std"]
+        columns_metrics_tresh = ["tresh_" + x for x in columns_metrics]
+
+        columns = columns_meta + columns_metrics + columns_metrics_tresh
+
         df = pd.DataFrame(columns=columns).reset_index()
         df.to_csv(output_file)
 
@@ -241,12 +248,6 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
             dict_scores["iteration"] = iteration
             dict_scores["val_loss"] = loss_value
             dict_scores["loss_function"] = parameters["loss_function"]
-
-            columns_meta = ["date", "model_name", "iteration", "val_loss", "loss_function"]
-            columns_metrics = ["AUC", "AUC_std", "DSC", "DSC_std", "Recall", "Recall_std", "Precision", "Precision_std"]
-            columns_metrics_tresh = ["tresh_"+x for x in columns_metrics]
-
-            columns = columns_meta + columns_metrics + columns_metrics_tresh
 
             # Append line to CSV by keeping only relevant columns
             df = df[columns]
