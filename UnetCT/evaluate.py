@@ -82,7 +82,7 @@ def predict_patient(patient_id, list_files, model, channels_input=["T2"], channe
     return np.array(ys_true), np.array(ys_pred)
 
 
-def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"]):
+def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"], decimals = 4):
     input_option = channels_input[0]
     input_files = [os.path.join(test_folder, input_option, x) for x in os.listdir(os.path.join(test_folder, input_option))]
 
@@ -144,29 +144,29 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
     dict_scores = {}
 
     # without threshold
-    dict_scores["AUC"] = np.mean(aucs)
-    dict_scores["AUC_std"] = np.std(aucs)
-    dict_scores["DSC"] = np.mean(dices)
-    dict_scores["DSC_std"] = np.std(dices)
-    dict_scores["Recall"] = np.mean(recalls)
-    dict_scores["Recall_std"] = np.std(recalls)
-    dict_scores["Precision"] = np.mean(precisions)
-    dict_scores["Precision_std"] = np.std(precisions)
+    dict_scores["AUC"] = round(np.mean(aucs),decimals)
+    dict_scores["AUC_std"] = round(np.std(aucs),decimals)
+    dict_scores["DSC"] = round(np.mean(dices),decimals)
+    dict_scores["DSC_std"] = round(np.std(dices),decimals)
+    dict_scores["Recall"] = round(np.mean(recalls),decimals)
+    dict_scores["Recall_std"] = round(np.std(recalls),decimals)
+    dict_scores["Precision"] = round(np.mean(precisions),decimals)
+    dict_scores["Precision_std"] = round(np.std(precisions),decimals)
     # with threshold
-    dict_scores["thresh_AUC"] = np.mean(aucs_thresh)
-    dict_scores["thresh_AUC_std"] = np.std(aucs_thresh)
-    dict_scores["thresh_DSC"] = np.mean(dices_thresh)
-    dict_scores["thresh_DSC_std"] = np.std(dices_thresh)
-    dict_scores["thresh_Recall"] = np.mean(recalls_thresh)
-    dict_scores["thresh_Recall_std"] = np.std(recalls_thresh)
-    dict_scores["thresh_Precision"] = np.mean(precisions_thresh)
-    dict_scores["thresh_Precision_std"] = np.std(precisions_thresh)
+    dict_scores["thresh_AUC"] = round(np.mean(aucs_thresh),decimals)
+    dict_scores["thresh_AUC_std"] = round(np.std(aucs_thresh),decimals)
+    dict_scores["thresh_DSC"] = round(np.mean(dices_thresh),decimals)
+    dict_scores["thresh_DSC_std"] = round(np.std(dices_thresh),decimals)
+    dict_scores["thresh_Recall"] = round(np.mean(recalls_thresh),decimals)
+    dict_scores["thresh_Recall_std"] = round(np.std(recalls_thresh),decimals)
+    dict_scores["thresh_Precision"] = round(np.mean(precisions_thresh),decimals)
+    dict_scores["thresh_Precision_std"] = round(np.std(precisions_thresh),decimals)
 
 
     return dict_scores
 
 
-def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"}):
+def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"}, decimals = 4):
     checkpoints_folder = os.path.join(logdir, "checkpoints")
     parameters_file = os.path.join(logdir, "parameters.json")
     output_file = os.path.join(logdir, "evaluation.csv")
@@ -230,7 +230,7 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
                                                      })
             dict_scores = {}
             try:
-                dict_scores = predict(data_path, model, channels_input, channels_output)
+                dict_scores = predict(data_path, model, channels_input, channels_output,decimals = decimals)
             except Exception as e:
                 print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
                 traceback.print_exc()
@@ -261,8 +261,11 @@ if __name__ == '__main__':
                         default="/home/snarduzz/Models")
     parser.add_argument('-r', '--root_data_folder', help="Root folder to replace", default="/home/snarduzz/Data")
     parser.add_argument('-b', '--backup_data_folder', help="Backup folder that replace root folder", default="/home/snarduzz/Data")
+    parser.add_argument('-d', '--decimals', help="Decimals to round up results",
+                        default=4)
 
     args = parser.parse_args()
+    decimals = args.decimals
     logdir = os.path.expanduser(args.logdir)
     to_replace_dict = {args.root_data_folder: args.backup_data_folder}
 
@@ -277,7 +280,7 @@ if __name__ == '__main__':
         for x in sorted(os.listdir(logdir)):
             model_dir = os.path.join(logdir, x)
             print("Evaluating {}...".format(x))
-            evaluate_dir(model_dir, to_replace=to_replace_dict)
+            evaluate_dir(model_dir, to_replace=to_replace_dict, decimals=decimals)
 
             #load recently created evaluation file
             evaluation_file = os.path.join(model_dir, "evaluation.csv")
@@ -287,5 +290,5 @@ if __name__ == '__main__':
         frame = pd.concat(list_frames, axis=0, ignore_index=True)
 
     else:
-        evaluate_dir(logdir, to_replace=to_replace_dict)
+        evaluate_dir(logdir, to_replace=to_replace_dict, decimals=decimals)
 
