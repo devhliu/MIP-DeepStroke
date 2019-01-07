@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from utils import create_if_not_exists, split_train_test_val
+from utils2D import create_if_not_exists, split_train_test_val
 from image_processing import create_2D_patches_from_images, create_extra_patches_from_list, preprocess_image
 import numpy as np
 import nibabel as nb
