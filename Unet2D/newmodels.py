@@ -305,5 +305,3 @@ def attn_reg(opt, input_size, lossfxn):
                   metrics=[losses.dsc])
     return model
 
-attn_reg(Adam(), [512,512, 2], losses.dsc)
-

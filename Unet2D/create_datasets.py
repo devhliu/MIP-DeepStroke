@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from utils import create_if_not_exists, split_train_test_val
-from image_processing import create_patches_from_images, create_extra_patches_from_list, preprocess_image
+from image_processing import create_2D_patches_from_images, create_extra_patches_from_list, preprocess_image
 import numpy as np
 import nibabel as nb
 import os
@@ -68,12 +68,13 @@ def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_ex
         is_train = (dataset_type == 'train')
         image_patch = None
         for modality in modalities:
-            image_patch = create_patches_from_images(dict_preprocess[modality], patch_size, augment=augment, mode=mode,
-                                                     patch_divider=patch_divider)
+            image_patch = create_2D_patches_from_images(dict_preprocess[modality], patch_size, augment=augment,
+                                                        mode=mode, patch_divider=patch_divider)
             _save_patches(image_patch, save_path, subject=subject, type=modality)
 
         # create extra patches
         if is_train and augment is True:
+            raise Exception("Augmentation not yet supported")
             number_extra = int(ratio_extra * len(image_patch))  # take last size of image_patches
 
             # print("Creating {}*{} = {} extra patches.".format(ratio_extra, len(MTT_patches), number_extra))
@@ -100,10 +101,10 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--data_path", help="Path to data folder",
                         default="/home/snarduzz/Data/preprocessed_original_masked")
     parser.add_argument("-s", "--save_path", help="Path where to save patches", default="/home/snarduzz/Data")
-    parser.add_argument("-p", "--patch_size", help="Patch size", nargs="*", default=32, type=int)
+    parser.add_argument("-p", "--patch_size", help="Patch size", nargs="*", default=512, type=int)
     parser.add_argument("-f", "--setfile", help="File where the distribution of patient is stored", default=None)
     parser.add_argument("-pre", "--preprocessing", help="Preprocessing method", default="standardize")
-    parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="wcoreg_")
+    parser.add_argument("-stage", "--stage", help="Stage of regstration : coreg_ or wcoreg_ or \"\"", default="rcoreg_")
     parser.add_argument("-a", "--augment", type=bool, default=False, help="Augment the dataset")
     parser.add_argument("-m", "--mode", type=str, default="extend",
                         help="What to do in case of mismatch of size : crop or extend?")
@@ -112,10 +113,11 @@ if __name__ == '__main__':
     parser.add_argument("-pd", "--patch_divider", type=int, help="Number of overlapping patchers", default=2)
     args = parser.parse_args()
 
-    patch_size = [x for x in args.patch_size]
     patch_divider = args.patch_divider
-    if len(patch_size) == 1:
-        patch_size = [patch_size[0], patch_size[0]]
+    if isinstance(args.patch_size, int):
+        patch_size = [args.patch_size, args.patch_size]
+    else:
+        patch_size = [x for x in args.patch_size]
 
     date = datetime.datetime.now().strftime("%d%m%y-%H%M")
 
@@ -183,6 +185,25 @@ if __name__ == '__main__':
     train_path = create_if_not_exists(os.path.join(save_path, "train"))
     test_path = create_if_not_exists(os.path.join(save_path, "test"))
     validation_path = create_if_not_exists(os.path.join(save_path, "validation"))
+
+    parameters = {
+        "original_dataset":args.data_path,
+        "preprocessing": args.preprocessing,
+        "modalities": modalities,
+        "stage": stage,
+        "patch_size": patch_size,
+        "mode": args.mode,
+        "patch_divider": patch_divider,
+        "augment": args.augment,
+        "distribution": {"train": len(train),
+                         "validation": len(val),
+                         "test": len(test)}
+    }
+    # Save copy of json in folder of the model
+    json_file = os.path.join(save_path, "set_parameters.json")
+    print("Saving parameters in : " + json_file)
+    with open(json_file, 'w') as fp:
+        json.dump(parameters, fp, indent=4)
 
     _create_data_for_patients(train, train_path, dataset_type="train", preprocessing=args.preprocessing, stage=stage,
                               augment=args.augment, mode=mode, modalities=modalities, patch_divider=patch_divider)
