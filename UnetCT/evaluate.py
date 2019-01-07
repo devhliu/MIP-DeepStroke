@@ -116,8 +116,8 @@ def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"
         # without threshold
         auc = metrics.roc_auc_score(y_true, y_pred)
         dice = dice_score(y_true=y_true, y_pred=y_pred)
-        precision = metrics.precision_score(y_true=y_true, y_pred=y_pred)
-        recall = metrics.recall_score(y_true=y_true, y_pred=y_pred)
+        precision = 0
+        recall = 0
 
         aucs.append(auc)
         dices.append(dice)
@@ -199,7 +199,7 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
 
         columns_meta = ["date", "model_name", "iteration", "val_loss", "loss_function"]
         columns_metrics = ["AUC", "AUC_std", "DSC", "DSC_std", "Recall", "Recall_std", "Precision", "Precision_std"]
-        columns_metrics_tresh = ["tresh_" + x for x in columns_metrics]
+        columns_metrics_tresh = ["thresh_" + x for x in columns_metrics]
 
         columns = columns_meta + columns_metrics + columns_metrics_tresh
 
@@ -252,7 +252,7 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
             # Append line to CSV by keeping only relevant columns
             df = df[columns]
             new_df = pd.DataFrame(dict_scores, index=[0])
-            df = df.append(new_df)
+            df = df.append(new_df, sort=False)
             df.to_csv(output_file)
 
 
@@ -280,6 +280,9 @@ if __name__ == '__main__':
 
         for x in sorted(os.listdir(logdir)):
             model_dir = os.path.join(logdir, x)
+            if not os.path.isdir(model_dir):
+               print("Not a folder : {}".format(model_dir))
+               continue
             print("Evaluating {}...".format(x))
             evaluate_dir(model_dir, to_replace=to_replace_dict, decimals=decimals)
 
@@ -288,7 +291,8 @@ if __name__ == '__main__':
             df = pd.read_csv(evaluation_file, index_col=None, header=0)
             list_frames.append(df)
 
-        frame = pd.concat(list_frames, axis=0, ignore_index=True)
+        frame = pd.concat(list_frames, axis=0, ignore_index=True, sort=False)
+        frame.to_csv(output_file)
 
     else:
         evaluate_dir(logdir, to_replace=to_replace_dict, decimals=decimals)
