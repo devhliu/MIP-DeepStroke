@@ -421,9 +421,9 @@ if __name__ == '__main__':
     # load model : default is 3dunet
     if architecture == "attn_reg":
         model = newmodels.attn_reg(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)], lossfxn=loss_function)
-    if architecture == "attn_reg_ds":
+    elif architecture == "attn_reg_ds":
         model = newmodels.attn_reg_ds(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)], lossfxn=loss_function)
-    if architecture == "attn_unet":
+    elif architecture == "attn_unet":
         model = newmodels.attn_unet(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)], lossfxn=loss_function)
     else:
         print("Loading default : Unet")
