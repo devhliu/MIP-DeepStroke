@@ -415,6 +415,12 @@ if __name__ == '__main__':
     }
 
     loss_function = losses[loss_function]
+    if loss_function == "tversky":
+        loss_function = model_losses.tversky_loss
+    elif loss_function == "dice":
+        loss_function = model_losses.dice_loss
+    else:
+        loss_function = model_losses.dice_loss
 
     sgd = SGD(lr=initial_learning_rate, momentum=0.9)
 
