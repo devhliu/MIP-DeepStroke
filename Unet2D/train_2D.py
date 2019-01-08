@@ -2,7 +2,6 @@ import os
 import nibabel as nb
 import numpy as np
 from utils2D import create_if_not_exists, transorm_to_2d_usable_data
-from unet import unet_model_3d, isensee2017_model
 from callbacks import TrainValTensorBoard
 from argparse import ArgumentParser
 import time
@@ -14,7 +13,6 @@ import tensorflow as tf
 import json
 from keras.callbacks import ReduceLROnPlateau
 from keras.optimizers import SGD
-from data_generator import DataGenerator
 import losses as model_losses
 from image_augmentation import randomly_augment
 import newmodels
@@ -429,7 +427,7 @@ if __name__ == '__main__':
         model = newmodels.attn_unet(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)], lossfxn=loss_function)
     else:
         print("Loading default : Unet")
-        model = newmodels.attn_reg(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)],
+        model = newmodels.unet(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)],
                                    lossfxn=loss_function)
 
     dimensions = len(np.array(model.output_shape).shape)

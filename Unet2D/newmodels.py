@@ -7,7 +7,7 @@ from keras.optimizers import Adam
 from keras import backend as K
 from keras.layers.normalization import BatchNormalization
 
-from Unet2D import losses
+import losses
 
 K.set_image_data_format('channels_last')  # TF dimension ordering in this code
 kinit = 'glorot_normal'

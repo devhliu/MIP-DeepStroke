@@ -6,7 +6,7 @@ from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
-from utils import normalize_numpy
+from utils2D import normalize_numpy
 from predict import predict
 import numpy as np
 import tensorflow as tf

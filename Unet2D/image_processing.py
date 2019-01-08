@@ -129,7 +129,7 @@ def create_2D_patches_from_images(numpy_image, patch_size, mode="extend", augmen
     missing = [(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (
             shape[i] % patch_size[i])
                for i in range(len(patch_size))] + [0]  # third dimension - nothing missing
-
+    
     missing = np.array(missing)
     numpy_image_padded = np.zeros(numpy_image.shape + missing)
 
