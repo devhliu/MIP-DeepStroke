@@ -71,13 +71,12 @@ def predict(images, model, patch_size, verbose=0, batch_size=32):
 
     predictions = predictions[first_image][:, :, :, 0]
 
-    # reshape to [dimx,dimy,dimz]
-    predictions_reshaped = np.zeros([predictions.shape[1], predictions.shape[2], predictions.shape[0]])
+    # reshape to [(dimx,dimy),dimz]
+    list_patches = []
     for i in range(predictions.shape[0]):
-        predictions_reshaped[:, :, i] = predictions[i, :, :]
-    predictions = predictions_reshaped
+        list_patches.append(predictions[i, :, :])
 
-    predicted_image = recreate_image_from_2D_patches(original_image_size=original_image_size, list_patches=predictions)
+    predicted_image = recreate_image_from_2D_patches(original_image_size=original_image_size, list_patches=list_patches)
     return predicted_image
 
 
