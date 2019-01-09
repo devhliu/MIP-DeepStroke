@@ -1,7 +1,7 @@
 import scipy.ndimage as sn
 import random
 import numpy as np
-
+import cv2
 
 def normalize(v, new_max=1.0, new_min=0.0):
     v = np.nan_to_num(v)
@@ -14,23 +14,19 @@ def normalize(v, new_max=1.0, new_min=0.0):
     return v_new
 
 
-def rotate3D(imgsx, imgsy, pitch, yaw, roll, reshape=False):
-    def _rotateArray(x, pitch, yaw, roll, reshape=False):
+def rotate2D(imgsx, imgsy, angle, reshape=False):
+    def _rotateArray(x, angle, reshape=False):
         x = np.nan_to_num(x)
         # pitch
-        pitched = sn.rotate(x, angle=pitch, axes=(0, 2), reshape=reshape)
-        # yaw
-        yawn = sn.rotate(pitched, angle=yaw, axes=(0, 1), reshape=reshape)
-        # roll
-        rolled = sn.rotate(yawn, angle=roll, axes=(1, 2), reshape=reshape)
-        return rolled
+        rotated = sn.rotate(x, angle=angle, reshape=reshape)
+        return rotated
 
     rotatedXs = []
     rotatedYs = []
     for x in imgsx:
-        rotatedXs.append(_rotateArray(x, pitch, yaw, roll, reshape))
+        rotatedXs.append(_rotateArray(x, angle, reshape))
     for y in imgsy:
-        rotatedYs.append(_rotateArray(y, pitch, yaw, roll, reshape))
+        rotatedYs.append(_rotateArray(y, angle, reshape))
     return rotatedXs, rotatedYs
 
 
@@ -67,12 +63,12 @@ def adjust_contrast(imgsx, imgsy, contrast=1.0, brightness=1.0):
 def salt_and_pepper(imgsx, imgsy, salt_vs_pepper=0.2, amount=0.04):
     def _salt_and_pepper(x, salt_vs_pepper=0.2, amount=0.04):
         x = np.nan_to_num(x)
-        num_salt = np.ceil(amount * x.shape[0] * x.shape[1] * x.shape[2] * salt_vs_pepper)
-        num_pepper = np.ceil(amount * x.shape[0] * x.shape[1] * x.shape[2] * (1.0 - salt_vs_pepper))
+        num_salt = np.ceil(amount * x.shape[0] * x.shape[1] * salt_vs_pepper)
+        num_pepper = np.ceil(amount * x.shape[0] * x.shape[1] * (1.0 - salt_vs_pepper))
         coords = [np.random.randint(0, i - 1, int(num_salt)) for i in x.shape]
-        x[coords[0], coords[1], coords[2]] = np.max(x)
+        x[coords[0], coords[1]] = np.max(x)
         coords = [np.random.randint(0, i - 1, int(num_pepper)) for i in x.shape]
-        x[coords[0], coords[1], coords[2]] = np.min(x)
+        x[coords[0], coords[1]] = np.min(x)
         return x
 
     imgs_c = imgsx.copy()
@@ -97,11 +93,30 @@ def flip(imgsx, imgsy, axis=0):
         flippedYs.append(_flip(y, axis))
     return flippedXs, flippedYs
 
+def zoom(imgsx, imgsy, zoom=0):
+
+    def _zoom(image, zoom_pix):
+        IMAGE_HEIGHT = image.shape[0]
+        IMAGE_WIDTH = image.shape[1]
+        zoom_factor = 1 + (2*zoom_pix)/IMAGE_HEIGHT
+        image = cv2.resize(image, None, fx=zoom_factor,
+                           fy=zoom_factor, interpolation=cv2.INTER_LINEAR)
+        top_crop = (image.shape[0] - IMAGE_HEIGHT)//2
+        left_crop = (image.shape[1] - IMAGE_WIDTH)//2
+        image = image[top_crop: top_crop+IMAGE_HEIGHT,
+                      left_crop: left_crop+IMAGE_WIDTH]
+        return image
+
+    zoomedXs = []
+    zoomedYs = []
+    for x in imgsx:
+        zoomedXs.append(_zoom(x, zoom))
+    for y in imgsy:
+        zoomedYs.append(_zoom(y, zoom))
+    return zoomedXs, zoomedYs
 
 def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
                                          "rotxmax": 90.0,
-                                         "rotymax": 90.0,
-                                         "rotzmax": 90.0,
                                          "rotation_step": 1.0,
                                          "salt_and_pepper": 0.15,
                                          "flip": 0.15,
@@ -119,9 +134,7 @@ def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
     r = random.random()
     if r < prob["rotation"]:
         degx = get_random_angle(prob["rotxmax"], prob["rotation_step"])
-        degy = get_random_angle(prob["rotymax"], prob["rotation_step"])
-        degz = get_random_angle(prob["rotzmax"], prob["rotation_step"])
-        imgsx, imgsy = rotate3D(imgsx, imgsy, degx, degy, degz)
+        imgsx, imgsy = rotate2D(imgsx, imgsy, degx)
 
     # randomly add salt and pepper
     r = random.random()
@@ -136,6 +149,11 @@ def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
         ax = random.randint(0, 1)
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
 
+    # randomly zoom
+    r = random.random()
+    if r < prob["zoom"]:
+        zoom_value = random.randint(0, 10)
+        imgsx, imgsy = zoom(imgsx, imgsy, zoom=zoom_value)
     # Normalize between 0 and 1 to be sure that everything is correct
     #imgsx = [normalize(x) for x in imgsx]
     #imgsy = [normalize(y) for y in imgsy]

@@ -60,7 +60,7 @@ if __name__ == '__main__':
                     total_lesion_files+=1
 
                     total_lesion_voxels += np.sum(img)
-                    total_voxels_img = img.shape[0]*img.shape[1]*img.shape[2]
+                    total_voxels_img = img.size
                     total_not_lesion_voxels += (total_voxels_img-np.sum(img))
                     total_voxels += total_voxels_img
 

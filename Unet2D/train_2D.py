@@ -292,15 +292,14 @@ if __name__ == '__main__':
         parameters["inputs"] = [x[0] for x in args.input]
         parameters["targets"] = [x[0] for x in args.output]
         parameters["stage"] = args.stage
-        parameters["augment_prob"] = {"rotation": args.augment,
-                                      "rotxmax": 90.0,
-                                      "rotymax": 90.0,
-                                      "rotzmax": 90.0,
-                                      "rotation_step": 1.0,
-                                      "salt_and_pepper": args.augment,
-                                      "flip": args.augment,
-                                      "contrast_and_brightness": args.augment,
-                                      "only_positives": True}
+        parameters["augment_prob"] = {"rotation": float(args.augment),
+                                      "rotxmax": 180.0,
+                                      "rotation_step": 15.0,
+                                      "salt_and_pepper": float(args.augment),
+                                      "flip": float(args.augment),
+                                      "zoom": float(args.augment),
+                                      "contrast_and_brightness": float(args.augment),
+                                      "only_positives": False}
         parameters["dropout"] = 0.0
 
         parameters["layer_activation"] = args.layer_activation
@@ -346,13 +345,12 @@ if __name__ == '__main__':
     else:
         augment_prob = {"rotation": args.augment,
                         "rotxmax": 90.0,
-                        "rotymax": 90.0,
-                        "rotzmax": 90.0,
-                        "rotation_step": 1.0,
+                        "rotation_step": 30.0,
                         "salt_and_pepper": args.augment,
                         "flip": args.augment,
+                        "zoom": 1.0,
                         "contrast_and_brightness": args.augment,
-                        "only_positives": True}
+                        "only_positives": False}
         parameters["augment_prob"] = augment_prob
 
     if "layer_activation" in parameters.keys():
