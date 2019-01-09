@@ -124,7 +124,7 @@ def dual_generator(data_directory, folders_input, folders_output, batch_size, sk
         yield np.array(x_list), np.array(y_list)
 
 
-def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, patch_size=None, folders_input=['input'], folders_target=['lesion'],
+def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_size=None, max_epochs=1000, patch_size=None, folders_input=['input'], folders_target=['lesion'],
           test_patient=295742, train_patient=758594, learning_rate_patience=20, learning_rate_decay=0.0, stage="wcoreg_",
           augment_prob=None):
 
@@ -211,7 +211,7 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         steps_per_epoch = epoch_size
 
     # Train the model, iterating on the data in batches of 32 samples
-    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=1000, verbose=1,
+    history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=max_epochs, verbose=1,
                                       callbacks=[tensorboard_callback, checkpoint_callback, LRReduce],
                                       validation_data=validation_generator, validation_steps=validation_steps,
                                       class_weight=None, max_queue_size=2*batch_size,
@@ -262,6 +262,7 @@ if __name__ == '__main__':
         parameters["batch_normalization"] = args.batch_normalization
         parameters["skip_blank"] = args.skip_blank
         parameters["steps_per_epoch"] = args.epoch_size
+        parameters["max_epochs"] = 1000
         parameters["initial_learning_rate"] = args.initial_learning_rate
         parameters["decay"] = args.decay
         parameters["final_activation"] = args.activation_name
@@ -314,6 +315,7 @@ if __name__ == '__main__':
     train_patient = parameters["train_patient"]
     architecture = parameters["architecture"]
     dropout = parameters["dropout"]
+    max_epochs = parameters["max_epochs"]
 
     inputs = [x[0] for x in args.input]
     targets = [x[0] for x in args.output]
@@ -427,7 +429,7 @@ if __name__ == '__main__':
                               dropout=dropout)
 
     train(model, batch_size=batch_size, data_path=data_path, logdir=logdir,
-          skip_blank=skip_blank, epoch_size=steps_per_epoch, patch_size=patch_size,
+          skip_blank=skip_blank, epoch_size=steps_per_epoch, max_epochs=max_epochs, patch_size=patch_size,
           folders_input=inputs, folders_target=targets, test_patient=test_patient,
           train_patient=train_patient, learning_rate_patience=learning_rate_patience, learning_rate_decay=decay,
           stage=stage, augment_prob=augment_prob)
