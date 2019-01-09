@@ -131,11 +131,9 @@ def randomly_augment(imgsx, imgsy, prob={"rotation": 0.15,
     # randomly flip
     r = random.random()
     if r < prob["flip"]:
-        ax = random.randint(0, 2)
+        ax = random.randint(0, 1)
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
-        ax = random.randint(0, 2)
-        imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
-        ax = random.randint(0, 2)
+        ax = random.randint(0, 1)
         imgsx, imgsy = flip(imgsx, imgsy, axis=ax)
 
     # Normalize between 0 and 1 to be sure that everything is correct

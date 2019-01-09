@@ -288,18 +288,16 @@ if __name__ == '__main__':
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
         if parameters["loss_function"] == "tversky":
-            parameters["tversky_alpha-beta"] = (0.7, 0.3)
+            parameters["tversky_alpha-beta"] = (0.3, 0.7)
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : "+args.parameters)
         with open(args.parameters, 'r') as fp:
             parameters = json.load(fp)
 
-    #Edit JSON parameters to save tversky coefficients
-    if parameters["loss_function"]=="tversky":
-            parameters["tversky_alpha-beta"] = (0.7, 0.3)
-
     #Load values from parameters
+    alpha_value, beta_value = parameters["tversky_alpha-beta"]
+    print("alpha = {}, beta = {}".format(alpha_value, beta_value))
     data_path = parameters["data_path"]
     batch_size = parameters["batch_size"]
     batch_normalization = parameters["batch_normalization"]
@@ -392,7 +390,7 @@ if __name__ == '__main__':
                ]
 
     losses = {
-        "tversky": tversky_loss,
+        "tversky": lambda x, y, alpha=alpha_value, beta=beta_value: tversky_loss(x, y, alpha, beta),
         "dice": dice_coefficient_loss,
         "weighted_dice": weighted_dice_coefficient_loss,
         "mean_absolute_error" : mean_absolute_error

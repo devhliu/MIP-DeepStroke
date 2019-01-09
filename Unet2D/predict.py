@@ -64,12 +64,21 @@ def predict(images, model, patch_size, verbose=0, batch_size=32):
         patch_channel_tensor[:, :, :, i] = patch_by_channel[i, :, :, :]
 
     try:
-        first_image = len(model.output_shape) -1
         predictions = model.predict(np.asarray(patch_channel_tensor), batch_size=batch_size, verbose=verbose)
     except:  # Not enough memory : switch to mono prediction
         predictions = model.predict(np.asarray(patch_channel_tensor), batch_size=1, verbose=verbose)
 
-    predictions = predictions[first_image][:, :, :, 0]
+
+    dimensions = len(np.array(model.output_shape).shape)
+    if dimensions > 1:
+        model_output_depth = len(model.output_shape)
+    else:
+        model_output_depth = 1
+
+    if model_output_depth == 1:
+        predictions = predictions[:, :, :, 0]
+    else:
+        predictions = predictions[model_output_depth-1][:, :, :, 0]  # last output has the highest definition
 
     # reshape to [(dimx,dimy),dimz]
     list_patches = []

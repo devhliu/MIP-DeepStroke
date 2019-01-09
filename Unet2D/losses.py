@@ -50,19 +50,18 @@ def tn(y_true, y_pred):
     tn = (K.sum(y_neg * y_pred_neg) + smooth) / (K.sum(y_neg) + smooth )
     return tn
 
-def tversky(y_true, y_pred):
-    y_true_pos = K.flatten(y_true)
-    y_pred_pos = K.flatten(y_pred)
-    true_pos = K.sum(y_true_pos * y_pred_pos)
-    false_neg = K.sum(y_true_pos * (1-y_pred_pos))
-    false_pos = K.sum((1-y_true_pos)*y_pred_pos)
-    alpha = 0.7
-    return (true_pos + smooth)/(true_pos + alpha*false_neg + (1-alpha)*false_pos + smooth)
+def tversky_coeff(y_true, y_pred, alpha=0.3, beta=0.7, smooth=1.):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    G_P = alpha * K.sum((1 - y_true_f) * y_pred_f)  # G not P
+    P_G = beta * K.sum(y_true_f * (1 - y_pred_f))  # P not G
+    return (intersection + smooth) / (intersection + smooth + G_P + P_G)
 
-def tversky_loss(y_true, y_pred):
-    return 1 - tversky(y_true,y_pred)
+def tversky_loss(y_true, y_pred, alpha=0.3, beta=0.7):
+    return 1 - tversky_coeff(y_true, y_pred, alpha=alpha, beta=beta)
 
-def focal_tversky(y_true,y_pred):
-    pt_1 = tversky(y_true, y_pred)
+def focal_tversky(y_true, y_pred):
+    pt_1 = tversky_coeff(y_true, y_pred)
     gamma = 0.75
     return K.pow((1-pt_1), gamma)

@@ -16,6 +16,7 @@ from keras.optimizers import SGD
 import losses as model_losses
 from image_augmentation import randomly_augment
 import newmodels
+from keras.preprocessing.image import ImageDataGenerator
 
 config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})
 sess = tf.Session(config=config)
@@ -304,17 +305,16 @@ if __name__ == '__main__':
         parameters["layer_activation"] = args.layer_activation
         parameters["architecture"] = args.architecture
         if parameters["loss_function"] == "tversky":
-            parameters["tversky_alpha-beta"] = (0.7, 0.3)
+            parameters["tversky_alpha-beta"] = (0.5, 0.5)
     else:
         # If parameters are specified, load them from JSON
         print("Loading parameters from : " + args.parameters)
         with open(args.parameters, 'r') as fp:
             parameters = json.load(fp)
 
-    # Edit JSON parameters to save tversky coefficients
-    if parameters["loss_function"] == "tversky":
-        parameters["tversky_alpha-beta"] = (0.7, 0.3)
 
+    alpha_value, beta_value = parameters["tversky_alpha-beta"]
+    print("alpha = {}, beta = {}".format(alpha_value,beta_value))
     # Load values from parameters
     data_path = parameters["data_path"]
     batch_size = parameters["batch_size"]
@@ -416,7 +416,7 @@ if __name__ == '__main__':
 
     loss_function = losses[loss_function]
     if loss_function == "tversky":
-        loss_function = model_losses.tversky_loss
+        loss_function = lambda x, y, alpha=alpha_value, beta=beta_value: model_losses.tversky_loss(x, y, alpha, beta)
     elif loss_function == "dice":
         loss_function = model_losses.dice_loss
     else:
