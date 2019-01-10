@@ -8,7 +8,6 @@ from tqdm import tqdm
 import datetime
 import json
 
-
 def _save_patches(patch_list, save_path, subject, type, extra=False):
     for i in range(len(patch_list)):
         patch = nb.Nifti1Image(patch_list[i], np.eye(4))

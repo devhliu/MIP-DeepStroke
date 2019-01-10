@@ -18,6 +18,8 @@ from image_augmentation import randomly_augment
 import newmodels
 from keras.preprocessing.image import ImageDataGenerator
 
+from data_generator import DataGenerator
+
 config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
@@ -37,13 +39,13 @@ def create_generators(batch_size, data_path=None, skip_blank=True, folders_input
     print("Train data path {} - {} samples".format(train_path, training_size))
     print("Validation data path {} - {} samples".format(validation_path, validation_size))
 
-    train_generator = dual_generator(data_directory=train_path,
+    train_generator = DataGenerator(data_directory=train_path,
                                      folders_input=folders_input,
                                      folders_output=folders_target,
                                      batch_size=batch_size,
                                      augment_prob=augment_prob, depth=depth)
 
-    validation_generator = dual_generator(data_directory=validation_path,
+    validation_generator = DataGenerator(data_directory=validation_path,
                                           folders_input=folders_input,
                                           folders_output=folders_target,
                                           batch_size=batch_size,
