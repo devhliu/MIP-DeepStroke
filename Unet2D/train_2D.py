@@ -409,20 +409,20 @@ if __name__ == '__main__':
         binary_accuracy
     ]
 
-    losses = {
-        "tversky": tversky_loss,
-        "dice": dice_coefficient_loss,
-        "weighted_dice": weighted_dice_coefficient_loss,
-        "mean_absolute_error": mean_absolute_error
-    }
-
-    loss_function = losses[loss_function]
     if loss_function == "tversky":
         loss_function = lambda x, y, alpha=alpha_value, beta=beta_value: model_losses.tversky_loss(x, y, alpha, beta)
     elif loss_function == "dice":
         loss_function = model_losses.dice_loss
     else:
+        print("Loading default : dice loss")
         loss_function = model_losses.dice_loss
+        parameters["loss_function"] = "dice (default)"
+        # Save copy of json in folder of the model
+        json_file = os.path.join(logdir, "parameters.json")
+        print("Saving parameters in : " + json_file)
+        with open(json_file, 'w') as fp:
+            json.dump(parameters, fp, indent=4)
+
 
     sgd = SGD(lr=initial_learning_rate, momentum=0.9)
 
@@ -435,8 +435,14 @@ if __name__ == '__main__':
         model = newmodels.attn_unet(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)], lossfxn=loss_function)
     else:
         print("Loading default : Unet")
+        parameters["architecture"] = "Unet (default)"
         model = newmodels.unet(sgd, input_size=[patch_size[0], patch_size[1], len(inputs)],
                                    lossfxn=loss_function)
+        # Save copy of json in folder of the model
+        json_file = os.path.join(logdir, "parameters.json")
+        print("Saving parameters in : " + json_file)
+        with open(json_file, 'w') as fp:
+            json.dump(parameters, fp, indent=4)
 
     dimensions = len(np.array(model.output_shape).shape)
     if dimensions>1:
