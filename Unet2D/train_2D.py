@@ -413,6 +413,8 @@ if __name__ == '__main__':
         loss_function = lambda x, y, alpha=alpha_value, beta=beta_value: model_losses.tversky_loss(x, y, alpha, beta)
     elif loss_function == "dice":
         loss_function = model_losses.dice_loss
+    elif loss_function =="jaccard":
+        loss_function = model_losses.jaccard_distance
     else:
         print("Loading default : dice loss")
         loss_function = model_losses.dice_loss
