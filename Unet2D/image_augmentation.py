@@ -2,6 +2,7 @@ import scipy.ndimage as sn
 import random
 import numpy as np
 import cv2
+from PIL import Image
 
 def normalize(v, new_max=1.0, new_min=0.0):
     v = np.nan_to_num(v)
@@ -17,9 +18,10 @@ def normalize(v, new_max=1.0, new_min=0.0):
 def rotate2D(imgsx, imgsy, angle, reshape=False):
     def _rotateArray(x, angle, reshape=False):
         x = np.nan_to_num(x)
+        img = Image.fromarray(x)
         # pitch
-        rotated = sn.rotate(x, angle=angle, reshape=reshape)
-        return rotated
+        rotated = img.rotate(angle)
+        return np.asarray(rotated)
 
     rotatedXs = []
     rotatedYs = []
