@@ -280,10 +280,10 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
                                                      "weighted_dice_coefficient": weighted_dice_coefficient,
                                                      "tversky_loss": losses.tversky_loss,
                                                      "tversky_coeff": losses.tversky_coeff,
-                                                     "dice":losses.dice_loss,
+                                                     "dice_loss":losses.dice_loss,
                                                      "dsc":losses.dsc,
                                                      "focal_tversky":losses.focal_tversky,
-                                                     "jaccard":losses.jaccard_distance,
+                                                     "jaccard_distance":losses.jaccard_distance,
                                                      "tp": losses.tp,
                                                      "tn":losses.tn,
                                                      "<lambda>": losses.get_tversky(alpha_value, beta_value),
@@ -292,7 +292,7 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
             dict_scores = {}
             try:
                 stage = parameters["stage"]
-                patch_size = [int(x) for x in os.path.basename(parameters["data_path"][:-1]).split("x")]
+                patch_size = [int(x) for x in os.path.basename(parameters["data_path"]).split("x")]
                 print("patch size : {}".format(patch_size))
                 batch_size = parameters["batch_size"]
                 dict_scores = evaluate_model(model, dataset_path, channels_input, channels_output, stage, patch_size, decimals=decimals,

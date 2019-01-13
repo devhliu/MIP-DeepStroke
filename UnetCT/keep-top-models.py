@@ -10,8 +10,6 @@ def parseLoss(model_name):
     else:
         score = split[1].replace(".hdf5", "")
     score = float(score)
-    if score < 0:
-        score = -score
     return score
 
 
@@ -27,7 +25,7 @@ def remove(file):
 def keep_checkpoints(path, top):
     # list all checkpoints files
     files = os.listdir(path)
-    files = sorted(files, key=parseLoss, reverse=True)
+    files = sorted(files, key=parseLoss, reverse=True)[::-1]
     keeped = [x for x in files if parseIteration(x) in exception_iteration]
 
     all_files = set(files[:top] + keeped)
@@ -61,7 +59,7 @@ if __name__ == '__main__':
         # list models
         models = os.listdir(logdir)
         for m in models:
-            if os.path.isdir(os.path.join(logdir,m)):
+            if os.path.isdir(os.path.join(logdir, m)):
                 path = os.path.join(logdir, m, "checkpoints")
                 if not os.path.exists(path):
                     raise Exception("No checkpoints folder found in {}".format(folders))
