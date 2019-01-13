@@ -410,7 +410,7 @@ if __name__ == '__main__':
     ]
 
     if loss_function == "tversky":
-        loss_function = lambda x, y, alpha=alpha_value, beta=beta_value: model_losses.tversky_loss(x, y, alpha, beta)
+        loss_function = model_losses.get_tversky(alpha_value, beta_value)
     elif loss_function == "dice":
         loss_function = model_losses.dice_loss
     elif loss_function =="jaccard":

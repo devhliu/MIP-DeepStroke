@@ -61,6 +61,11 @@ def tversky_coeff(y_true, y_pred, alpha=0.3, beta=0.7, smooth=1.):
 def tversky_loss(y_true, y_pred, alpha=0.3, beta=0.7):
     return 1 - tversky_coeff(y_true, y_pred, alpha=alpha, beta=beta)
 
+def get_tversky(alpha_value,beta_value):
+    f = lambda x, y, alpha=alpha_value, beta=beta_value: tversky_loss(x, y, alpha, beta)
+    return f
+
+
 def jaccard_distance(y_true, y_pred, smooth=100):
     """Jaccard distance for semantic segmentation.
     Also known as the intersection-over-union loss.
@@ -91,7 +96,7 @@ def jaccard_distance(y_true, y_pred, smooth=100):
     intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
     sum_ = K.sum(K.abs(y_true) + K.abs(y_pred), axis=-1)
     jac = (intersection + smooth) / (sum_ - intersection + smooth)
-return (1 - jac) * smooth
+    return (1 - jac) * smooth
 
 
 

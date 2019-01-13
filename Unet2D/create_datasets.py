@@ -19,7 +19,7 @@ def _save_patches(patch_list, save_path, subject, type, extra=False):
         nb.save(patch, os.path.join(patch_save_path, s.format(type, subject, i)))
 
 
-def load_data_for_patient(patient_path, stage="wcoreg_", modalities=["TRACE", "T2", "LESION"]):
+def load_data_for_patient(patient_path, stage="wcoreg_", modalities=["TRACE", "T2", "LESION"], preprocess=False):
     p = os.path.basename(patient_path)
     dict_modalities_path = {
         "MTT": os.path.join(patient_path, "Ct2_Cerebrale", "{}RAPID_MTT_{}.nii".format(stage, p)),
@@ -36,7 +36,19 @@ def load_data_for_patient(patient_path, stage="wcoreg_", modalities=["TRACE", "T
         img = nb.load(dict_modalities_path[modality]).get_data()
         returned_dict[modality] = np.nan_to_num(img)
 
-    return returned_dict
+    if preprocess:
+        # preprocess data (normalize data)
+        dict_preprocess = dict()
+        for modality in modalities:
+            if modality != "LESION" and modality != "BACKGROUND":
+                image = preprocess_image(returned_dict[modality], preprocessing="standardize")
+            else:
+                image = preprocess_image(returned_dict[modality], preprocessing="clip")
+            dict_preprocess[modality] = image
+        return dict_preprocess
+
+    else:
+        return returned_dict
 
 
 def _create_data_for_patients(dataset, save_path, dataset_type="train", ratio_extra=0.3, preprocessing="standardize",

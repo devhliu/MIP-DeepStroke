@@ -38,7 +38,6 @@ def predict_patch(patches, model):
 
 
 def predict(images, model, patch_size, verbose=0, batch_size=32):
-    print("PREDICTING USING 2D VERSION")
     if not isinstance(images, list):
         images = [images]  # Transform to 1 dimensional channel
 
@@ -92,15 +91,15 @@ def predict(images, model, patch_size, verbose=0, batch_size=32):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-i", "--input", help="Path to .nii image")
-    parser.add_argument("-m", "--mask", help="Path to .nii image")
+    parser.add_argument("-s", "--mask", help="Path to save .nii image")
+    parser.add_argument("-m", "--model", help="Path to model file or weights")
 
     args = parser.parse_args()
 
     image = nb.load(args.input).get_data()
     mask = nb.load(args.mask).get_data()
-    patches = create_2D_patches_from_images(image, [32, 32, 32])
-
-    model = load_old_model("/home/Simon/Datasets/model.25--0.56.hdf5")
+    model = load_old_model(args.model)
+    patches = create_2D_patches_from_images(image, [512, 512])
 
     predicted = []
     for p in patches:
