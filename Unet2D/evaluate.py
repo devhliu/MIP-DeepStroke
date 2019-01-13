@@ -139,11 +139,7 @@ def evaluate_model(model, dataset_path, inputs, targets, stage, patch_size, deci
                    to_replace={"/home/snarduzz/Data":"/mnt/sda/Data"}, batch_size=32):
 
     dataset_path = substitue_path(dataset_path, to_replace=to_replace) # Make sure path exists
-    basename = os.path.basename(dataset_path)
-    path_to_date = substitue_path(dataset_path.replace(basename, ""))
-    date = os.path.basename(path_to_date)
-    dataset_path_root = dataset_path.split(date)[0]
-    set_file = os.path.join(dataset_path_root, date, "sets_{}.json".format(date))
+    set_file = os.path.join(dataset_path, "set_parameters.json")
 
     # Load json containing patients
     with open(set_file, 'r') as fp:

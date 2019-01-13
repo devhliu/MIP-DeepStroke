@@ -208,7 +208,10 @@ if __name__ == '__main__':
         "augment": args.augment,
         "distribution": {"train": len(train),
                          "validation": len(val),
-                         "test": len(test)}
+                         "test": len(test)},
+        "train": dict_sets["train"],
+        "validation": dict_sets["validation"],
+        "test": dict_sets["test"],
     }
     # Save copy of json in folder of the model
     json_file = os.path.join(save_path, "set_parameters.json")
