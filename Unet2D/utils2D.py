@@ -3,7 +3,6 @@ Created on Wed Aug 29 15:12:49 2018
 @author: Nabila Abraham
 """
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 from sklearn.model_selection import train_test_split
 from shutil import copyfile
@@ -125,40 +124,6 @@ def split_train_test_val(x, y, ratios=[0.7, 0.2, 0.1], seed=None):
         x_val, y_val = zip(*data[num_train:])
 
     return x_train, x_test, x_val, y_train, y_test, y_val
-
-
-
-def plot(hist, epochnum, batchnum, name, is_attnnet=0):
-    plt.figure()
-
-    if is_attnnet == True:
-        train_loss = hist['final_loss']
-        val_loss = hist['val_final_loss']
-        acc = hist['final_dsc']
-        val_acc = hist['val_final_dsc']
-    else:
-        train_loss = hist['loss']
-        val_loss = hist['val_loss']
-        acc = hist['dsc']
-        val_acc = hist['val_dsc']
-
-    epochs = np.arange(1, len(train_loss) + 1, 1)
-    plt.plot(epochs, train_loss, 'b', label='Training Loss')
-    plt.plot(epochs, val_loss, 'r', label='Validation Loss')
-    plt.grid(color='gray', linestyle='--')
-    plt.legend()
-    plt.title('LOSS Model={}, Epochs={}, Batch={}'.format(name, epochnum, batchnum))
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-
-    plt.figure()
-    plt.plot(epochs, acc, 'b', label='Training Dice Coefficient')
-    plt.plot(epochs, val_acc, 'r', label='Validation Dice Coefficient')
-    plt.grid(color='gray', linestyle='--')
-    plt.legend()
-    plt.title('DSC Model={}, Epochs={}, Batch={}'.format(name, epochnum, batchnum))
-    plt.xlabel('Epochs')
-    plt.ylabel('Dice')
 
 
 def check_preds(ypred, ytrue):

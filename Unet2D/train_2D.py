@@ -207,9 +207,9 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
 
     # Save checkpoint each 5 epochs
     checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))
-    checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_loss:.4f}.hdf5")
+    checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_dsc:.4f}-dsc.hdf5")
 
-    checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_loss', verbose=0,
+    checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_dsc', verbose=0,
                                                           save_best_only=False,
                                                           save_weights_only=False, mode='auto', period=1)
 

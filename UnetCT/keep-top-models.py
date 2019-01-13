@@ -4,6 +4,8 @@ from tqdm import tqdm
 
 
 def parseLoss(model_name):
+    if "-dsc" in model_name:
+        model_name = model_name.replace("-dsc", "")
     split = model_name.split("-")
     if len(split)>2:
         score = split[2].replace(".hdf5","")
@@ -25,7 +27,12 @@ def remove(file):
 def keep_checkpoints(path, top):
     # list all checkpoints files
     files = os.listdir(path)
-    files = sorted(files, key=parseLoss, reverse=True)[::-1]
+    if "dsc" in files[0]:
+        # handle as dice : take maximum
+        files = sorted(files, key=parseLoss, reverse=True)
+    else:
+        files = sorted(files, key=parseLoss, reverse=False)
+
     keeped = [x for x in files if parseIteration(x) in exception_iteration]
 
     all_files = set(files[:top] + keeped)
