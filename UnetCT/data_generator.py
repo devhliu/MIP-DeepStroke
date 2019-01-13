@@ -8,7 +8,7 @@ from image_augmentation import randomly_augment
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, data_directory, folders_input, folders_output, batch_size, skip_blank=False, logfile=None,
-                 shuffle=True, augment_prob=None):
+                 shuffle=True, augment_prob=None, depth=1):
         'Initialization'
         if augment_prob is None:
             augment_prob = {"rotation": 0.0,

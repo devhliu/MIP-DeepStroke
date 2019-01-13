@@ -166,7 +166,8 @@ class TrainValTensorBoard(TensorBoard):
             if type_writer=="validation":
                 writer = self.val_writer
 
-            dict_inputs = load_data_for_patient(patient, stage=self.stage)
+            modalities = self.folders_input + self.folders_target
+            dict_inputs = load_data_for_patient(patient, stage=self.stage, modalities=modalities, preprocess=True)
 
             images_input = [dict_inputs[k] for k in self.folders_input]
             images_target = [dict_inputs[k] for k in self.folders_target]

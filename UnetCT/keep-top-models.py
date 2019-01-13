@@ -61,10 +61,11 @@ if __name__ == '__main__':
         # list models
         models = os.listdir(logdir)
         for m in models:
-            path = os.path.join(logdir, m, "checkpoints")
-            if not os.path.exists(path):
-                raise Exception("No checkpoints folder found in {}".format(folders))
-            keep_checkpoints(path, top)
+            if os.path.isdir(os.path.join(logdir,m)):
+                path = os.path.join(logdir, m, "checkpoints")
+                if not os.path.exists(path):
+                    raise Exception("No checkpoints folder found in {}".format(folders))
+                keep_checkpoints(path, top)
     else:
         path = os.path.join(logdir, "checkpoints")
         if not os.path.exists(path):
