@@ -50,7 +50,7 @@ if __name__ == '__main__':
                 if max_img>1 or min_img<-1:
                     dict_log[file] = (min_img, max_img)
 
-                if c == "lesion":
+                if c.lower() == "lesion":
                 #Log number of files with lesion
                     if np.max(img)>=1:
                         total_containing_lesion+=1
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                     total_lesion_files+=1
 
                     total_lesion_voxels += np.sum(img)
-                    total_voxels_img = img.shape[0]*img.shape[1]*img.shape[2]
+                    total_voxels_img = img.size
                     total_not_lesion_voxels += (total_voxels_img-np.sum(img))
                     total_voxels += total_voxels_img
 

@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from image_processing import create_patches_from_images, recreate_image_from_patches, preprocess_image
 from keras.models import load_model
 from metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
-                            weighted_dice_coefficient_loss, weighted_dice_coefficient)
+                            weighted_dice_coefficient_loss, weighted_dice_coefficient, tversky_loss, tversky_coeff)
 import numpy as np
 
 
@@ -13,7 +13,9 @@ def load_old_model(model_file):
     custom_objects = {'dice_coefficient_loss': dice_coefficient_loss, 'dice_coefficient': dice_coefficient,
                       'dice_coef': dice_coef, 'dice_coef_loss': dice_coef_loss,
                       'weighted_dice_coefficient': weighted_dice_coefficient,
-                      'weighted_dice_coefficient_loss': weighted_dice_coefficient_loss}
+                      'weighted_dice_coefficient_loss': weighted_dice_coefficient_loss,
+                      'tversky_loss':tversky_loss,
+                      'tversky_coeff':tversky_coeff}
     try:
         from keras_contrib.layers import InstanceNormalization
         custom_objects["InstanceNormalization"] = InstanceNormalization

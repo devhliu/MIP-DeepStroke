@@ -1,7 +1,7 @@
 import os
 import nibabel as nb
 import numpy as np
-from utils import create_if_not_exists, normalize_numpy
+from utils2D import create_if_not_exists, normalize_numpy
 from tqdm import tqdm
 
 
@@ -14,30 +14,33 @@ def preprocess_image(img, preprocessing="standardize"):
     if preprocessing == "clip":
         return clip(normalize_numpy(img), 0, 1)
 
+
 def clip(img, min=0, max=1):
     img = np.nan_to_num(img)
-    img[img>0] = max
-    img[img<=0] = min
+    img[img > 0] = max
+    img[img <= 0] = min
     return img
+
 
 def standardize(img):
     img = np.nan_to_num(img)
     mean = np.mean(img)
     std = np.std(img)
-    img_std = (img-mean)/std
+    img_std = (img - mean) / std
 
-    #Clipping values between -2 and 3 to remove outliers
-    #img_clipped = np.clip(img_std, -2, 3)
+    # Clipping values between -2 and 3 to remove outliers
+    # img_clipped = np.clip(img_std, -2, 3)
 
     # scaling between -1 and 1
     # img_scaled = normalize_numpy(img_std, new_min=0, new_max=1)
     img_scaled = np.interp(img_std, (img_std.min(), img_std.max()), (0, 1))
     return img_scaled
 
+
 def load_data_atlas_for_patient(patient_path):
     patient = os.path.basename(patient_path)
-    #list_x = []
-    #list_y = []
+    # list_x = []
+    # list_y = []
     for t in os.listdir(patient_path):
         if not t == "t01" or os.path.basename(patient_path) == "031916":
             # print("Found folder {} instead of T01 for patient {}".format(t, patient))
@@ -56,7 +59,7 @@ def load_data_atlas_for_patient(patient_path):
 
     #    list_x.append(brain_structure)
     #    list_y.append(lesion)
-    #return list_x, list_y
+    # return list_x, list_y
 
 
 def load_data_atlas_from_site(site_path):
@@ -64,7 +67,7 @@ def load_data_atlas_from_site(site_path):
     list_y = []
     patients = os.listdir(site_path)
     for patient in tqdm(patients):
-        brain_structure, lesion = load_data_atlas_for_patient(os.path.join(site_path,patient))
+        brain_structure, lesion = load_data_atlas_for_patient(os.path.join(site_path, patient))
 
         list_x.append(brain_structure)
         list_y.append(lesion)
@@ -112,8 +115,52 @@ def create_patches_from_images(numpy_image, patch_size, mode="extend", augment=F
         STRIDE_PATCH_Y = int(patch_size[1] / patch_divider)
         STRIDE_PATCH_Z = int(patch_size[2] / patch_divider)
         patches_augmented = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z,
-                                STRIDE_PATCH_Z)
-        patches=patches+patches_augmented
+                                          STRIDE_PATCH_Z)
+        patches = patches + patches_augmented
+
+    return patches
+
+
+def create_2D_patches_from_images(numpy_image, patch_size, mode="extend", augment=False, patch_divider=2):
+    # Case transform to 2D images :
+    if (len(patch_size) > 2):
+        raise Exception("Please provide 2D patch size (to be applied on axis=3)")
+    shape = numpy_image.shape
+    missing = [(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (
+            shape[i] % patch_size[i])
+               for i in range(len(patch_size))] + [0]  # third dimension - nothing missing
+    
+    missing = np.array(missing)
+    numpy_image_padded = np.zeros(numpy_image.shape + missing)
+
+    if mode is "extend":
+        numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, missing[2])],
+                                             mode="constant", constant_values=0)
+    else:
+        raise Exception("Mode {} nor supported yet".format(mode))
+
+    # shape = numpy_image_padded.shape
+    patches = []
+    if not augment:
+        for x in range(0, shape[0], patch_size[0]):
+            for y in range(0, shape[1], patch_size[1]):
+                for z in range(0, numpy_image.shape[2]):
+                    patch = numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z]
+                    # patches[to1D_index(x,y,z,xMax,yMax,zMax)] = patch
+                    # patches = patches +[patch]
+                    patches.append(patch)
+    else:
+        raise Exception("Augmentation not yet supported ifor 2D images")
+        # Create dataset using strides
+        PATCH_X = patch_size[0]
+        PATCH_Y = patch_size[1]
+        PATCH_Z = patch_size[2]
+        STRIDE_PATCH_X = int(patch_size[0] / patch_divider)
+        STRIDE_PATCH_Y = int(patch_size[1] / patch_divider)
+        STRIDE_PATCH_Z = int(patch_size[2] / patch_divider)
+        patches_augmented = to_patches_3d(numpy_image_padded, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z,
+                                          STRIDE_PATCH_Z)
+        patches = patches + patches_augmented
 
     return patches
 
@@ -128,13 +175,13 @@ def create_extra_patches(numpy_image, numpy_lesion, patch_size, limit=0, sampled
     :return: two list of numpy arrays, one for the images and one for the corresponding lesion
     """
     image_padded = np.pad(numpy_image, [(int(patch_size[0] / 2), int(patch_size[0] / 2)),
-                                  (int(patch_size[1] / 2), int(patch_size[1] / 2)),
-                                  (int(patch_size[2] / 2), int(patch_size[2] / 2))],
+                                        (int(patch_size[1] / 2), int(patch_size[1] / 2)),
+                                        (int(patch_size[2] / 2), int(patch_size[2] / 2))],
                           mode="constant", constant_values=0)
 
     lesion_padded = np.pad(numpy_lesion, [(int(patch_size[0] / 2), int(patch_size[0] / 2)),
-                                    (int(patch_size[1] / 2), int(patch_size[1] / 2)),
-                                    (int(patch_size[2] / 2), int(patch_size[2] / 2))],
+                                          (int(patch_size[1] / 2), int(patch_size[1] / 2)),
+                                          (int(patch_size[2] / 2), int(patch_size[2] / 2))],
                            mode="constant", constant_values=0)
 
     pos_indices = np.array(np.where(lesion_padded >= 1)).T
@@ -150,21 +197,20 @@ def create_extra_patches(numpy_image, numpy_lesion, patch_size, limit=0, sampled
         sampled_indices = sampled_indices[:limit]
 
     for x, y, z in sampled_indices:
-            patch_image = create_patch_around(x, y, z, patch_size, image_padded)
-            patch_lesion = create_patch_around(x, y, z, patch_size, lesion_padded)
+        patch_image = create_patch_around(x, y, z, patch_size, image_padded)
+        patch_lesion = create_patch_around(x, y, z, patch_size, lesion_padded)
 
-            patches_image.append(patch_image)
-            patches_lesion.append(patch_lesion)
+        patches_image.append(patch_image)
+        patches_lesion.append(patch_lesion)
 
     return patches_image, patches_lesion
 
 
 def create_extra_patches_from_list(images, lesion, patch_size, limit=0):
-
     # Pad the lesion to get squared image, should correspond to pad in create_extra_patches
     lesion_padded = np.pad(lesion, [(int(patch_size[0] / 2), int(patch_size[0] / 2)),
-                                          (int(patch_size[1] / 2), int(patch_size[1] / 2)),
-                                          (int(patch_size[2] / 2), int(patch_size[2] / 2))],
+                                    (int(patch_size[1] / 2), int(patch_size[1] / 2)),
+                                    (int(patch_size[2] / 2), int(patch_size[2] / 2))],
                            mode="constant", constant_values=0)
 
     # Compute indices of "centered lesion"
@@ -186,25 +232,24 @@ def create_extra_patches_from_list(images, lesion, patch_size, limit=0):
 
 
 # Create patches from a scan - toPatch should be (x,y,z) - the output of the function is (nb_patches,x,y,z)
-def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,STRIDE_PATCH_Z):
-
+def to_patches_3d(toPatch, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z, STRIDE_PATCH_Z):
     shape = toPatch.shape
     x_shape = shape[0]
     y_shape = shape[1]
     slices = shape[2]
 
-    def check(x,y,z):
+    def check(x, y, z):
         try:
-            val = (float)((x-PATCH_X)/STRIDE_PATCH_X)
-            assert((val).is_integer())
+            val = (float)((x - PATCH_X) / STRIDE_PATCH_X)
+            assert ((val).is_integer())
         except:
-            print("{}-{}/{} = {} is not integer.".format(x,PATCH_X,STRIDE_PATCH_X, val))
+            print("{}-{}/{} = {} is not integer.".format(x, PATCH_X, STRIDE_PATCH_X, val))
 
         try:
-            val = (float)((y-PATCH_Y)/STRIDE_PATCH_Y)
-            assert((val).is_integer())
+            val = (float)((y - PATCH_Y) / STRIDE_PATCH_Y)
+            assert ((val).is_integer())
         except:
-            print("{}-{}/{} = {} is not integer.".format(y,PATCH_Y,STRIDE_PATCH_Y, val))
+            print("{}-{}/{} = {} is not integer.".format(y, PATCH_Y, STRIDE_PATCH_Y, val))
 
         try:
             val = (float)((z - PATCH_Z) / STRIDE_PATCH_Z)
@@ -212,55 +257,53 @@ def to_patches_3d(toPatch,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,
         except:
             print("{}-{}/{} = {} is not integer.".format(z, PATCH_Z, STRIDE_PATCH_Z, val))
 
-    #check(x_shape-1,y_shape-1,slices-1)
+    # check(x_shape-1,y_shape-1,slices-1)
 
-    #patches = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+    # patches = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
     patches = []
-    for k in range(0,slices-PATCH_Z+STRIDE_PATCH_Z,STRIDE_PATCH_Z):
-        for i in range(0,x_shape-PATCH_X+STRIDE_PATCH_X,STRIDE_PATCH_X):
-            for j in range(0,y_shape-PATCH_Y+STRIDE_PATCH_Y,STRIDE_PATCH_Y):
-                #cut = np.reshape(toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z],(1,PATCH_X,PATCH_Y,PATCH_Z))
+    for k in range(0, slices - PATCH_Z + STRIDE_PATCH_Z, STRIDE_PATCH_Z):
+        for i in range(0, x_shape - PATCH_X + STRIDE_PATCH_X, STRIDE_PATCH_X):
+            for j in range(0, y_shape - PATCH_Y + STRIDE_PATCH_Y, STRIDE_PATCH_Y):
+                # cut = np.reshape(toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z],(1,PATCH_X,PATCH_Y,PATCH_Z))
                 # patches = np.append(patches,cut,axis=0)
-                cut = toPatch[i:i+PATCH_X, j:j+PATCH_Y,k:k+PATCH_Z]
+                cut = toPatch[i:i + PATCH_X, j:j + PATCH_Y, k:k + PATCH_Z]
                 patches.append(cut)
 
     return patches
 
 
 # Augment the patches with new patches where the center pixel is part of a lesion - for 3D
-def to_patches_3d_augmented_with_1(mask,structural,PATCH_X,STRIDE_PATCH_X,PATCH_Y,STRIDE_PATCH_Y,PATCH_Z,STRIDE_PATCH_Z):
-
+def to_patches_3d_augmented_with_1(mask, structural, PATCH_X, STRIDE_PATCH_X, PATCH_Y, STRIDE_PATCH_Y, PATCH_Z,
+                                   STRIDE_PATCH_Z):
     shape = mask.shape
     x_shape = shape[0]
     y_shape = shape[1]
     slices = shape[2]
 
-    def check(x,y,z):
-        assert(((float)((x-PATCH_X)/STRIDE_PATCH_X)).is_integer())
-        assert(((float)((y-PATCH_Y)/STRIDE_PATCH_Y)).is_integer())
-        assert(((float)((z-PATCH_Z)/STRIDE_PATCH_Z)).is_integer())
+    def check(x, y, z):
+        assert (((float)((x - PATCH_X) / STRIDE_PATCH_X)).is_integer())
+        assert (((float)((y - PATCH_Y) / STRIDE_PATCH_Y)).is_integer())
+        assert (((float)((z - PATCH_Z) / STRIDE_PATCH_Z)).is_integer())
 
-    check(x_shape,y_shape,slices)
+    check(x_shape, y_shape, slices)
 
+    patches_mask = np.empty((0, PATCH_X, PATCH_Y, PATCH_Z))
+    patches_struc = np.empty((0, PATCH_X, PATCH_Y, PATCH_Z))
 
-    patches_mask = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
-    patches_struc = np.empty((0,PATCH_X,PATCH_Y,PATCH_Z))
+    mid_x = PATCH_X / 2
+    mid_y = PATCH_Y / 2
+    mid_z = PATCH_Z / 2
 
-    mid_x = PATCH_X/2
-    mid_y = PATCH_Y/2
-    mid_z = PATCH_Z/2
+    for k in range(mid_z, slices - mid_z):
+        for i in range(mid_x, x_shape - mid_x):
+            for j in range(mid_y, y_shape - mid_y):
+                if (mask[i][j][k] == 1):
+                    cut = mask[i - mid_x:i + mid_x, j - mid_y:j + mid_y, k - mid_z:k + mid_z]
+                    patches_mask = np.append(patches_mask, cut, axis=0)
+                    cut = structural[i - mid_x:i + mid_x, j - mid_y:j + mid_y, k - mid_z:k + mid_z]
+                    patches_struc = np.append(patches_struc, cut, axis=0)
 
-    for k in range(mid_z,slices-mid_z):
-        for i in range(mid_x,x_shape-mid_x):
-            for j in range(mid_y,y_shape-mid_y):
-                if(mask[i][j][k]==1):
-                    cut = mask[i-mid_x:i+mid_x,j-mid_y:j+mid_y,k-mid_z:k+mid_z]
-                    patches_mask = np.append(patches_mask,cut,axis=0)
-                    cut = structural[i-mid_x:i+mid_x,j-mid_y:j+mid_y,k-mid_z:k+mid_z]
-                    patches_struc = np.append(patches_struc,cut,axis=0)
-
-    return patches_mask,patches_struc
-
+    return patches_mask, patches_struc
 
 
 def create_patch_around(center_x, center_y, center_z, patch_size, image):
@@ -279,17 +322,17 @@ def get_lesion_ratio(patches_list):
     """Compute the ratio of lesioned tissue in total list of patches"""
     ratio = 0
     for p in patches_list:
-        s = np.array(p.shape)/2
+        s = np.array(p.shape) / 2
         s = s.astype(np.int64)
         center = p[s[0], s[1], s[2]]
-        if(center>0):
-            ratio+=1
+        if (center > 0):
+            ratio += 1
 
-    return float(ratio)/float(len(patches_list))
+    return float(ratio) / float(len(patches_list))
 
 
 def to1D_index(x, y, z, xMax, yMax, zMax):
-    k =  (z * xMax * yMax) + (y * xMax) + x
+    k = (z * xMax * yMax) + (y * xMax) + x
     return k
 
 
@@ -301,6 +344,37 @@ def to3D(idx, xMax, yMax):
     return int(x), int(y), int(z)
 
 
+def recreate_image_from_2D_patches(original_image_size, list_patches, mode="extend"):
+    numpy_image = np.zeros(original_image_size)
+    patch_size = np.array(list_patches[0].shape)
+    shape = original_image_size
+
+    missing = np.array(
+        [(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (shape[i] % patch_size[i])
+         for i in range(len(patch_size))] + [0])  # case 2D
+
+    numpy_image_padded = np.zeros(shape + missing)
+    if mode is "extend":
+        numpy_image_padded[:, :, :] = np.pad(numpy_image[:, :, :], [(0, missing[0]), (0, missing[1]), (0, 0)],
+                                             mode="constant", constant_values=0)
+
+    if type(list_patches) is np.ndarray:
+        list_patches = list_patches.tolist()
+
+    for x in range(0, shape[0], patch_size[0]):
+        for y in range(0, shape[1], patch_size[1]):
+            for z in range(0, shape[2]):
+                p = list_patches[0]
+                list_patches = list_patches[1:]
+                numpy_image_padded[x:x + patch_size[0], y:y + patch_size[1], z] = p
+
+    if mode == "extend":
+        ox, oy, oz = original_image_size
+        image = numpy_image_padded[:ox, :oy, :oz]
+
+    return image
+
+
 def recreate_image_from_patches(original_image_size, list_patches, mode="extend"):
     numpy_image = np.zeros(original_image_size)
     patch_size = np.array(list_patches[0].shape)
@@ -309,7 +383,8 @@ def recreate_image_from_patches(original_image_size, list_patches, mode="extend"
         list_patches = list_patches.tolist()
 
     shape = original_image_size
-    missing = np.array([(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (shape[i] % patch_size[i])
+    missing = np.array(
+        [(shape[i] % patch_size[i]) if (shape[i] % patch_size[i]) == 0 else patch_size[i] - (shape[i] % patch_size[i])
          for i in range(len(patch_size))])
     numpy_image_padded = np.zeros(shape + missing)
     if mode is "extend":
@@ -361,9 +436,9 @@ def transform_atlas_to_patches(altas_path, save_path, patch_size=[32, 32, 32]):
             bar.update(percent)
             with progressbar.ProgressBar(max_value=len(patients)) as bar_patient:
                 bar_patient.update(0)
-                j=0
+                j = 0
                 for patient in patients:
-                    j = j+1
+                    j = j + 1
                     # Read data for this patient
                     for t in os.listdir(os.path.join(site_path, patient)):
                         if not t == "t01" or patient == "031916":
@@ -386,9 +461,11 @@ def transform_atlas_to_patches(altas_path, save_path, patch_size=[32, 32, 32]):
                                 brain_scan = nb.Nifti1Image(input_patches[i], np.eye(4))
                                 lesion = nb.Nifti1Image(label_patches[i], np.eye(4))
                                 nb.save(brain_scan,
-                                        os.path.join(save_path, "inputs", "input_{}-p{}-{}.nii".format(site, patient, i)))
+                                        os.path.join(save_path, "inputs",
+                                                     "input_{}-p{}-{}.nii".format(site, patient, i)))
                                 nb.save(lesion,
-                                        os.path.join(save_path, "masks", "label_{}-p{}-{}.nii".format(site, patient, i)))
+                                        os.path.join(save_path, "masks",
+                                                     "label_{}-p{}-{}.nii".format(site, patient, i)))
 
                         except Exception as e:
                             print("Error reading patient {} ({})".format(patient, os.path.basename(site_path)))

@@ -6,7 +6,7 @@ from keras.callbacks import TensorBoard, EarlyStopping
 
 from tensorboard.plugins.pr_curve import summary as pr_summary
 from tensorboard.plugins.scalar import summary as sc_summary
-from utils import normalize_numpy
+from utils2D import normalize_numpy
 from predict import predict
 import numpy as np
 import tensorflow as tf
@@ -181,6 +181,8 @@ class TrainValTensorBoard(TensorBoard):
                 image_original = normalize_numpy(images_input[0][:, :, layer])
                 lesion_original = clip(normalize_numpy(images_target[0][:, :, layer]))
 
+                if lesion_original.shape != pred_image.shape:
+                    lesion_original = lesion_original[:pred_image.shape[0], :pred_image.shape[1]]
                 # RGB
                 merged_image = np.zeros([pred_image.shape[0], pred_image.shape[1], 3])
                 merged_image[:, :, 0] = lesion_original
@@ -193,40 +195,40 @@ class TrainValTensorBoard(TensorBoard):
 
 
     def __add_batch_visualization(self, generator, epoch, training=True):
-        try:
-            batch = generator.next() #custom generator
-        except:
-            batch = next(generator) #classic generator
-        if training:
-            t = "training"
-            writer = self.writer
-        else:
-            writer = self.val_writer
-            t = "validation"
+        if epoch<5: #Only log the five first epochs
+            try:
+                batch = generator.next() #custom generator
+            except:
+                batch = next(generator) #classic generator
+            if training:
+                t = "training"
+                writer = self.writer
+            else:
+                writer = self.val_writer
+                t = "validation"
 
-        for c in range(batch[0].shape[1]):
-            images = []
-            for x, y in zip(batch[0], batch[1]):
-                image = x[c, :, :, :]
-                lesion = y[0, :, :, :]
-                layer = int(image.shape[2] / 2)
-                image_layer = image[:, :, layer]
-                lesion_layer = lesion[:, :, layer]
-                merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
-                merged_image[:, :, 0] = lesion_layer
-                merged_image[:, :, 1] = 0
-                merged_image[:, :, 2] = image_layer
-                images.append(merged_image)
+            for c in range(batch[0].shape[3]):
+                images = []
+                for x, y in zip(batch[0], batch[1][-1]):
+                    image = x[:, :, c]
+                    lesion = y[:, :, 0]
+                    image_layer = image[:, :]
+                    lesion_layer = lesion[:, :]
+                    merged_image = np.zeros([image_layer.shape[0], image_layer.shape[1], 3])
+                    merged_image[:, :, 0] = lesion_layer
+                    merged_image[:, :, 1] = 0
+                    merged_image[:, :, 2] = image_layer
+                    images.append(merged_image)
 
-            images_per_log = 16
-            list_merged_images = []
-            for i in range(0, len(images)+images_per_log, images_per_log):
-                image_merged = self.__merge_images(images[i:i+images_per_log])
+                images_per_log = 16
+                list_merged_images = []
+                for i in range(0, len(images)+images_per_log, images_per_log):
+                    image_merged = self.__merge_images(images[i:i+images_per_log])
 
-                if image_merged is not None:
-                    list_merged_images.append(image_merged)
-            if len(list_merged_images)>0:
-                self.log_images(tag="Batch : {} - channel{}".format(t, c), images=list_merged_images, step=epoch, writer=writer)
+                    if image_merged is not None:
+                        list_merged_images.append(image_merged)
+                if len(list_merged_images)>0:
+                    self.log_images(tag="Batch : {} - channel{}".format(t, c), images=list_merged_images, step=epoch, writer=writer)
 
     def __add_pr_curve(self, epoch):
         if self.pr_curve and self.validation_generator:

@@ -1,3 +1,8 @@
+"""
+Created on Wed Aug 29 15:12:49 2018
+@author: Nabila Abraham
+"""
+import numpy as np
 import os
 from sklearn.model_selection import train_test_split
 from shutil import copyfile
@@ -19,6 +24,35 @@ def create_if_not_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
     return directory
+
+
+def transorm_to_2d_usable_data(x_list_batch, y_list_batch=None, depth=4):
+    new_x_batch = channel_first_to_channel_last(x_list_batch)
+    if y_list_batch is None: # return only one list
+        return new_x_batch
+
+    # else, reverse channel as well
+    new_y_batch = channel_first_to_channel_last(y_list_batch)
+
+    # Create zoom masks
+    gt_mask = []
+    for i in range(depth):
+        zoom = new_y_batch[:, ::np.power(2, i), ::np.power(2, i), :]
+        gt_mask.insert(0, zoom)
+
+    return new_x_batch, gt_mask
+
+
+def channel_first_to_channel_last(x_list):
+    x_list_batch = np.array(x_list)
+    x_shape = x_list_batch.shape
+    new_x_batch = np.zeros([x_shape[0], x_shape[2], x_shape[3], x_shape[1]])
+
+    for c in range(x_list_batch.shape[1]):
+        new_x_batch[:, :, :, c] = x_list_batch[:, c, :, :]
+
+    return new_x_batch
+
 
 
 def save_set_to_folder(x_paths, y_paths, data_path, save_path):
@@ -90,3 +124,41 @@ def split_train_test_val(x, y, ratios=[0.7, 0.2, 0.1], seed=None):
         x_val, y_val = zip(*data[num_train:])
 
     return x_train, x_test, x_val, y_train, y_test, y_val
+
+
+def check_preds(ypred, ytrue):
+    smooth = 1
+    pred = np.ndarray.flatten(np.clip(ypred, 0, 1))
+    gt = np.ndarray.flatten(np.clip(ytrue, 0, 1))
+    intersection = np.sum(pred * gt)
+    union = np.sum(pred) + np.sum(gt)
+    return np.round((2 * intersection + smooth) / (union + smooth), decimals=5)
+
+
+def confusion(y_true, y_pred):
+    smooth = 1
+    y_pred_pos = np.round(np.clip(y_pred, 0, 1))
+    y_pred_neg = 1 - y_pred_pos
+    y_pos = np.round(np.clip(y_true, 0, 1))
+    y_neg = 1 - y_pos
+    tp = (np.sum(y_pos * y_pred_pos) + smooth) / (np.sum(y_pos) + smooth)
+    tn = (np.sum(y_neg * y_pred_neg) + smooth) / (np.sum(y_neg) + smooth)
+    return [tp, tn]
+
+
+def auc(y_true, y_pred):
+    smooth = 1
+    y_pred_pos = np.round(np.clip(y_pred, 0, 1))
+    y_pred_neg = 1 - y_pred_pos
+    y_pos = np.round(np.clip(y_true, 0, 1))
+    y_neg = 1 - y_pos
+    tp = np.sum(y_pos * y_pred_pos)
+    tn = np.sum(y_neg * y_pred_neg)
+    fp = np.sum(y_neg * y_pred_pos)
+    fn = np.sum(y_pos * y_pred_neg)
+    tpr = (tp + smooth) / (tp + fn + smooth)  # recall
+    tnr = (tn + smooth) / (tn + fp + smooth)
+    prec = (tp + smooth) / (tp + fp + smooth)  # precision
+
+
+    return [tpr, tnr, prec]

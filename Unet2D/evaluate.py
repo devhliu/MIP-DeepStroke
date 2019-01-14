@@ -15,6 +15,9 @@ import json
 import re
 import traceback
 import tensorflow as tf
+import losses
+from create_datasets import load_data_for_patient
+from predict import predict
 
 def parseLoss(model_name):
     split = model_name.split("-")
@@ -50,7 +53,7 @@ def tversky_score(y_true, y_pred, alpha=0.3):
     return tversky
 
 def predict_patient(patient_id, list_files, model, channels_input=["T2"], channels_output=["lesion"]):
-    patient_patches_names = [x for x in list_files if patient_id in x]
+    patient_patches_names = sorted([x for x in list_files if patient_id in x])
     patch_size = nb.load(patient_patches_names[0]).get_data().shape
 
     ys_true = []
@@ -82,88 +85,138 @@ def predict_patient(patient_id, list_files, model, channels_input=["T2"], channe
     return np.array(ys_true), np.array(ys_pred)
 
 
-def predict(test_folder, model, channels_input=["T2"], channels_output=["lesion"], decimals = 4):
-    input_option = channels_input[0]
-    input_files = [os.path.join(test_folder, input_option, x) for x in os.listdir(os.path.join(test_folder, input_option))]
+def predict_patient_from(path, model, patch_size=[512, 512], stage="rcoreg_", input_folders=["T2"], target_folders=["LESION"], return_original=False, batch_size=32):
+    modalities = input_folders+target_folders
+    dict_inputs = load_data_for_patient(path, stage=stage, modalities=modalities, preprocess=True)
 
-    s = nb.load(input_files[0]).get_data().size
+    images_input = [dict_inputs[k] for k in input_folders]
+    images_target = [dict_inputs[k] for k in target_folders]
 
-    patient_list = list(set([re.search('%s(.*)%s' % ("{}_".format(input_option), "-"), x).group(1) for x in input_files]))
+    # Predict the output.
+    predicted_image = predict(images_input, model, patch_size, batch_size=batch_size)
 
-    files_per_patients = len([x for x in input_files if patient_list[0] in x])
+    if return_original:
+        return images_target[0], predicted_image
 
-    list_y = np.empty(len(patient_list)*files_per_patients*s)
-    list_y_pred = np.empty(len(patient_list)*files_per_patients*s)
+    return predicted_image
 
-    aucs = []
-    dices = []
-    precisions = []
-    recalls = []
 
-    aucs_thresh = []
-    dices_thresh = []
-    precisions_thresh = []
-    recalls_thresh = []
+def compute_scores(y_true, y_pred):
+    y_true = y_true.flatten()
+    y_pred = y_pred.flatten()
 
-    for i in tqdm(range(len(patient_list))):
-        p = patient_list[i]
-        y_true, y_pred = predict_patient(p, input_files, model, channels_input, channels_output)
+    if len(y_true) != len(y_pred):
+        raise Exception("Cannot evaluate scores because original and prediction images does not match in shapes.")
 
-        y_true = y_true.flatten()
-        y_pred = y_pred.flatten()
+    auc = metrics.roc_auc_score(y_true, y_pred)
+    dice = dice_score(y_true=y_true, y_pred=y_pred)
 
+    # with threshold
+    # compute threshold
+    y_pred_thresh = y_pred.copy()
+    y_pred_thresh[y_pred_thresh < 0.5] = 0
+    y_pred_thresh[y_pred_thresh >= 0.5] = 1
+
+    auc_t = metrics.roc_auc_score(y_true, y_pred_thresh)
+    dice_t = dice_score(y_true=y_true, y_pred=y_pred_thresh)
+    precision_t = metrics.precision_score(y_true=y_true, y_pred=y_pred_thresh)
+    recall_t = metrics.recall_score(y_true=y_true, y_pred=y_pred_thresh)
+
+    d = dict()
+
+    d["auc"] = auc
+    d["dice"] = dice
+    # threshold
+    d["auc_t"] = auc_t
+    d["dice_t"] = dice_t
+    d["precision_t"] = precision_t
+    d["recall_t"] = recall_t
+
+    return d
+
+
+def evaluate_model(model, dataset_path, inputs, targets, stage, patch_size, decimals=4,
+                   to_replace={"/home/snarduzz/Data":"/mnt/sda/Data"}, batch_size=32):
+
+    dataset_path = substitue_path(dataset_path, to_replace=to_replace) # Make sure path exists
+    set_file = os.path.join(dataset_path, "set_parameters.json")
+
+    # Load json containing patients
+    with open(set_file, 'r') as fp:
+        set_distribution = json.load(fp)
+
+    test_patients = set_distribution["test"]
+
+    if(len(test_patients)<1):
+        raise Exception("No tests patients found for {}".format(dataset_path))
+
+    else:  # perform analysis
+
+        aucs = []
+        dices = []
+
+        aucs_thresh = []
+        dices_thresh = []
+        precisions_thresh = []
+        recalls_thresh = []
+
+        for patient_path in tqdm(test_patients):
+            patient_path = substitue_path(patient_path, to_replace=to_replace)
+            if not os.path.exists(patient_path):
+                raise Exception("Patient does not exists : {} \n Please check that the dataset is still available.".format(patient_path))
+            y_true, y_pred = predict_patient_from(patient_path, model, patch_size=patch_size, stage=stage, input_folders=inputs,
+                                     target_folders=targets, return_original=True, batch_size=batch_size)
+
+            patient_scores = compute_scores(y_true,y_pred)
+
+            aucs.append(patient_scores["auc"])
+            dices.append(patient_scores["dice"])
+            aucs_thresh.append(patient_scores["auc_t"])
+            dices_thresh.append(patient_scores["dice_t"])
+            precisions_thresh.append(patient_scores["precision_t"])
+            recalls_thresh.append(patient_scores["recall_t"])
+
+        dict_scores = {}
 
         # without threshold
-        auc = metrics.roc_auc_score(y_true, y_pred)
-        dice = dice_score(y_true=y_true, y_pred=y_pred)
-        precision = 0
-        recall = 0
-
-        aucs.append(auc)
-        dices.append(dice)
-        precisions.append(precision)
-        recalls.append(recall)
-
+        dict_scores["AUC"] = round(np.mean(aucs), decimals)
+        dict_scores["AUC_std"] = round(np.std(aucs), decimals)
+        dict_scores["DSC"] = round(np.mean(dices), decimals)
+        dict_scores["DSC_std"] = round(np.std(dices), decimals)
         # with threshold
-        # compute threshold
-        y_pred_thresh = y_pred.copy()
-        y_pred_thresh[y_pred_thresh < 0.5] = 0
-        y_pred_thresh[y_pred_thresh >= 0.5] = 1
+        dict_scores["thresh_AUC"] = round(np.mean(aucs_thresh), decimals)
+        dict_scores["thresh_AUC_std"] = round(np.std(aucs_thresh), decimals)
+        dict_scores["thresh_DSC"] = round(np.mean(dices_thresh), decimals)
+        dict_scores["thresh_DSC_std"] = round(np.std(dices_thresh), decimals)
+        dict_scores["thresh_Recall"] = round(np.mean(recalls_thresh), decimals)
+        dict_scores["thresh_Recall_std"] = round(np.std(recalls_thresh), decimals)
+        dict_scores["thresh_Precision"] = round(np.mean(precisions_thresh), decimals)
+        dict_scores["thresh_Precision_std"] = round(np.std(precisions_thresh), decimals)
 
-        auc_t = metrics.roc_auc_score(y_true, y_pred_thresh)
-        dice_t = dice_score(y_true=y_true, y_pred=y_pred_thresh)
-        precision_t = metrics.precision_score(y_true=y_true, y_pred=y_pred_thresh)
-        recall_t = metrics.recall_score(y_true=y_true, y_pred=y_pred_thresh)
-
-        aucs_thresh.append(auc_t)
-        dices_thresh.append(dice_t)
-        precisions_thresh.append(precision_t)
-        recalls_thresh.append(recall_t)
+        return dict_scores
 
 
-    dict_scores = {}
+def substitue_path(path, to_replace={"/home/snarduzz/Data":"/mnt/sda/Data"}):
 
-    # without threshold
-    dict_scores["AUC"] = round(np.mean(aucs),decimals)
-    dict_scores["AUC_std"] = round(np.std(aucs),decimals)
-    dict_scores["DSC"] = round(np.mean(dices),decimals)
-    dict_scores["DSC_std"] = round(np.std(dices),decimals)
-    dict_scores["Recall"] = round(np.mean(recalls),decimals)
-    dict_scores["Recall_std"] = round(np.std(recalls),decimals)
-    dict_scores["Precision"] = round(np.mean(precisions),decimals)
-    dict_scores["Precision_std"] = round(np.std(precisions),decimals)
-    # with threshold
-    dict_scores["thresh_AUC"] = round(np.mean(aucs_thresh),decimals)
-    dict_scores["thresh_AUC_std"] = round(np.std(aucs_thresh),decimals)
-    dict_scores["thresh_DSC"] = round(np.mean(dices_thresh),decimals)
-    dict_scores["thresh_DSC_std"] = round(np.std(dices_thresh),decimals)
-    dict_scores["thresh_Recall"] = round(np.mean(recalls_thresh),decimals)
-    dict_scores["thresh_Recall_std"] = round(np.std(recalls_thresh),decimals)
-    dict_scores["thresh_Precision"] = round(np.mean(precisions_thresh),decimals)
-    dict_scores["thresh_Precision_std"] = round(np.std(precisions_thresh),decimals)
+    if os.path.exists(path):
+        if path.endswith("/"):
+            path = path[:-1]
+        return path
 
+    if not os.path.exists(path):
+        path_replaced = path
+        # try by replacing the value
+        for k in to_replace.keys():
+            path_replaced = path_replaced.replace(k, to_replace[k])
 
-    return dict_scores
+        # if still not valid
+        if not os.path.exists(path_replaced):
+            raise Exception("Path to data {} not found.".format(path_replaced))
+
+        if path_replaced.endswith("/"):
+            path_replaced = path_replaced[:-1]
+
+        return path_replaced
 
 
 def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"}, decimals = 4):
@@ -176,23 +229,14 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
     with open(parameters_file, 'r') as fp:
         parameters = json.load(fp)
 
-    path_replaced = parameters["data_path"]
+    # replace the paths
+    path = parameters["data_path"]
+    dataset_path = substitue_path(path, to_replace=to_replace)
+
     channels_input = parameters["inputs"]
     channels_output = parameters["targets"]
-
     print("INPUTS : {}".format(channels_input))
     print("OUTPUTS : {}".format(channels_output))
-
-    if not os.path.exists(path_replaced):
-        # try by replacing the value
-        for k in to_replace.keys():
-            path_replaced = path_replaced.replace(k, to_replace[k])
-
-    # if still not valid
-    if not os.path.exists(path_replaced):
-        raise Exception("Path to data {} not found.".format(path_replaced))
-
-    data_path = os.path.join(path_replaced, "test")
 
     # Create DF if not exists
     if not os.path.exists(output_file):
@@ -201,7 +245,7 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
         columns_metrics = ["AUC", "AUC_std", "DSC", "DSC_std", "Recall", "Recall_std", "Precision", "Precision_std"]
         columns_metrics_tresh = ["thresh_" + x for x in columns_metrics]
 
-        columns = columns_meta + columns_metrics + columns_metrics_tresh
+        columns = columns_meta + columns_metrics[:4] + columns_metrics_tresh # only take AUC and DICE w/o thresh
 
         df = pd.DataFrame(columns=columns).reset_index()
         df.to_csv(output_file)
@@ -228,17 +272,33 @@ def evaluate_dir(logdir, to_replace={"/home/snarduzz/Data":"/home/snarduzz/Data"
                 print(date, model_name, "already tested.")
                 continue
 
+            alpha_value, beta_value = parameters["tversky_alpha-beta"]
+
             model = load_model(ckpt, custom_objects={"dice_coefficient": dice_coefficient,
                                                      "dice_coefficient_loss": dice_coefficient_loss,
                                                      "weighted_dice_coefficient_loss": weighted_dice_coefficient_loss,
                                                      "weighted_dice_coefficient": weighted_dice_coefficient,
-                                                     "tversky_loss": tversky_loss,
-                                                     "tversky_coeff": tversky_coeff
+                                                     "tversky_loss": losses.tversky_loss,
+                                                     "tversky_coeff": losses.tversky_coeff,
+                                                     "dice_loss":losses.dice_loss,
+                                                     "dsc":losses.dsc,
+                                                     "focal_tversky":losses.focal_tversky,
+                                                     "jaccard_distance":losses.jaccard_distance,
+                                                     "tp": losses.tp,
+                                                     "tn":losses.tn,
+                                                     "<lambda>": losses.get_tversky(alpha_value, beta_value),
+                                                     "tversky": losses.get_tversky(alpha_value, beta_value)
                                                      })
             dict_scores = {}
             try:
-                dict_scores = predict(data_path, model, channels_input, channels_output,decimals = decimals)
+                stage = parameters["stage"]
+                patch_size = [int(x) for x in os.path.basename(parameters["data_path"]).split("x")]
+                print("patch size : {}".format(patch_size))
+                batch_size = parameters["batch_size"]
+                dict_scores = evaluate_model(model, dataset_path, channels_input, channels_output, stage, patch_size, decimals=decimals,
+                                             to_replace=to_replace, batch_size=batch_size)
             except Exception as e:
+                print(e)
                 print("Error while predicting model {}. Try with another image patch size.".format(ckpt))
                 traceback.print_exc()
                 continue

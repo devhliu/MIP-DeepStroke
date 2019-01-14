@@ -22,13 +22,13 @@ def clean_folders(path_lesion, modalities=["MTT","Tmax","CVF","CBF","T2","backgr
     kept_lesion_files = os.listdir(path_lesion)
 
     for m in modalities:
-        folder_path = path_lesion.replace("lesion",m)
+        folder_path = path_lesion.replace("LESION",m)
         if not os.path.exists(folder_path):
             continue
         files = os.listdir(folder_path)
         for f in files:
             filepath = os.path.join(folder_path, f)
-            corresponding_lesion_path = os.path.basename(filepath.replace(m, "lesion"))
+            corresponding_lesion_path = os.path.basename(filepath.replace(m, "LESION"))
             if corresponding_lesion_path not in kept_lesion_files:
                 os.remove(filepath)
 
@@ -53,8 +53,8 @@ if __name__ == '__main__':
 
     folders = os.listdir(path)
     for f in folders:
-        if f not in ["MTT","Tmax","CBF","CBV","lesion","background","T2"]:
+        if f.lower() not in [x.lower() for x in ["TRACE","MTT","Tmax","CBF","CBV","LESION","background","T2"]]:
             raise Exception("Folder not allowed")
 
-    clean_lesions(os.path.join(path, "lesion"))
-    clean_folders(os.path.join(path, "lesion"), modalities=["MTT","Tmax","CVF","CBF","T2","background"])
+    clean_lesions(os.path.join(path, "LESION"))
+    clean_folders(os.path.join(path, "LESION"), modalities=["TRACE","MTT","Tmax","CVF","CBF","T2","background"])

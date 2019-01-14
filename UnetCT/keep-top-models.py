@@ -2,23 +2,48 @@ from argparse import ArgumentParser, REMAINDER
 import os
 from tqdm import tqdm
 
+
 def parseLoss(model_name):
+    if "-dsc" in model_name:
+        model_name = model_name.replace("-dsc", "")
     split = model_name.split("-")
     if len(split)>2:
         score = split[2].replace(".hdf5","")
     else:
         score = split[1].replace(".hdf5", "")
     score = float(score)
-    if score < 0:
-        score = -score
     return score
+
 
 def parseIteration(model_name):
     iteration = model_name.split("-")[0].replace("model.","")
     return iteration
 
+
 def remove(file):
     os.remove(file)
+
+
+def keep_checkpoints(path, top):
+    # list all checkpoints files
+    files = os.listdir(path)
+    if "dsc" in files[0]:
+        # handle as dice : take maximum
+        files = sorted(files, key=parseLoss, reverse=True)
+    else:
+        files = sorted(files, key=parseLoss, reverse=False)
+
+    keeped = [x for x in files if parseIteration(x) in exception_iteration]
+
+    all_files = set(files[:top] + keeped)
+    for f in tqdm(files):
+        if f not in all_files:
+            remove(os.path.join(path, f))
+
+    print("File keeped : ")
+    for f in all_files:
+        print(f)
+
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Keep the best models in folder")
@@ -38,21 +63,18 @@ if __name__ == '__main__':
 
     folders = os.listdir(logdir)
     if "checkpoints" not in folders:
-        raise Exception("No checkpoints folder found in {}".format(folders))
+        # list models
+        models = os.listdir(logdir)
+        for m in models:
+            if os.path.isdir(os.path.join(logdir, m)):
+                path = os.path.join(logdir, m, "checkpoints")
+                if not os.path.exists(path):
+                    raise Exception("No checkpoints folder found in {}".format(folders))
+                keep_checkpoints(path, top)
     else:
-        # list all checkpoints files
-        files = os.listdir(os.path.join(logdir, "checkpoints"))
-        files = sorted(files, key=parseLoss, reverse=True)
-        keeped = [x for x in files if parseIteration(x) in exception_iteration]
-
-        all_files = set(files[:top]+keeped)
-        for f in tqdm(files):
-            if f not in all_files:
-                remove(os.path.join(logdir, "checkpoints",f))
-
-
-        print("File keeped : ")
-        for f in all_files:
-            print(f)
+        path = os.path.join(logdir, "checkpoints")
+        if not os.path.exists(path):
+            raise Exception("No checkpoints folder found in {}".format(folders))
+        keep_checkpoints(path, top)
 
 
