@@ -20,14 +20,14 @@ from create_datasets import load_data_for_patient
 from predict import predict
 
 def parseLoss(model_name):
+    if "-dsc" in model_name:
+        model_name = model_name.replace("-dsc", "")
     split = model_name.split("-")
     if len(split)>2:
         score = split[2].replace(".hdf5","")
     else:
         score = split[1].replace(".hdf5", "")
     score = float(score)
-    if score < 0:
-        score = -score
     return score
 
 def parseIteration(model_name):
