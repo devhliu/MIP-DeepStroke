@@ -205,11 +205,17 @@ def train(model, data_path, batch_size=32, logdir=None, skip_blank=True, epoch_s
         # Start Tensorboard
         print("\033[94m" + "tensorboard --logdir={}".format(log_path) + "\033[0m")
 
-    # Save checkpoint each 5 epochs
-    checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))
-    checkpoint_filename = os.path.join(checkpoint_path, "model.{epoch:02d}-{val_dsc:.4f}-dsc.hdf5")
+    monitoring = "val_dsc"
+    if depth>1:
+        monitoring = "val_final_dsc"
 
-    checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor='val_dsc', verbose=0,
+    # Save checkpoint each epochs
+    checkpoint_path = create_if_not_exists(os.path.join(logdir, "checkpoints"))
+    str_checkpoint = "model.{epoch:02d}-{"+"{}".format(monitoring)+":.4f}-dsc.hdf5"
+
+    checkpoint_filename = os.path.join(checkpoint_path, str_checkpoint)
+
+    checkpoint_callback = keras.callbacks.ModelCheckpoint(checkpoint_filename, monitor=monitoring, verbose=0,
                                                           save_best_only=False,
                                                           save_weights_only=False, mode='auto', period=1)
 

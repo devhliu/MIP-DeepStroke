@@ -227,7 +227,7 @@ def attn_reg_ds(opt, input_size, lossfxn):
                     'pred3': 1,
                     'final': 1}
     model.compile(optimizer=opt, loss=loss, loss_weights=loss_weights,
-                  metrics=[losses.dsc])
+                  metrics=[losses.dsc,  losses.tp, losses.tn])
     return model
 
 
@@ -302,6 +302,6 @@ def attn_reg(opt, input_size, lossfxn):
                     'pred3': 1,
                     'final': 1}
     model.compile(optimizer=opt, loss=loss, loss_weights=loss_weights,
-                  metrics=[losses.dsc])
+                  metrics=[losses.dsc,  losses.tp, losses.tn])
     return model
 
