@@ -47,7 +47,7 @@ def unet(opt, input_size, lossfxn):
         [Conv2DTranspose(32, (2, 2), strides=(2, 2), kernel_initializer=kinit, padding='same')(conv8), conv1], axis=3)
     conv9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer=kinit, padding='same')(up9)
     conv9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer=kinit, padding='same')(conv9)
-    conv10 = Conv2D(1, (1, 1), activation='sigmoid', name='final')(conv9)
+    conv10 = Conv2D(1, (1, 1), activation='softmax', name='final')(conv9)
 
     model = Model(inputs=[inputs], outputs=[conv10])
     model.compile(optimizer=opt, loss=lossfxn, metrics=[losses.dsc, losses.tp, losses.tn])
@@ -157,7 +157,7 @@ def attn_unet(opt, input_size, lossfxn):
     up4 = concatenate(
         [Conv2DTranspose(32, (3, 3), strides=(2, 2), padding='same', activation='relu', kernel_initializer=kinit)(up3),
          conv1], name='up4')
-    out = Conv2D(1, (1, 1), activation='sigmoid', kernel_initializer=kinit, name='final')(up4)
+    out = Conv2D(1, (1, 1), activation='softmax', kernel_initializer=kinit, name='final')(up4)
 
     model = Model(inputs=[inputs], outputs=[out])
     model.compile(optimizer=opt, loss=lossfxn, metrics=[losses.dsc, losses.tp, losses.tn])
@@ -210,10 +210,10 @@ def attn_reg_ds(opt, input_size, lossfxn):
     conv8 = UnetConv2D(up3, 64, is_batchnorm=True, name='conv8')
     conv9 = UnetConv2D(up4, 32, is_batchnorm=True, name='conv9')
 
-    out6 = Conv2D(1, (1, 1), activation='sigmoid', name='pred1')(conv6)
-    out7 = Conv2D(1, (1, 1), activation='sigmoid', name='pred2')(conv7)
-    out8 = Conv2D(1, (1, 1), activation='sigmoid', name='pred3')(conv8)
-    out9 = Conv2D(1, (1, 1), activation='sigmoid', name='final')(conv9)
+    out6 = Conv2D(1, (1, 1), activation='softmax', name='pred1')(conv6)
+    out7 = Conv2D(1, (1, 1), activation='softmax', name='pred2')(conv7)
+    out8 = Conv2D(1, (1, 1), activation='softmax', name='pred3')(conv8)
+    out9 = Conv2D(1, (1, 1), activation='softmax', name='final')(conv9)
 
     model = Model(inputs=[img_input], outputs=[out6, out7, out8, out9])
 
@@ -285,10 +285,10 @@ def attn_reg(opt, input_size, lossfxn):
     conv8 = UnetConv2D(up3, 64, is_batchnorm=True, name='conv8')
     conv9 = UnetConv2D(up4, 32, is_batchnorm=True, name='conv9')
 
-    out6 = Conv2D(1, (1, 1), activation='sigmoid', name='pred1')(conv6)
-    out7 = Conv2D(1, (1, 1), activation='sigmoid', name='pred2')(conv7)
-    out8 = Conv2D(1, (1, 1), activation='sigmoid', name='pred3')(conv8)
-    out9 = Conv2D(1, (1, 1), activation='sigmoid', name='final')(conv9)
+    out6 = Conv2D(1, (1, 1), activation='softmax', name='pred1')(conv6)
+    out7 = Conv2D(1, (1, 1), activation='softmax', name='pred2')(conv7)
+    out8 = Conv2D(1, (1, 1), activation='softmax', name='pred3')(conv8)
+    out9 = Conv2D(1, (1, 1), activation='softmax', name='final')(conv9)
 
     model = Model(inputs=[img_input], outputs=[out6, out7, out8, out9])
 
