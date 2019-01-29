@@ -4,6 +4,10 @@ Deep learning network for predicting lesions in stroke.
 This project aims to predict stroke lesions from T2-weighted, CT-Perfusion and Diffusion-weighted images.
 This research was supported by the Medical Image Processing Lab (MIPLAB) in Campus Biotech Geneva.
 
+## Requirements
+- Tensorflow(-GPU)
+- Keras
+
 ## How to I use this code?
 This code is relatively generic and might be used for any binary segmentation task.
 
@@ -25,7 +29,8 @@ To train a model on the data just created, use the following command:
 - For 3D : `python ~/MIP-Deepstroke/Unet2D/train.py -d {DATAPATH} -i {INPUT_MODALITY1} -i {INPUT_MODALITY2} -o {OUTPUT_MODALITY}`
 
 Example :  `python ~/MIP-Deepstroke/Unet2D/train.py -d ~/Data/010119-1000/32x32x32 -i T2 -i TRACE -o LESION`
-By default, models are saved under `~/Models/{date}/checkpoints`
+
+By default, models are saved under `~/Models/{date}/checkpoints`.
 
 ### Note
 This README is still under construction.
