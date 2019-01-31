@@ -27,8 +27,8 @@ def clean_lesions(lesion_path, neg=0.0):
     if neg < 0:
         selected = positives + negatives
     for f in files:
-        if f not in selected:
-            filepath = os.path.join(lesion_path, f)
+        filepath = os.path.join(lesion_path, f)
+        if filepath not in selected:
             os.remove(filepath)
 
 
