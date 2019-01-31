@@ -3,7 +3,7 @@ from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Conv2DTranspo
 from keras.layers import Activation, add, multiply, Lambda
 from keras.layers import AveragePooling2D, UpSampling2D
 from keras.optimizers import Adam
-
+from keras.utils import multi_gpu_model
 from keras import backend as K
 from keras.layers.normalization import BatchNormalization
 
@@ -50,6 +50,7 @@ def unet(opt, input_size, lossfxn):
     conv10 = Conv2D(1, (1, 1), activation='sigmoid', name='final')(conv9)
 
     model = Model(inputs=[inputs], outputs=[conv10])
+    model = multi_gpu_model(model, gpus=2)
     model.compile(optimizer=opt, loss=lossfxn, metrics=[losses.dsc, losses.tp, losses.tn])
     return model
 
@@ -160,6 +161,7 @@ def attn_unet(opt, input_size, lossfxn):
     out = Conv2D(1, (1, 1), activation='sigmoid', kernel_initializer=kinit, name='final')(up4)
 
     model = Model(inputs=[inputs], outputs=[out])
+    model = multi_gpu_model(model, gpus=2)
     model.compile(optimizer=opt, loss=lossfxn, metrics=[losses.dsc, losses.tp, losses.tn])
     return model
 
@@ -216,7 +218,7 @@ def attn_reg_ds(opt, input_size, lossfxn):
     out9 = Conv2D(1, (1, 1), activation='sigmoid', name='final')(conv9)
 
     model = Model(inputs=[img_input], outputs=[out6, out7, out8, out9])
-
+    model = multi_gpu_model(model, gpus=2)
     loss = {'pred1': lossfxn,
             'pred2': lossfxn,
             'pred3': lossfxn,
@@ -291,7 +293,7 @@ def attn_reg(opt, input_size, lossfxn):
     out9 = Conv2D(1, (1, 1), activation='sigmoid', name='final')(conv9)
 
     model = Model(inputs=[img_input], outputs=[out6, out7, out8, out9])
-
+    model = multi_gpu_model(model, gpus=2)
     loss = {'pred1': lossfxn,
             'pred2': lossfxn,
             'pred3': lossfxn,
