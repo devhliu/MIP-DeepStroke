@@ -2,27 +2,41 @@ import os
 import nibabel as nb
 from argparse import ArgumentParser
 import numpy as np
-import random
 
-def clean_lesions(lesion_path, pos=1.0, neg=0.0):
+
+def clean_lesions(lesion_path, neg=0.0):
     files = os.listdir(lesion_path)
+    positives = []
+    negatives = []
     for f in files:
         filepath = os.path.join(lesion_path, f)
         img = nb.load(filepath).get_data()
-        if np.sum(img)>0:
-            r = np.random.uniform()
-            if r>pos:
-                os.remove(filepath)
+        if np.sum(img) > 0:
+            positives.append(filepath)
         else:
-            r = np.random.uniform()
-            if r > neg:
-                os.remove(filepath)
+            negatives.append(filepath)
 
-def clean_folders(path_lesion, modalities=["MTT","Tmax","CVF","CBF","T2","background"]):
+    total_pos = len(positives)
+    num_neg = int(total_pos * neg)
+
+    shuffled_neg = np.random.permutation(negatives)
+    selected_negatives = shuffled_neg[:num_neg]
+
+    selected = positives + selected_negatives
+
+    if neg < 0:
+        selected = positives + negatives
+    for f in files:
+        if f not in selected:
+            filepath = os.path.join(lesion_path, f)
+            os.remove(filepath)
+
+
+def clean_folders(path_lesion, modalities=["MTT", "Tmax", "CVF", "CBF", "T2", "background"]):
     kept_lesion_files = os.listdir(path_lesion)
 
     for m in modalities:
-        folder_path = path_lesion.replace("LESION",m)
+        folder_path = path_lesion.replace("LESION", m)
         if not os.path.exists(folder_path):
             continue
         files = os.listdir(folder_path)
@@ -48,13 +62,13 @@ if __name__ == '__main__':
     pos = args.pos
     neg = args.neg
 
-    print("Keeping {}% of positive samples".format(pos*100.0))
-    print("Keeping {}% of negative samples".format(neg*100.0))
+    print("Keeping {}% of positive samples".format(pos * 100.0))
+    print("Keeping {}% of negative samples".format(neg * 100.0))
 
     folders = os.listdir(path)
     for f in folders:
-        if f.lower() not in [x.lower() for x in ["TRACE","MTT","Tmax","CBF","CBV","LESION","background","T2"]]:
+        if f.lower() not in [x.lower() for x in ["TRACE", "MTT", "Tmax", "CBF", "CBV", "LESION", "background", "T2"]]:
             raise Exception("Folder not allowed")
 
-    clean_lesions(os.path.join(path, "LESION"))
-    clean_folders(os.path.join(path, "LESION"), modalities=["TRACE","MTT","Tmax","CVF","CBF","T2","background"])
+    clean_lesions(os.path.join(path, "LESION"), neg=neg)
+    clean_folders(os.path.join(path, "LESION"), modalities=["TRACE", "MTT", "Tmax", "CVF", "CBF", "T2", "background"])
