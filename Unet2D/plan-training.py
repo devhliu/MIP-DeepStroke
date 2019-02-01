@@ -17,13 +17,19 @@ architectures = "attn_reg_ds"  #["unet", "attn_reg", "attn_reg_ds", "attn_unet"]
 augmentation = 0.5  # [0.1, 0.2, 0.3, 0.5, 0.7, 1.0]
 loss_functions = "tversky" # ["tversky", "jaccard", "focal_tversky"]
 
-iterate_on = "tversky_alpha-beta"
+datasets = ["/home/snarduzz/Data/310119-2347-0.1/512x512",
+            "/home/snarduzz/Data/310119-2347-0.2/512x512",
+            "/home/snarduzz/Data/310119-2347-0.3/512x512",
+            "/home/snarduzz/Data/310119-2347-0.5/512x512"]
+
+iterate_on = "data_path"
 
 dict_parameters = dict()
 dict_parameters["tversky_alpha-beta"] = alpha_values[6:]
 dict_parameters["architecture"] = architectures
 dict_parameters["loss_function"] = loss_functions
 dict_parameters["augmentation"] = augmentation
+dict_parameters["data_path"] = datasets
 
 for value in dict_parameters[iterate_on]:
 
